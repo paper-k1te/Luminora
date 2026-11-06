@@ -82,6 +82,16 @@ typedef enum {
     BLOCK_MUD,
     BLOCK_GLOW_SHROOM,
     BLOCK_BEDROCK,
+    BLOCK_WORKBENCH,
+    BLOCK_CHAIR,
+    BLOCK_TABLE,
+    BLOCK_DOOR,
+    BLOCK_BED,
+    BLOCK_FURNACE,
+    BLOCK_CHEST,
+    BLOCK_BOOKSHELF,
+    BLOCK_CLOCK,
+    BLOCK_CHANDELIER,
     BLOCK_TYPE_COUNT
 } BlockType;
 
@@ -124,7 +134,17 @@ static BlockDef g_BlockDefs[BLOCK_TYPE_COUNT] = {
     { "Mossy Stone",    "苔石",       "苔石",       0.42f, 0.52f, 0.40f, 1.6f, true,  false, false, 0,0,0 },
     { "Mud Block",      "泥浆块",     "泥浆",       0.40f, 0.30f, 0.22f, 0.5f, true,  false, false, 0,0,0 },
     { "Glow Shroom",    "发光蘑菇",   "发光蘑菇",   0.15f, 0.82f, 0.88f, 0.2f, false, true,  true,  0.2f, 0.9f, 0.95f },
-    { "Bedrock",        "基岩",       "基岩",       0.12f, 0.12f, 0.14f,-1.0f, true,  false, false, 0,0,0 }
+    { "Bedrock",        "基岩",       "基岩",       0.12f, 0.12f, 0.14f,-1.0f, true,  false, false, 0,0,0 },
+    { "Work Bench",     "工作台",     "工作台",     0.68f, 0.48f, 0.28f, 1.0f, true,  false, false, 0,0,0 },
+    { "Wooden Chair",   "木椅",       "木椅",       0.72f, 0.45f, 0.22f, 0.8f, false, true,  false, 0,0,0 },
+    { "Wooden Table",   "木桌",       "木桌",       0.65f, 0.42f, 0.22f, 1.0f, true,  false, false, 0,0,0 },
+    { "Wooden Door",    "木门",       "木门",       0.60f, 0.38f, 0.20f, 1.0f, true,  true,  false, 0,0,0 },
+    { "Bed",            "舒适木床",   "舒适木床",   0.85f, 0.25f, 0.25f, 1.0f, true,  false, false, 0,0,0 },
+    { "Furnace",        "石制熔炉",   "石制熔炉",   0.55f, 0.55f, 0.58f, 2.0f, true,  false, true,  1.0f, 0.65f, 0.25f },
+    { "Treasure Chest", "大藏宝箱",   "大藏宝箱",   0.85f, 0.68f, 0.20f, 1.5f, true,  false, false, 0,0,0 },
+    { "Bookshelf",      "精装书架",   "精装书架",   0.55f, 0.35f, 0.18f, 1.2f, true,  false, false, 0,0,0 },
+    { "Clock",          "古典摆钟",   "古典摆钟",   0.50f, 0.32f, 0.16f, 1.5f, true,  false, false, 0,0,0 },
+    { "Chandelier",     "铁艺吊灯",   "铁艺吊灯",   0.95f, 0.85f, 0.45f, 0.5f, false, true,  true,  1.0f, 0.88f, 0.50f }
 };
 
 // ============================================================================
@@ -290,6 +310,8 @@ typedef struct {
     float health;
     float maxHealth;
     float hurtTimer;
+    float timeSinceCombat;
+    float regenTimer;
     bool isDead;
     float deathTimer;
 } Player;
@@ -322,8 +344,7 @@ static bool g_MouseRight = false;
 static int  g_MouseScreenX = 0;
 static int  g_MouseScreenY = 0;
 
-// OpenGL Texture Atlas
-static GLuint g_AtlasTex = 0;
+// OpenGL Texture Atlas (managed via texture_atlas.h)
 
 static void generateWorld(int seed);
 static bool addToInventory(BlockType type, int count);
@@ -864,6 +885,8 @@ static void startNewWorld(int slotIdx, const char* name, int mode, int seed) {
     g_Player.health = 100.0f;
     g_Player.maxHealth = 100.0f;
     g_Player.hurtTimer = 0.0f;
+    g_Player.timeSinceCombat = 25.0f;
+    g_Player.regenTimer = 0.0f;
     g_Player.isDead = false;
     g_Player.deathTimer = 0.0f;
 
@@ -902,6 +925,7 @@ void onPlayerHurt(float damage, float sourceX) {
 
     g_Player.health -= damage;
     g_Player.hurtTimer = 0.65f;
+    g_Player.timeSinceCombat = 0.0f;
     playSound(SFX_HIT);
 
     float pushDir = (g_Player.x >= sourceX) ? 1.0f : -1.0f;
@@ -929,6 +953,8 @@ static void respawnPlayer(void) {
     g_Player.vy = 0.0f;
     g_Player.health = g_Player.maxHealth;
     g_Player.hurtTimer = 1.0f;
+    g_Player.timeSinceCombat = 25.0f;
+    g_Player.regenTimer = 0.0f;
     g_Player.isDead = false;
     g_Player.deathTimer = 0.0f;
     playSound(SFX_CRAFT);
@@ -983,6 +1009,26 @@ static void updatePhysics(float dt) {
     if (g_Player.hurtTimer > 0.0f) {
         g_Player.hurtTimer -= dt;
         if (g_Player.hurtTimer < 0.0f) g_Player.hurtTimer = 0.0f;
+    }
+
+    // Requirement 3: Natural Health Regeneration (After leaving combat for 20s, start slowly regenerating health)
+    if (getGameMode() == MODE_SURVIVAL && !g_Player.isDead) {
+        g_Player.timeSinceCombat += dt;
+        if (g_Player.timeSinceCombat >= 20.0f && g_Player.health < g_Player.maxHealth) {
+            float regenRate = 3.5f; // 3.5 HP per second
+            g_Player.health += regenRate * dt;
+            if (g_Player.health > g_Player.maxHealth) g_Player.health = g_Player.maxHealth;
+
+            g_Player.regenTimer += dt;
+            if (g_Player.regenTimer >= 2.5f) {
+                g_Player.regenTimer = 0.0f;
+                char rBuf[32];
+                snprintf(rBuf, sizeof(rBuf), "+%d HP", (int)(regenRate * 2.5f));
+                spawnFloatingText(rBuf, g_Player.x, g_Player.y + 1.8f, 0.35f, 1.0f, 0.45f);
+            }
+        } else {
+            g_Player.regenTimer = 0.0f;
+        }
     }
 
     if (g_Player.isDead) {
@@ -1211,6 +1257,26 @@ static BlockType getMatchingWallType(BlockType bt) {
             return BLOCK_STONE;
         case BLOCK_GLASS:
             return BLOCK_GLASS;
+        case BLOCK_WORKBENCH:
+            return BLOCK_WORKBENCH;
+        case BLOCK_CHAIR:
+            return BLOCK_CHAIR;
+        case BLOCK_TABLE:
+            return BLOCK_TABLE;
+        case BLOCK_DOOR:
+            return BLOCK_DOOR;
+        case BLOCK_BED:
+            return BLOCK_BED;
+        case BLOCK_FURNACE:
+            return BLOCK_FURNACE;
+        case BLOCK_CHEST:
+            return BLOCK_CHEST;
+        case BLOCK_BOOKSHELF:
+            return BLOCK_BOOKSHELF;
+        case BLOCK_CLOCK:
+            return BLOCK_CLOCK;
+        case BLOCK_CHANDELIER:
+            return BLOCK_CHANDELIER;
         default:
             return BLOCK_DIRT;
     }
@@ -1249,6 +1315,7 @@ static void updateInteraction(float dt) {
         if (checkMobAttackEx(mouseWX, mouseWY, damage, knockback, g_Player.x, g_Player.y)) {
             s_AttackCooldown = 0.20f;
             g_MiningProgress = 0.0f;
+            g_Player.timeSinceCombat = 0.0f;
             return;
         }
     }
@@ -1521,8 +1588,8 @@ static void renderCube25D(float x, float y, int blockType, bool topCull, bool bt
     }
 
     float u0, v0, u1, v1;
-    float zFront = (blockType == BLOCK_WOOD) ? -0.15f : 0.0f;
-    float zBack = (blockType == BLOCK_WOOD) ? -0.55f : -BLOCK_DEPTH;
+    float zFront = (blockType == BLOCK_WOOD || blockType == BLOCK_CHAIR || blockType == BLOCK_CHANDELIER) ? -0.15f : 0.0f;
+    float zBack = (blockType == BLOCK_WOOD || blockType == BLOCK_CHAIR || blockType == BLOCK_CHANDELIER) ? -0.55f : -BLOCK_DEPTH;
 
     // Front Face (Z = 0)
     int frontTex = GetBlockFaceTextureIndex(blockType, 0);
@@ -2174,10 +2241,18 @@ static void renderHUD(void) {
             drawQuad2D(barX + 2.0f, barY + 2.0f, fillW, barH - 4.0f, fR, fG, fB, 0.95f);
         }
 
-        // Text with centered baseline
-        char hpBuf[64];
-        snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth);
-        drawText(barX + 12.0f, barY + 18.0f, hpBuf, 1.0f, 1.0f, 1.0f, true);
+        // Text with centered baseline & natural regen feedback
+        char hpBuf[128];
+        if (g_Player.health >= g_Player.maxHealth) {
+            snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth);
+        } else if (g_Player.timeSinceCombat >= 20.0f) {
+            snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d  [%s]", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth, LOC("自然回血中 +3.5/s", "Regen +3.5/s"));
+        } else {
+            int secLeft = (int)ceilf(20.0f - g_Player.timeSinceCombat);
+            if (secLeft < 0) secLeft = 0;
+            snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d  (%s %ds)", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth, LOC("脱战回血倒计时", "Regen in"), secLeft);
+        }
+        drawText(barX + 10.0f, barY + 18.0f, hpBuf, 1.0f, 1.0f, 1.0f, true);
     }
 
     // Game Over Overlay

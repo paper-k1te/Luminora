@@ -424,6 +424,18 @@ namespace Core
             Register(new BlockData(type: BlockType.Gel, chineseName: "史莱姆凝胶", englishName: "Slime Gel", hardness: 0.1f, isSolid: false, isPassable: true, isTransparent: true, textureIndex: 43, defaultColor: new Color(0.22f, 0.88f, 0.45f), dropItemId: (int)BlockType.Gel));
             Register(new BlockData(type: BlockType.StickyBomb, chineseName: "粘性炸弹", englishName: "Sticky Bomb", hardness: 0.2f, isSolid: false, isPassable: true, isTransparent: true, textureIndex: 44, defaultColor: new Color(0.35f, 0.72f, 0.35f), dropItemId: (int)BlockType.StickyBomb));
 
+            // Furniture Blocks (42 - 51)
+            Register(new BlockData(type: BlockType.Workbench, chineseName: "工作台", englishName: "Work Bench", hardness: 1.0f, isSolid: true, isPassable: false, isTransparent: false, textureIndex: 45, defaultColor: new Color(0.68f, 0.48f, 0.28f), dropItemId: (int)BlockType.Workbench));
+            Register(new BlockData(type: BlockType.Chair, chineseName: "木椅", englishName: "Wooden Chair", hardness: 0.8f, isSolid: false, isPassable: true, isTransparent: true, textureIndex: 46, defaultColor: new Color(0.72f, 0.45f, 0.22f), dropItemId: (int)BlockType.Chair));
+            Register(new BlockData(type: BlockType.Table, chineseName: "木桌", englishName: "Wooden Table", hardness: 1.0f, isSolid: true, isPassable: false, isTransparent: false, textureIndex: 47, defaultColor: new Color(0.65f, 0.42f, 0.22f), dropItemId: (int)BlockType.Table));
+            Register(new BlockData(type: BlockType.Door, chineseName: "木门", englishName: "Wooden Door", hardness: 1.0f, isSolid: true, isPassable: false, isTransparent: true, textureIndex: 48, defaultColor: new Color(0.60f, 0.38f, 0.20f), dropItemId: (int)BlockType.Door));
+            Register(new BlockData(type: BlockType.Bed, chineseName: "舒适木床", englishName: "Bed", hardness: 1.0f, isSolid: true, isPassable: false, isTransparent: false, textureIndex: 49, defaultColor: new Color(0.85f, 0.25f, 0.25f), dropItemId: (int)BlockType.Bed));
+            Register(new BlockData(type: BlockType.Furnace, chineseName: "石制熔炉", englishName: "Furnace", hardness: 2.0f, isSolid: true, isPassable: false, isTransparent: false, textureIndex: 50, defaultColor: new Color(0.55f, 0.55f, 0.58f), dropItemId: (int)BlockType.Furnace, emitLight: true, lightColor: new Color(1.0f, 0.65f, 0.25f), lightIntensity: 1.0f));
+            Register(new BlockData(type: BlockType.Chest, chineseName: "大藏宝箱", englishName: "Treasure Chest", hardness: 1.5f, isSolid: true, isPassable: false, isTransparent: false, textureIndex: 51, defaultColor: new Color(0.85f, 0.68f, 0.20f), dropItemId: (int)BlockType.Chest));
+            Register(new BlockData(type: BlockType.Bookshelf, chineseName: "精装书架", englishName: "Bookshelf", hardness: 1.2f, isSolid: true, isPassable: false, isTransparent: false, textureIndex: 52, defaultColor: new Color(0.55f, 0.35f, 0.18f), dropItemId: (int)BlockType.Bookshelf));
+            Register(new BlockData(type: BlockType.Clock, chineseName: "古典摆钟", englishName: "Clock", hardness: 1.5f, isSolid: true, isPassable: false, isTransparent: false, textureIndex: 53, defaultColor: new Color(0.50f, 0.32f, 0.16f), dropItemId: (int)BlockType.Clock));
+            Register(new BlockData(type: BlockType.Chandelier, chineseName: "铁艺吊灯", englishName: "Chandelier", hardness: 0.5f, isSolid: false, isPassable: true, isTransparent: true, textureIndex: 54, defaultColor: new Color(0.95f, 0.85f, 0.45f), dropItemId: (int)BlockType.Chandelier, emitLight: true, lightColor: new Color(1.0f, 0.88f, 0.50f), lightIntensity: 1.0f));
+
             _initialized = true;
         }
 
@@ -502,7 +514,7 @@ namespace Core
         /// <summary>
         /// Retrieves total number of registered distinct block definitions.
         /// </summary>
-        public static int Count => 27;
+        public static int Count => 37;
 
         /// <summary>
         /// Retrieves the corresponding background wall type for a given foreground block.

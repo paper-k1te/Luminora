@@ -313,7 +313,9 @@ static const int g_TabMaterialsItems[] = {
 static const int g_TabMaterialsCount = sizeof(g_TabMaterialsItems) / sizeof(g_TabMaterialsItems[0]);
 
 static const int g_TabDecorItems[] = {
-    BLOCK_TORCH, BLOCK_GLOW_SHROOM, BLOCK_CACTUS
+    BLOCK_TORCH, BLOCK_GLOW_SHROOM, BLOCK_CACTUS,
+    BLOCK_WORKBENCH, BLOCK_CHAIR, BLOCK_TABLE, BLOCK_DOOR, BLOCK_BED,
+    BLOCK_FURNACE, BLOCK_CHEST, BLOCK_BOOKSHELF, BLOCK_CLOCK, BLOCK_CHANDELIER
 };
 static const int g_TabDecorCount = sizeof(g_TabDecorItems) / sizeof(g_TabDecorItems[0]);
 
@@ -404,76 +406,65 @@ static inline float getArmSwingAngle(float t, bool isSwinging, float walkCycle) 
 static void drawInventoryItemIcon(float x, float y, float size, int itemId) {
     if (itemId == BLOCK_AIR || itemId == 0) return;
 
-    if (!isToolItem(itemId) && itemId < BLOCK_TYPE_COUNT) {
-        // 2.5D Isometric Shaded Mini Block
-        float r = g_BlockDefs[itemId].r;
-        float g = g_BlockDefs[itemId].g;
-        float b = g_BlockDefs[itemId].b;
+    GLuint atlas = getAtlasTextureGL();
+    int texIdx = -1;
 
-        float cx = x + size * 0.5f;
-        float cy = y + size * 0.5f;
-        float hw = size * 0.38f;
-        float hh = size * 0.22f;
-        float h  = size * 0.40f;
-
-        // Top Face (+Y, Bright highlight)
-        glColor3f(fminf(r * 1.25f, 1.0f), fminf(g * 1.25f, 1.0f), fminf(b * 1.25f, 1.0f));
-        glBegin(GL_QUADS);
-        glVertex2f(cx, cy - h - hh);
-        glVertex2f(cx + hw, cy - h);
-        glVertex2f(cx, cy - h + hh);
-        glVertex2f(cx - hw, cy - h);
-        glEnd();
-
-        // Left Face (Front-Left, Base tint)
-        glColor3f(r * 0.90f, g * 0.90f, b * 0.90f);
-        glBegin(GL_QUADS);
-        glVertex2f(cx - hw, cy - h);
-        glVertex2f(cx, cy - h + hh);
-        glVertex2f(cx, cy + hh);
-        glVertex2f(cx - hw, cy);
-        glEnd();
-
-        // Right Face (Side Shadow)
-        glColor3f(r * 0.65f, g * 0.65f, b * 0.65f);
-        glBegin(GL_QUADS);
-        glVertex2f(cx, cy - h + hh);
-        glVertex2f(cx + hw, cy - h);
-        glVertex2f(cx + hw, cy);
-        glVertex2f(cx, cy + hh);
-        glEnd();
-
-        // Outline borders
-        glColor3f(0.1f, 0.12f, 0.15f);
-        glLineWidth(1.2f);
-        glBegin(GL_LINE_LOOP);
-        glVertex2f(cx, cy - h - hh);
-        glVertex2f(cx + hw, cy - h);
-        glVertex2f(cx + hw, cy);
-        glVertex2f(cx, cy + hh);
-        glVertex2f(cx - hw, cy);
-        glVertex2f(cx - hw, cy - h);
-        glEnd();
-
-        // Inner ridge line
-        glBegin(GL_LINES);
-        glVertex2f(cx, cy - h + hh); glVertex2f(cx, cy + hh);
-        glVertex2f(cx, cy - h + hh); glVertex2f(cx - hw, cy - h);
-        glVertex2f(cx, cy - h + hh); glVertex2f(cx + hw, cy - h);
-        glEnd();
-
-        // Special emissive glow for torch and glow shroom
-        if (itemId == BLOCK_TORCH || itemId == BLOCK_GLOW_SHROOM || itemId == BLOCK_MAGMA) {
-            glColor4f(1.0f, 0.95f, 0.4f, 0.45f);
-            glBegin(GL_TRIANGLE_FAN);
-            glVertex2f(cx, cy - h);
-            for (int a = 0; a <= 12; a++) {
-                float rad = (float)a * (float)M_PI * 2.0f / 12.0f;
-                glVertex2f(cx + cosf(rad) * (size * 0.28f), cy - h + sinf(rad) * (size * 0.28f));
-            }
-            glEnd();
+    if (itemId < BLOCK_TYPE_COUNT) {
+        texIdx = GetBlockFaceTextureIndex(itemId, 0);
+    } else {
+        switch (itemId) {
+            case ITEM_STICK:                texIdx = TILE_STICK; break;
+            case ITEM_TOOL_WOOD_PICKAXE:    texIdx = TILE_WOOD_PICKAXE; break;
+            case ITEM_TOOL_WOOD_AXE:        texIdx = TILE_WOOD_AXE; break;
+            case ITEM_TOOL_WOOD_SWORD:      texIdx = TILE_WOOD_SWORD; break;
+            case ITEM_TOOL_WOOD_SHOVEL:     texIdx = TILE_WOOD_SHOVEL; break;
+            case ITEM_TOOL_STONE_PICKAXE:   texIdx = TILE_STONE_PICKAXE; break;
+            case ITEM_TOOL_STONE_AXE:       texIdx = TILE_STONE_AXE; break;
+            case ITEM_TOOL_STONE_SWORD:     texIdx = TILE_STONE_SWORD; break;
+            case ITEM_TOOL_IRON_PICKAXE:    texIdx = TILE_IRON_PICKAXE; break;
+            case ITEM_TOOL_IRON_AXE:        texIdx = TILE_IRON_AXE; break;
+            case ITEM_TOOL_IRON_SWORD:      texIdx = TILE_IRON_SWORD; break;
+            case ITEM_TOOL_DIAMOND_PICKAXE: texIdx = TILE_DIAMOND_PICKAXE; break;
+            case ITEM_TOOL_DIAMOND_SWORD:   texIdx = TILE_DIAMOND_SWORD; break;
+            case ITEM_GEL:                  texIdx = TILE_GEL; break;
+            case ITEM_STICKY_BOMB:          texIdx = TILE_STICKY_BOMB; break;
+            default: break;
         }
-    } else if (isToolItem(itemId)) {
+    }
+
+    if (atlas != 0 && texIdx >= 0) {
+        float u0, v0, u1, v1;
+        GetAtlasTileUV(texIdx, &u0, &v0, &u1, &v1);
+
+        float pad = size * 0.08f;
+        float qx = x + pad;
+        float qy = y + pad;
+        float qw = size - pad * 2.0f;
+        float qh = size - pad * 2.0f;
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, atlas);
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
+
+        glBegin(GL_QUADS);
+        glTexCoord2f(u0, v1); glVertex2f(qx, qy);
+        glTexCoord2f(u1, v1); glVertex2f(qx + qw, qy);
+        glTexCoord2f(u1, v0); glVertex2f(qx + qw, qy + qh);
+        glTexCoord2f(u0, v0); glVertex2f(qx, qy + qh);
+        glEnd();
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
+
+        if (itemId < BLOCK_TYPE_COUNT && g_BlockDefs[itemId].isSolid) {
+            menuDrawBorder(qx, qy, qw, qh, 0.12f, 0.14f, 0.18f, 1.0f);
+        }
+        return;
+    }
+
+    if (isToolItem(itemId)) {
         // High-Quality Stylized Tool Icon
         const ToolDef* def = getToolDef(itemId);
         if (!def) return;

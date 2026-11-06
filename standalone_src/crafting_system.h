@@ -20,7 +20,7 @@
 // Recipe Database & Structs
 // ============================================================================
 #define MAX_INGREDIENTS 3
-#define RECIPE_COUNT 19
+#define RECIPE_COUNT 29
 #define BACKPACK_SLOTS 27
 
 typedef struct {
@@ -155,7 +155,67 @@ static RecipeDef g_Recipes[RECIPE_COUNT] = {
     { 19, "Sticky Bomb", "粘性炸弹", "SUPPLIES",
       "Adhesive demolition charge that clings steadfastly to cavern walls.",
       "可紧紧粘附在洞穴墙壁上的强力粘性炸弹。",
-      ITEM_STICKY_BOMB, 1, 2, { { ITEM_GEL, 1 }, { BLOCK_TORCH, 1 } } }
+      ITEM_STICKY_BOMB, 1, 2, { { ITEM_GEL, 1 }, { BLOCK_TORCH, 1 } } },
+
+    // 20. 4 Wood Planks -> Work Bench (工作台)
+    { 20, "Work Bench", "工作台", "BLOCKS",
+      "Essential carpentry crafting bench for assembling fine tools and furnishings.",
+      "基础木工工作台，是搭建工坊与制作精细工具的核心平台。",
+      BLOCK_WORKBENCH, 1, 1, { { BLOCK_WOOD_PLANK, 4 } } },
+
+    // 21. 4 Wood Planks -> Wooden Chair (木椅)
+    { 21, "Wooden Chair", "木椅", "BLOCKS",
+      "Hand-carved wooden chair. Adds home comfort to any shelter.",
+      "手工雕刻的舒适木椅，探险家居所的经典家具。",
+      BLOCK_CHAIR, 1, 1, { { BLOCK_WOOD_PLANK, 4 } } },
+
+    // 22. 4 Wood Planks + 2 Sticks -> Wooden Table (木桌)
+    { 22, "Wooden Table", "木桌", "BLOCKS",
+      "Sturdy four-legged dining and workbench table.",
+      "厚重结实的四角木桌，适合摆放烛台与战利品。",
+      BLOCK_TABLE, 1, 2, { { BLOCK_WOOD_PLANK, 4 }, { ITEM_STICK, 2 } } },
+
+    // 23. 6 Wood Planks -> Wooden Door (木门)
+    { 23, "Wooden Door", "木门", "BLOCKS",
+      "Hinged entrance door with brass knob to secure your home.",
+      "装配黄铜把手的铰链木门，阻挡洞穴外的蝙蝠与僵尸。",
+      BLOCK_DOOR, 1, 1, { { BLOCK_WOOD_PLANK, 6 } } },
+
+    // 24. 5 Wood Planks + 3 Slime Gel -> Comfortable Bed (舒适木床)
+    { 24, "Bed", "舒适木床", "BLOCKS",
+      "Cozy bed with soft stuffing and red quilt. Rest here to recover.",
+      "柔软充填棉被的舒适木床，让你在庇护所中安心休息。",
+      BLOCK_BED, 1, 2, { { BLOCK_WOOD_PLANK, 5 }, { ITEM_GEL, 3 } } },
+
+    // 25. 8 Stone + 2 Coal Ore -> Furnace (石制熔炉)
+    { 25, "Furnace", "石制熔炉", "BLOCKS",
+      "Cobblestone smelting furnace with smoldering coal fire.",
+      "由坚固原石砌成的炽热冶炼炉，内部炭火熊熊燃烧。",
+      BLOCK_FURNACE, 1, 2, { { BLOCK_STONE, 8 }, { BLOCK_COAL_ORE, 2 } } },
+
+    // 26. 8 Wood Planks + 2 Iron Ore -> Treasure Chest (大藏宝箱)
+    { 26, "Treasure Chest", "大藏宝箱", "BLOCKS",
+      "Brass-banded storage chest to safeguard your subterranean loot.",
+      "镶嵌黄铜包角与加固锁扣的木质宝箱，用于珍藏稀世珍宝。",
+      BLOCK_CHEST, 1, 2, { { BLOCK_WOOD_PLANK, 8 }, { BLOCK_IRON_ORE, 2 } } },
+
+    // 27. 6 Wood Planks + 2 Sticks -> Bookshelf (精装书架)
+    { 27, "Bookshelf", "精装书架", "BLOCKS",
+      "Three-tier wooden bookcase holding ancient magical tomes.",
+      "三层实木书架，陈列着记载魔法秘典的羊皮卷轴。",
+      BLOCK_BOOKSHELF, 1, 2, { { BLOCK_WOOD_PLANK, 6 }, { ITEM_STICK, 2 } } },
+
+    // 28. 6 Wood Planks + 1 Gold Ore -> Clock (古典摆钟)
+    { 28, "Clock", "古典摆钟", "BLOCKS",
+      "Grandfather clock with swinging brass pendulum indicating time.",
+      "高雅的落地摆钟，黄铜钟摆来回摆动，精准指示世界时辰。",
+      BLOCK_CLOCK, 1, 2, { { BLOCK_WOOD_PLANK, 6 }, { BLOCK_GOLD_ORE, 1 } } },
+
+    // 29. 4 Torches + 2 Iron Ore -> Chandelier (铁艺吊灯)
+    { 29, "Chandelier", "铁艺吊灯", "BLOCKS",
+      "Wrought-iron ceiling chandelier illuminating cavern halls.",
+      "悬挂式锻铁枝形吊灯，装有四支温润长燃蜡烛，照亮大厅。",
+      BLOCK_CHANDELIER, 1, 2, { { BLOCK_TORCH, 4 }, { BLOCK_IRON_ORE, 2 } } }
 };
 
 static inline const char* getRecipeLocalizedName(const RecipeDef* r) {
@@ -577,6 +637,26 @@ static int getFilteredRecipeIndices(int* outIndices, int maxCount) {
 // ============================================================================
 // Input Handling
 // ============================================================================
+
+static inline void getCraftButtonLayout(float modalX, float modalY,
+                                        float* outBtnX, float* outBtnY, float* outBtnW, float* outBtnH,
+                                        float* outSmallY, float* outSmallW, float* outSmallH) {
+    float cardW = 330.0f;
+    float prevX = modalX + cardW + 36.0f;
+    float prevY = modalY + 92.0f;
+    float prevW = 840.0f - cardW - 52.0f;
+    float prevH = 560.0f - 108.0f;
+
+    *outBtnX = prevX + 20.0f;
+    *outBtnY = prevY + prevH - 100.0f;
+    *outBtnW = prevW - 40.0f;
+    *outBtnH = 46.0f;
+
+    *outSmallW = (*outBtnW - 10.0f) * 0.5f;
+    *outSmallH = 28.0f;
+    *outSmallY = *outBtnY + *outBtnH + 8.0f;
+}
+
 static bool handleCraftingInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (!g_CraftingOpen) {
         if (uMsg == WM_KEYDOWN) {
@@ -602,11 +682,9 @@ static bool handleCraftingInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             g_CraftingMouseX = (int)(short)LOWORD(lParam);
             g_CraftingMouseY = (int)(short)HIWORD(lParam);
 
-            // Craft button hover check
-            float btnX = modalX + 370.0f;
-            float btnY = modalY + 395.0f;
-            float btnW = 430.0f;
-            float btnH = 46.0f;
+            // Craft button hover check (using unified layout helper)
+            float btnX, btnY, btnW, btnH, smallY, smallW, smallH;
+            getCraftButtonLayout(modalX, modalY, &btnX, &btnY, &btnW, &btnH, &smallY, &smallW, &smallH);
             g_CraftBtnHovered = (g_CraftingMouseX >= btnX && g_CraftingMouseX <= btnX + btnW &&
                                  g_CraftingMouseY >= btnY && g_CraftingMouseY <= btnY + btnH);
             return true;
@@ -691,14 +769,14 @@ static bool handleCraftingInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     }
                 }
 
-                // 5. Click "CRAFT [合成]" button
-                float btnX = modalX + 370.0f;
-                float btnY = modalY + 395.0f;
-                float btnW = 430.0f;
-                float btnH = 46.0f;
+                // 5. Click "CRAFT [合成]" button (using unified layout helper)
+                float btnX, btnY, btnW, btnH, smallY, smallW, smallH;
+                getCraftButtonLayout(modalX, modalY, &btnX, &btnY, &btnW, &btnH, &smallY, &smallW, &smallH);
+
                 if (g_CraftingMouseX >= btnX && g_CraftingMouseX <= btnX + btnW &&
                     g_CraftingMouseY >= btnY && g_CraftingMouseY <= btnY + btnH) {
                     g_CraftBtnActive = true;
+                    // Strict 1x craft: consumes only 1 recipe's ingredients
                     if (g_CraftingSelectedRecipe >= 0 && g_CraftingSelectedRecipe < count) {
                         craftRecipe(filtered[g_CraftingSelectedRecipe] + 1);
                     }
@@ -706,9 +784,6 @@ static bool handleCraftingInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 }
 
                 // 6. Bulk craft buttons
-                float smallW = 205.0f;
-                float smallH = 28.0f;
-                float smallY = btnY + btnH + 10.0f;
                 // Craft x5
                 if (g_CraftingMouseX >= btnX && g_CraftingMouseX <= btnX + smallW &&
                     g_CraftingMouseY >= smallY && g_CraftingMouseY <= smallY + smallH) {
@@ -1065,11 +1140,9 @@ static void renderCraftingUI(void) {
                 drawText(prevX + 24, badgeY, LOC("状态: 缺少必要材料", "Status: Missing Materials"), 1.0f, 0.40f, 0.40f, true);
             }
 
-            // Big Golden "CRAFT [合成]" Button
-            float btnX = prevX + 20.0f;
-            float btnY = prevY + prevH - 100.0f;
-            float btnW = prevW - 40.0f;
-            float btnH = 46.0f;
+            // Big Golden "CRAFT [合成]" Button (using unified layout helper)
+            float btnX, btnY, btnW, btnH, smallY, smallW, smallH;
+            getCraftButtonLayout(modalX, modalY, &btnX, &btnY, &btnW, &btnH, &smallY, &smallW, &smallH);
 
             if (g_CraftBtnActive) {
                 menuDrawQuad(btnX, btnY, btnW, btnH, 0.45f, 0.35f, 0.15f, 1.0f);
@@ -1098,10 +1171,7 @@ static void renderCraftingUI(void) {
                 drawText(btnX + (getLanguage() == LANG_ZH ? 120 : 100), btnY + 28, LOC("缺少必要材料", "Missing Materials"), 0.65f, 0.65f, 0.65f, false);
             }
 
-            // Bulk craft buttons
-            float smallW = (btnW - 10.0f) * 0.5f;
-            float smallH = 28.0f;
-            float smallY = btnY + btnH + 8.0f;
+            // Bulk craft buttons (coordinates from getCraftButtonLayout)
 
             menuDrawQuad(btnX, smallY, smallW, smallH, 0.16f, 0.19f, 0.26f, 1.0f);
             menuDrawBorder(btnX, smallY, smallW, smallH, 0.35f, 0.42f, 0.55f, 1.0f);

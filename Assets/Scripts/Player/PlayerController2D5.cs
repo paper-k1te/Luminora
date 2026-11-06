@@ -50,9 +50,11 @@ namespace Player
         [SerializeField] private float maxHealth = 100.0f;
         [SerializeField] private float currentHealth = 100.0f;
         [SerializeField] private float hurtTimer = 0.0f;
+        [SerializeField] private float timeSinceCombat = 25.0f;
         [SerializeField] private bool isDead = false;
         private float _hurtFlashTimer = 0.0f;
         private const float InvulnerableDuration = 0.65f;
+        public float TimeSinceCombat => timeSinceCombat;
         private readonly System.Collections.Generic.List<Renderer> _visualRenderers = new System.Collections.Generic.List<Renderer>();
         private readonly System.Collections.Generic.List<Color> _originalVisualColors = new System.Collections.Generic.List<Color>();
         private AudioSource _audioSource;
@@ -882,6 +884,7 @@ namespace Player
 
             currentHealth = Mathf.Max(0f, currentHealth - amount);
             hurtTimer = InvulnerableDuration;
+            timeSinceCombat = 0f;
             _hurtFlashTimer = 0.28f;
 
             // Apply knockback
@@ -978,6 +981,16 @@ namespace Player
                 hurtTimer -= dt;
             }
 
+            // Natural health regeneration: out of combat for 20s -> slow regen
+            if (currentGameMode == GameMode.Survival && !isDead)
+            {
+                timeSinceCombat += dt;
+                if (timeSinceCombat >= 20.0f && currentHealth < maxHealth)
+                {
+                    Heal(3.5f * dt);
+                }
+            }
+
             if (_hurtFlashTimer > 0f)
             {
                 _hurtFlashTimer -= dt;
@@ -1029,6 +1042,7 @@ namespace Player
             currentHealth = maxHealth;
             isDead = false;
             hurtTimer = 0f;
+            timeSinceCombat = 25f;
             _hurtFlashTimer = 0f;
 
             for (int i = 0; i < _visualRenderers.Count; i++)

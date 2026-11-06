@@ -346,6 +346,93 @@ namespace Crafting
                 new IngredientRequirement(BlockType.Gel, 1),
                 new IngredientRequirement(BlockType.Torch, 1)
             ));
+
+            // 20. 4 Wood Planks -> Work Bench (工作台)
+            recipes.Add(new RecipeDefinition(
+                id++, "Work Bench", "工作台", "Blocks",
+                "Essential carpentry crafting bench for assembling fine tools and furnishings.",
+                BlockType.Workbench, 1, "🪑",
+                new IngredientRequirement(BlockType.WoodPlank, 4)
+            ));
+
+            // 21. 4 Wood Planks -> Wooden Chair (木椅)
+            recipes.Add(new RecipeDefinition(
+                id++, "Wooden Chair", "木椅", "Blocks",
+                "Hand-carved wooden chair. Adds home comfort to any shelter.",
+                BlockType.Chair, 1, "🪑",
+                new IngredientRequirement(BlockType.WoodPlank, 4)
+            ));
+
+            // 22. 4 Wood Planks + 2 Sticks -> Wooden Table (木桌)
+            recipes.Add(new RecipeDefinition(
+                id++, "Wooden Table", "木桌", "Blocks",
+                "Sturdy four-legged dining and workbench table.",
+                BlockType.Table, 1, "🪵",
+                new IngredientRequirement(BlockType.WoodPlank, 4),
+                new IngredientRequirement(BlockType.Stick, 2)
+            ));
+
+            // 23. 6 Wood Planks -> Wooden Door (木门)
+            recipes.Add(new RecipeDefinition(
+                id++, "Wooden Door", "木门", "Blocks",
+                "Hinged entrance door with brass knob to secure your home.",
+                BlockType.Door, 1, "🚪",
+                new IngredientRequirement(BlockType.WoodPlank, 6)
+            ));
+
+            // 24. 5 Wood Planks + 3 Slime Gel -> Comfortable Bed (舒适木床)
+            recipes.Add(new RecipeDefinition(
+                id++, "Bed", "舒适木床", "Blocks",
+                "Cozy bed with soft stuffing and red quilt. Rest here to recover.",
+                BlockType.Bed, 1, "🛏️",
+                new IngredientRequirement(BlockType.WoodPlank, 5),
+                new IngredientRequirement(BlockType.Gel, 3)
+            ));
+
+            // 25. 8 Stone + 2 Coal Ore -> Furnace (石制熔炉)
+            recipes.Add(new RecipeDefinition(
+                id++, "Furnace", "石制熔炉", "Blocks",
+                "Cobblestone smelting furnace with smoldering coal fire.",
+                BlockType.Furnace, 1, "🔥",
+                new IngredientRequirement(BlockType.Stone, 8),
+                new IngredientRequirement(BlockType.CoalOre, 2)
+            ));
+
+            // 26. 8 Wood Planks + 2 Iron Ore -> Treasure Chest (大藏宝箱)
+            recipes.Add(new RecipeDefinition(
+                id++, "Treasure Chest", "大藏宝箱", "Blocks",
+                "Brass-banded storage chest to safeguard your subterranean loot.",
+                BlockType.Chest, 1, "📦",
+                new IngredientRequirement(BlockType.WoodPlank, 8),
+                new IngredientRequirement(BlockType.IronOre, 2)
+            ));
+
+            // 27. 6 Wood Planks + 2 Sticks -> Bookshelf (精装书架)
+            recipes.Add(new RecipeDefinition(
+                id++, "Bookshelf", "精装书架", "Blocks",
+                "Three-tier wooden bookcase holding ancient magical tomes.",
+                BlockType.Bookshelf, 1, "📚",
+                new IngredientRequirement(BlockType.WoodPlank, 6),
+                new IngredientRequirement(BlockType.Stick, 2)
+            ));
+
+            // 28. 6 Wood Planks + 1 Gold Ore -> Clock (古典摆钟)
+            recipes.Add(new RecipeDefinition(
+                id++, "Clock", "古典摆钟", "Blocks",
+                "Grandfather clock with swinging brass pendulum indicating time.",
+                BlockType.Clock, 1, "🕰️",
+                new IngredientRequirement(BlockType.WoodPlank, 6),
+                new IngredientRequirement(BlockType.GoldOre, 1)
+            ));
+
+            // 29. 4 Torches + 2 Iron Ore -> Chandelier (铁艺吊灯)
+            recipes.Add(new RecipeDefinition(
+                id++, "Chandelier", "铁艺吊灯", "Blocks",
+                "Wrought-iron ceiling chandelier illuminating cavern halls.",
+                BlockType.Chandelier, 1, "💡",
+                new IngredientRequirement(BlockType.Torch, 4),
+                new IngredientRequirement(BlockType.IronOre, 2)
+            ));
         }
 
         public List<RecipeDefinition> GetFilteredRecipes()

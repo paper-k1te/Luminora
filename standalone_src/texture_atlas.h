@@ -35,6 +35,22 @@
 #define TILE_GEL              43
 #define TILE_STICKY_BOMB      44
 
+// Furniture Tiles (45 - 54)
+#define TILE_WORKBENCH        45
+#define TILE_CHAIR            46
+#define TILE_TABLE            47
+#define TILE_DOOR             48
+#define TILE_BED              49
+#define TILE_FURNACE          50
+#define TILE_CHEST            51
+#define TILE_BOOKSHELF        52
+#define TILE_CLOCK            53
+#define TILE_CHANDELIER       54
+
+static GLuint g_AtlasTex = 0;
+static inline GLuint getAtlasTextureGL(void) { return g_AtlasTex; }
+static inline void setAtlasTextureGL(GLuint tex) { g_AtlasTex = tex; }
+
 static inline unsigned int atlas_hash2d(int x, int y, int seed) {
     unsigned int n = (unsigned int)x * 374761393u + (unsigned int)y * 668265263u + (unsigned int)seed * 91234567u;
     n = (n ^ (n >> 13)) * 1274126177u;
@@ -782,6 +798,240 @@ static void paint_item_sticky_bomb(unsigned char* diff, int tile_idx) {
 // Master Atlas Generator
 // ---------------------------------------------------------------------------
 
+
+// ---------------------------------------------------------------------------
+// Terraria Furniture Painters (Tiles 45 - 54)
+// ---------------------------------------------------------------------------
+
+static void paint_workbench(unsigned char* diff, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            if (y >= 12) {
+                int grain = (x * 7 + y * 3) % 4;
+                if (grain == 0) atlas_set_pixel(diff, tile_idx, x, y, 195, 145, 90, 255);
+                else if (grain == 1) atlas_set_pixel(diff, tile_idx, x, y, 175, 125, 75, 255);
+                else atlas_set_pixel(diff, tile_idx, x, y, 160, 110, 65, 255);
+            } else if (y >= 8) {
+                if (x >= 4 && x <= 11) {
+                    if (x == 4 || x == 11 || y == 8 || y == 11) atlas_set_pixel(diff, tile_idx, x, y, 110, 75, 45, 255);
+                    else if (x >= 7 && x <= 8 && y == 9) atlas_set_pixel(diff, tile_idx, x, y, 220, 190, 40, 255);
+                    else atlas_set_pixel(diff, tile_idx, x, y, 150, 105, 60, 255);
+                } else if (x < 3 || x > 12) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 130, 90, 50, 255);
+                } else {
+                    atlas_set_pixel(diff, tile_idx, x, y, 40, 25, 15, 255);
+                }
+            } else {
+                if (x < 3 || x > 12) {
+                    int shade = (x == 1 || x == 14) ? 145 : 120;
+                    atlas_set_pixel(diff, tile_idx, x, y, shade, shade * 7 / 10, shade / 2, 255);
+                } else {
+                    atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+                }
+            }
+        }
+    }
+    atlas_set_pixel(diff, tile_idx, 1, 14, 180, 185, 195, 255);
+    atlas_set_pixel(diff, tile_idx, 2, 14, 140, 145, 155, 255);
+    atlas_set_pixel(diff, tile_idx, 2, 15, 210, 215, 225, 255);
+}
+
+static void paint_chair(unsigned char* diff, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            if (y >= 8 && x <= 4) {
+                if (x == 1 || x == 4) atlas_set_pixel(diff, tile_idx, x, y, 175, 120, 70, 255);
+                else if (y == 15 || y == 11) atlas_set_pixel(diff, tile_idx, x, y, 150, 100, 55, 255);
+                else atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+            } else if (y == 7 && x <= 12) {
+                atlas_set_pixel(diff, tile_idx, x, y, 200, 140, 80, 255);
+            } else if (y == 6 && x <= 12) {
+                atlas_set_pixel(diff, tile_idx, x, y, 140, 90, 50, 255);
+            } else if (y < 6 && (x == 2 || x == 11)) {
+                atlas_set_pixel(diff, tile_idx, x, y, 150, 100, 60, 255);
+            } else {
+                atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+            }
+        }
+    }
+}
+
+static void paint_table(unsigned char* diff, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            if (y >= 13) {
+                int g = (x + y) % 3;
+                atlas_set_pixel(diff, tile_idx, x, y, 180 + g * 10, 125 + g * 8, 75 + g * 5, 255);
+            } else if (y >= 11) {
+                atlas_set_pixel(diff, tile_idx, x, y, 130, 85, 50, 255);
+            } else {
+                if (x <= 2 || x >= 13) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 160, 110, 65, 255);
+                } else {
+                    atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+                }
+            }
+        }
+    }
+}
+
+static void paint_door(unsigned char* diff, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            int p = (x % 5 == 0) ? 100 : 160;
+            atlas_set_pixel(diff, tile_idx, x, y, p, p * 7 / 10, p / 2, 255);
+            if (x == 0 || x == 15 || y == 0 || y == 15) {
+                atlas_set_pixel(diff, tile_idx, x, y, 90, 60, 35, 255);
+            }
+            if ((y == 12 || y == 3) && x >= 1 && x <= 4) {
+                atlas_set_pixel(diff, tile_idx, x, y, 65, 68, 75, 255);
+            }
+            if (y >= 6 && y <= 8 && x >= 12 && x <= 13) {
+                atlas_set_pixel(diff, tile_idx, x, y, 240, 200, 45, 255);
+            }
+        }
+    }
+}
+
+static void paint_bed(unsigned char* diff, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            if (x <= 3 && y <= 11) {
+                atlas_set_pixel(diff, tile_idx, x, y, 120, 80, 45, 255);
+            } else if (x >= 13 && y <= 7) {
+                atlas_set_pixel(diff, tile_idx, x, y, 120, 80, 45, 255);
+            } else if (y >= 3 && y <= 8) {
+                if (x >= 3 && x <= 6 && y >= 5) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 235, 235, 245, 255);
+                } else if (x >= 3 && x <= 13) {
+                    if (y == 8 && x >= 7) atlas_set_pixel(diff, tile_idx, x, y, 240, 195, 45, 255);
+                    else atlas_set_pixel(diff, tile_idx, x, y, 185, 30, 40, 255);
+                } else {
+                    atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+                }
+            } else if (y <= 2) {
+                if (x == 1 || x == 14) atlas_set_pixel(diff, tile_idx, x, y, 95, 60, 35, 255);
+                else atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+            } else {
+                atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+            }
+        }
+    }
+}
+
+static void paint_furnace(unsigned char* diff, unsigned char* emission, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            int g = (x * 13 + y * 17) % 30;
+            atlas_set_pixel(diff, tile_idx, x, y, 110 + g, 112 + g, 118 + g, 255);
+            if (x >= 4 && x <= 11 && y >= 2 && y <= 8) {
+                if (!(y >= 6 && (x == 4 || x == 11))) {
+                    if (y <= 4) {
+                        atlas_set_pixel(diff, tile_idx, x, y, 255, 140, 20, 255);
+                        if (emission) atlas_set_pixel(emission, tile_idx, x, y, 255, 160, 30, 255);
+                    } else {
+                        atlas_set_pixel(diff, tile_idx, x, y, 255, 220, 70, 255);
+                        if (emission) atlas_set_pixel(emission, tile_idx, x, y, 255, 230, 80, 255);
+                    }
+                }
+            }
+            if ((y == 4 || y == 6) && x >= 5 && x <= 10 && x % 2 == 0) {
+                atlas_set_pixel(diff, tile_idx, x, y, 45, 45, 50, 255);
+            }
+        }
+    }
+}
+
+static void paint_chest(unsigned char* diff, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            if (y >= 2 && y <= 13 && x >= 1 && x <= 14) {
+                atlas_set_pixel(diff, tile_idx, x, y, 150, 95, 45, 255);
+                if (x <= 3 || x >= 12 || y == 8 || y == 13 || y == 2) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 230, 185, 45, 255);
+                }
+                if (x >= 7 && x <= 8 && y >= 7 && y <= 9) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 255, 220, 70, 255);
+                }
+                if (x == 7 && y == 7) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 30, 30, 35, 255);
+                }
+            } else {
+                atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+            }
+        }
+    }
+}
+
+static void paint_bookshelf(unsigned char* diff, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            if (x == 0 || x == 15 || y == 0 || y == 15 || y == 5 || y == 10) {
+                atlas_set_pixel(diff, tile_idx, x, y, 120, 75, 40, 255);
+            } else {
+                int shelf = (y < 5) ? 0 : ((y < 10) ? 1 : 2);
+                int bookIdx = (x + shelf * 3) % 4;
+                if (bookIdx == 0) atlas_set_pixel(diff, tile_idx, x, y, 190, 40, 45, 255);
+                else if (bookIdx == 1) atlas_set_pixel(diff, tile_idx, x, y, 40, 95, 195, 255);
+                else if (bookIdx == 2) atlas_set_pixel(diff, tile_idx, x, y, 40, 160, 65, 255);
+                else atlas_set_pixel(diff, tile_idx, x, y, 215, 175, 40, 255);
+            }
+        }
+    }
+}
+
+static void paint_clock(unsigned char* diff, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            if (x >= 3 && x <= 12) {
+                atlas_set_pixel(diff, tile_idx, x, y, 105, 65, 35, 255);
+                if (y >= 10 && y <= 14 && x >= 5 && x <= 10) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 245, 242, 230, 255);
+                    if ((x == 7 && y >= 11 && y <= 13) || (y == 12 && x >= 7 && x <= 9)) {
+                        atlas_set_pixel(diff, tile_idx, x, y, 20, 20, 25, 255);
+                    }
+                } else if (y >= 3 && y <= 8 && x >= 5 && x <= 10) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 40, 50, 60, 200);
+                    if (x == 7 || x == 8) {
+                        atlas_set_pixel(diff, tile_idx, x, y, 230, 190, 45, 255);
+                    }
+                    if (y <= 4 && (x >= 6 && x <= 9)) {
+                        atlas_set_pixel(diff, tile_idx, x, y, 255, 215, 55, 255);
+                    }
+                }
+            } else {
+                atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+            }
+        }
+    }
+}
+
+static void paint_chandelier(unsigned char* diff, unsigned char* emission, int tile_idx) {
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            if (y >= 11 && (x == 7 || x == 8)) {
+                atlas_set_pixel(diff, tile_idx, x, y, 90, 95, 105, 255);
+            } else if (y >= 5 && y <= 10) {
+                if ((y == 6 && x >= 2 && x <= 13) ||
+                    (y >= 7 && y <= 9 && (x == 2 || x == 5 || x == 10 || x == 13))) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 50, 55, 65, 255);
+                } else if (y == 7 && (x == 2 || x == 5 || x == 10 || x == 13)) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 210, 175, 45, 255);
+                } else if (y == 8 && (x == 2 || x == 5 || x == 10 || x == 13)) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 245, 245, 240, 255);
+                } else if (y >= 9 && y <= 10 && (x == 2 || x == 5 || x == 10 || x == 13)) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 255, 190, 40, 255);
+                    if (emission) atlas_set_pixel(emission, tile_idx, x, y, 255, 220, 80, 255);
+                } else {
+                    atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+                }
+            } else {
+                atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+            }
+        }
+    }
+}
+
 static inline void GenerateTextureAtlasRGBA(unsigned char* outRgba, unsigned char* outEmission) {
     // Clear out buffers
     for (int i = 0; i < ATLAS_RES * ATLAS_RES * 4; i += 4) {
@@ -853,6 +1103,18 @@ static inline void GenerateTextureAtlasRGBA(unsigned char* outRgba, unsigned cha
 
     paint_item_gel(outRgba, TILE_GEL);
     paint_item_sticky_bomb(outRgba, TILE_STICKY_BOMB);
+
+    // Furniture Blocks (Tiles 45 - 54)
+    paint_workbench(outRgba, TILE_WORKBENCH);
+    paint_chair(outRgba, TILE_CHAIR);
+    paint_table(outRgba, TILE_TABLE);
+    paint_door(outRgba, TILE_DOOR);
+    paint_bed(outRgba, TILE_BED);
+    paint_furnace(outRgba, outEmission, TILE_FURNACE);
+    paint_chest(outRgba, TILE_CHEST);
+    paint_bookshelf(outRgba, TILE_BOOKSHELF);
+    paint_clock(outRgba, TILE_CLOCK);
+    paint_chandelier(outRgba, outEmission, TILE_CHANDELIER);
 }
 
 // ---------------------------------------------------------------------------
@@ -890,9 +1152,9 @@ static inline int GetBlockFaceTextureIndex(int blockType, int face) {
         if (face == 1 || face == 2) return TILE_CACTUS_TOP;
         return 8; // Ribbed side
     }
-    // Craftable Tools, Weapons & Items (mapped to tiles 30-44)
-    if (blockType >= 27 && blockType <= 41) {
-        return (blockType - 27) + TILE_STICK;
+    // Furniture Blocks (27 - 36 -> Tiles 45 - 54)
+    if (blockType >= 27 && blockType <= 36) {
+        return (blockType - 27) + TILE_WORKBENCH;
     }
     return blockType;
 }

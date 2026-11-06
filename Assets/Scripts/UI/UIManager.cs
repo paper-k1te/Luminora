@@ -1127,7 +1127,20 @@ namespace UI
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = Color.white }
             };
-            string hpString = $"HP: {Mathf.CeilToInt(health)} / {Mathf.CeilToInt(maxHealth)}";
+            string hpString;
+            if (health >= maxHealth)
+            {
+                hpString = $"HP: {Mathf.CeilToInt(health)} / {Mathf.CeilToInt(maxHealth)}";
+            }
+            else if (_player != null && _player.TimeSinceCombat >= 20f)
+            {
+                hpString = $"HP: {Mathf.CeilToInt(health)} / {Mathf.CeilToInt(maxHealth)} [Regen +3.5/s]";
+            }
+            else
+            {
+                int sec = _player != null ? Mathf.CeilToInt(20f - _player.TimeSinceCombat) : 0;
+                hpString = $"HP: {Mathf.CeilToInt(health)} / {Mathf.CeilToInt(maxHealth)} ({sec}s)";
+            }
             GUI.Label(bgRect, hpString, hpTextStyle);
         }
 

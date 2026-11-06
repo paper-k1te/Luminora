@@ -49,6 +49,18 @@ namespace Core
         DiamondPickaxe = 38,
         DiamondSword = 39,
         Gel = 40,
-        StickyBomb = 41
+        StickyBomb = 41,
+
+        // Furniture Blocks
+        Workbench = 42,
+        Chair = 43,
+        Table = 44,
+        Door = 45,
+        Bed = 46,
+        Furnace = 47,
+        Chest = 48,
+        Bookshelf = 49,
+        Clock = 50,
+        Chandelier = 51
     }
 }

@@ -1054,7 +1054,7 @@ namespace UI
 
                 GUIStyle dTitleStyle = new GUIStyle(_titleStyle)
                 {
-                    fontSize = 15,
+                    fontSize = 18,
                     alignment = TextAnchor.MiddleCenter,
                     normal = { textColor = new Color(1.0f, 0.25f, 0.25f) }
                 };
@@ -1100,7 +1100,7 @@ namespace UI
 
             GUIStyle heartStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = 14,
                 alignment = TextAnchor.MiddleCenter
             };
 
@@ -1128,7 +1128,7 @@ namespace UI
             // Numerical HP text overlay inside bar
             GUIStyle hpTextStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 11,
+                fontSize = 13,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = Color.white }
@@ -2084,7 +2084,7 @@ namespace UI
 
             _slotNumberStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 11,
+                fontSize = 13,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color(0.85f, 0.90f, 1.0f, 0.9f) }
@@ -2092,7 +2092,7 @@ namespace UI
 
             _slotCountStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = 14,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.LowerRight,
                 normal = { textColor = Color.white }
@@ -2100,7 +2100,7 @@ namespace UI
 
             _activeItemNameStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 14,
+                fontSize = 16,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color(1.0f, 0.88f, 0.35f, 1.0f) }
@@ -2128,7 +2128,7 @@ namespace UI
 
             _titleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 13,
+                fontSize = 16,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
                 normal = { textColor = new Color(1.0f, 0.82f, 0.25f, 1.0f) }
@@ -2136,14 +2136,14 @@ namespace UI
 
             _bodyStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 11,
+                fontSize = 13,
                 alignment = TextAnchor.MiddleLeft,
                 normal = { textColor = new Color(0.92f, 0.92f, 0.95f, 1.0f) }
             };
 
             _keyBadgeStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 11,
+                fontSize = 13,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
                 normal = { textColor = new Color(0.45f, 0.85f, 1.0f, 1.0f) }
@@ -2161,14 +2161,14 @@ namespace UI
 
             _floatingTextStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 13,
+                fontSize = 15,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter
             };
 
             _tooltipTitleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = 14,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
                 normal = { textColor = new Color(1.0f, 0.88f, 0.35f, 1.0f) }
@@ -2176,14 +2176,14 @@ namespace UI
 
             _tooltipBodyStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 11,
+                fontSize = 13,
                 alignment = TextAnchor.MiddleLeft,
                 normal = { textColor = Color.white }
             };
 
             _bannerTitleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 15,
+                fontSize = 18,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color(1.0f, 0.88f, 0.30f, 1.0f) }
@@ -2191,7 +2191,7 @@ namespace UI
 
             _bannerSubStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = 14,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color(0.9f, 0.95f, 1.0f, 1.0f) }
             };
@@ -2199,7 +2199,7 @@ namespace UI
             // Minecraft-style stone buttons
             _mcBtnStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 13,
+                fontSize = 15,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { background = _mcBtnNormalTex, textColor = Color.white },
@@ -2209,7 +2209,7 @@ namespace UI
 
             _menuTitleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 36,
+                fontSize = 40,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color(1.0f, 0.85f, 0.22f) }
@@ -2217,7 +2217,7 @@ namespace UI
 
             _menuSubtitleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = 14,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color(0.75f, 0.85f, 0.95f) }
@@ -2225,7 +2225,7 @@ namespace UI
 
             _splashStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 13,
+                fontSize = 15,
                 fontStyle = FontStyle.BoldAndItalic,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { textColor = new Color(1.0f, 1.0f, 0.35f) }

@@ -1162,24 +1162,31 @@ static void renderCraftingUI(void) {
             if (isCreative) {
                 snprintf(craftBtnText, sizeof(craftBtnText), "%s (x%d) [%s]",
                          LOC("开始合成", "Craft Item"), sel->outputCount, LOC("免费", "Free"));
-                drawText(btnX + (getLanguage() == LANG_ZH ? 110 : 90), btnY + 28, craftBtnText, 0.4f, 0.95f, 1.0f, true);
+                float cbw = getTextWidth(craftBtnText, true);
+                drawText(btnX + (btnW - cbw) * 0.5f, btnY + 28, craftBtnText, 0.4f, 0.95f, 1.0f, true);
             } else if (canCraft) {
                 snprintf(craftBtnText, sizeof(craftBtnText), "%s (x%d)",
                          LOC("开始合成", "Craft Item"), sel->outputCount);
-                drawText(btnX + (getLanguage() == LANG_ZH ? 140 : 120), btnY + 28, craftBtnText, 1.0f, 0.95f, 0.45f, true);
+                float cbw = getTextWidth(craftBtnText, true);
+                drawText(btnX + (btnW - cbw) * 0.5f, btnY + 28, craftBtnText, 1.0f, 0.95f, 0.45f, true);
             } else {
-                drawText(btnX + (getLanguage() == LANG_ZH ? 120 : 100), btnY + 28, LOC("缺少必要材料", "Missing Materials"), 0.65f, 0.65f, 0.65f, false);
+                const char* missText = LOC("缺少必要材料", "Missing Materials");
+                float cbw = getTextWidth(missText, false);
+                drawText(btnX + (btnW - cbw) * 0.5f, btnY + 28, missText, 0.65f, 0.65f, 0.65f, false);
             }
 
             // Bulk craft buttons (coordinates from getCraftButtonLayout)
-
             menuDrawQuad(btnX, smallY, smallW, smallH, 0.16f, 0.19f, 0.26f, 1.0f);
             menuDrawBorder(btnX, smallY, smallW, smallH, 0.35f, 0.42f, 0.55f, 1.0f);
-            drawText(btnX + 45, smallY + 18, LOC("批量合成 x5", "Craft x5"), 0.85f, 0.85f, 0.90f, false);
+            const char* b5Text = LOC("批量合成 x5", "Craft x5");
+            float b5w = getTextWidth(b5Text, false);
+            drawText(btnX + (smallW - b5w) * 0.5f, smallY + 18, b5Text, 0.85f, 0.85f, 0.90f, false);
 
             menuDrawQuad(btnX + smallW + 10.0f, smallY, smallW, smallH, 0.16f, 0.19f, 0.26f, 1.0f);
             menuDrawBorder(btnX + smallW + 10.0f, smallY, smallW, smallH, 0.35f, 0.42f, 0.55f, 1.0f);
-            drawText(btnX + smallW + 50.0f, smallY + 18, LOC("全部合成", "Craft All"), 0.85f, 0.85f, 0.90f, false);
+            const char* allText = LOC("全部合成", "Craft All");
+            float allw = getTextWidth(allText, false);
+            drawText(btnX + smallW + 10.0f + (smallW - allw) * 0.5f, smallY + 18, allText, 0.85f, 0.85f, 0.90f, false);
         }
 
         // Footer helper

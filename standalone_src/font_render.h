@@ -20,6 +20,16 @@
 #define FONT_CACHE_SIZE   512
 #define MAX_CACHED_FONTS  32
 
+// Base Typography Metric Constants (crisp, readable, publication-grade font hierarchy)
+#define FONT_SIZE_TITLE   21   // Primary dialog & section titles (was 18)
+#define FONT_SIZE_BODY    17   // Primary UI body, buttons, HUD status (was 15)
+#define FONT_SIZE_SMALL   14   // Subtitles, slot counts, secondary hints (was 12)
+#define FONT_SIZE_BANNER  26   // Main menu brand banner title
+#define FONT_SIZE_DEATH   28   // Game over banner title
+
+// Dynamic Font Scale Factor: 1.0f = Standard, 1.15f = Large, 1.30f = Extra Large
+static float g_FontScale = 1.0f;
+
 typedef struct {
     int   fontSize;
     bool  isBold;
@@ -55,6 +65,7 @@ static inline void  cleanupFontRenderer(void);
 static inline void  drawTextUTF8(float x, float y, const char* utf8Text, float r, float g, float b, int fontSize, bool isBold);
 static inline void  drawText(float x, float y, const char* str, float r, float g, float b, bool isTitle);
 static inline float getTextWidthUTF8(const char* utf8Text, int fontSize, bool isBold);
+static inline float getTextWidth(const char* str, bool isTitle);
 
 // ============================================================================
 // Helper: Get or Create Win32 HFONT
@@ -338,6 +349,61 @@ static inline bool initFontRenderer(void) {
     return true;
 }
 
+// ============================================================================
+// Font Scaling & Cache Invalidation Helpers
+// ============================================================================
+static inline float getFontScale(void) {
+    return g_FontScale;
+}
+
+static inline const char* getFontScaleName(void) {
+    if (g_FontScale > 1.25f) return "特大 (130%)";
+    if (g_FontScale > 1.05f) return "放大 (115%)";
+    return "标准 (100%)";
+}
+
+static inline void clearFontCache(void) {
+    for (int i = 0; i < FONT_CACHE_SIZE; i++) {
+        if (g_FontCache[i].active) {
+            if (g_FontCache[i].texId) {
+                glDeleteTextures(1, &g_FontCache[i].texId);
+                g_FontCache[i].texId = 0;
+            }
+            if (g_FontCache[i].utf8Text) {
+                free(g_FontCache[i].utf8Text);
+                g_FontCache[i].utf8Text = NULL;
+            }
+            g_FontCache[i].active = false;
+        }
+    }
+}
+
+static inline void setFontScale(float scale) {
+    if (scale < 0.8f) scale = 0.8f;
+    if (scale > 1.6f) scale = 1.6f;
+    if (g_FontScale != scale) {
+        g_FontScale = scale;
+        clearFontCache();
+    }
+}
+
+static inline void cycleFontScale(void) {
+    if (g_FontScale < 1.05f) {
+        setFontScale(1.15f);
+    } else if (g_FontScale < 1.25f) {
+        setFontScale(1.30f);
+    } else {
+        setFontScale(1.0f);
+    }
+}
+
+static inline int getEffectiveFontSize(int fontSize) {
+    int s = (int)(fontSize * g_FontScale + 0.5f);
+    if (s < 9)  s = 9;
+    if (s > 96) s = 96;
+    return s;
+}
+
 // Draw UTF-8 string with TrueType font rasterization & texture cache
 static inline void drawTextUTF8(float x, float y, const char* utf8Text, float r, float g, float b, int fontSize, bool isBold) {
     if (!utf8Text || utf8Text[0] == '\0') return;
@@ -345,7 +411,8 @@ static inline void drawTextUTF8(float x, float y, const char* utf8Text, float r,
         initFontRenderer();
     }
 
-    FontCacheEntry* entry = getOrCreateFontEntry(utf8Text, fontSize, isBold);
+    int effSize = getEffectiveFontSize(fontSize);
+    FontCacheEntry* entry = getOrCreateFontEntry(utf8Text, effSize, isBold);
     if (!entry || !entry->texId) return;
 
     // Baseline alignment matching standard OpenGL raster position
@@ -375,9 +442,9 @@ static inline void drawTextUTF8(float x, float y, const char* utf8Text, float r,
     if (!blendEnabled) glDisable(GL_BLEND);
 }
 
-// Drop-in replacement for old drawText(x, y, str, r, g, b, isTitle)
+// Drop-in replacement for drawText(x, y, str, r, g, b, isTitle)
 static inline void drawText(float x, float y, const char* str, float r, float g, float b, bool isTitle) {
-    drawTextUTF8(x, y, str, r, g, b, isTitle ? 18 : 15, true);
+    drawTextUTF8(x, y, str, r, g, b, isTitle ? FONT_SIZE_TITLE : FONT_SIZE_BODY, isTitle);
 }
 
 // Measure pixel width of a UTF-8 string
@@ -386,9 +453,15 @@ static inline float getTextWidthUTF8(const char* utf8Text, int fontSize, bool is
     if (!g_FontRendererInitialized) {
         initFontRenderer();
     }
-    FontCacheEntry* entry = getOrCreateFontEntry(utf8Text, fontSize, isBold);
+    int effSize = getEffectiveFontSize(fontSize);
+    FontCacheEntry* entry = getOrCreateFontEntry(utf8Text, effSize, isBold);
     if (!entry) return 0.0f;
     return (float)(entry->width - 4); // minus the 2*padX
+}
+
+// Convenient helper matching drawText typography metrics
+static inline float getTextWidth(const char* str, bool isTitle) {
+    return getTextWidthUTF8(str, isTitle ? FONT_SIZE_TITLE : FONT_SIZE_BODY, isTitle);
 }
 
 // Cleanup all texture cache entries, HFONTs, and memory DC

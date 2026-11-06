@@ -140,7 +140,7 @@ namespace Player
 
             _headerStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 18,
+                fontSize = 21,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleLeft,
                 normal = { textColor = new Color(1.0f, 0.86f, 0.25f) }
@@ -148,7 +148,7 @@ namespace Player
 
             _tabActiveStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 13,
+                fontSize = 15,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { background = _tabActiveTex, textColor = new Color(1.0f, 0.88f, 0.30f) }
@@ -156,7 +156,7 @@ namespace Player
 
             _tabInactiveStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 12,
+                fontSize = 14,
                 fontStyle = FontStyle.Normal,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { background = _tabInactiveTex, textColor = new Color(0.70f, 0.75f, 0.85f) }
@@ -164,7 +164,7 @@ namespace Player
 
             _slotLabelStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 10,
+                fontSize = 12,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.LowerCenter,
                 normal = { textColor = Color.white }
@@ -172,27 +172,27 @@ namespace Player
 
             _tooltipTitleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 14,
+                fontSize = 16,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(1.0f, 0.88f, 0.30f) }
             };
 
             _tooltipBodyStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 11,
+                fontSize = 13,
                 normal = { textColor = new Color(0.85f, 0.90f, 0.95f) }
             };
 
             _hotbarNumStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 10,
+                fontSize = 12,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(1.0f, 0.85f, 0.25f) }
             };
 
             _closeBtnStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 14,
+                fontSize = 16,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = Color.white }
             };

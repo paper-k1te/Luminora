@@ -111,14 +111,15 @@ static MenuButton g_PauseMenuButtons[PAUSE_MENU_BTN_COUNT] = {
     { 0, 0, 360.0f, 38.0f, "", false, false }  // 7: Exit Game
 };
 
-// Settings Modal Buttons (5 options)
-#define SETTINGS_BTN_COUNT 5
+// Settings Modal Buttons (6 options: Language, Sound, Resolution, Font Scale, Game Mode, Done)
+#define SETTINGS_BTN_COUNT 6
 static MenuButton g_SettingsButtons[SETTINGS_BTN_COUNT] = {
-    { 0, 0, 380.0f, 42.0f, "", false, false }, // 0: Language Option
-    { 0, 0, 380.0f, 42.0f, "", false, false }, // 1: Sound Option
-    { 0, 0, 380.0f, 42.0f, "", false, false }, // 2: Display / Resolution Option
-    { 0, 0, 380.0f, 42.0f, "", false, false }, // 3: Mode Option
-    { 0, 0, 380.0f, 42.0f, "", false, false }  // 4: Done & Return
+    { 0, 0, 400.0f, 42.0f, "", false, false }, // 0: Language Option
+    { 0, 0, 400.0f, 42.0f, "", false, false }, // 1: Sound Option
+    { 0, 0, 400.0f, 42.0f, "", false, false }, // 2: Display / Resolution Option
+    { 0, 0, 400.0f, 42.0f, "", false, false }, // 3: Font Scale Option
+    { 0, 0, 400.0f, 42.0f, "", false, false }, // 4: Mode Option
+    { 0, 0, 400.0f, 42.0f, "", false, false }  // 5: Done & Return
 };
 
 // ============================================================================
@@ -230,20 +231,20 @@ static void menuDrawMinecraftButton(MenuButton* btn) {
     }
 
     // 3. Centered button label with drop shadow
-    float textPixelW = getTextWidthUTF8(btn->label, 15, true);
+    float textPixelW = getTextWidthUTF8(btn->label, FONT_SIZE_BODY, true);
     float textX = x + (w - textPixelW) * 0.5f;
-    float textY = y + (h * 0.5f) + 5.0f;
+    float textY = y + (h * 0.5f) + 6.0f;
 
     // Drop shadow
-    drawText(textX + 1.5f, textY + 1.5f, btn->label, 0.10f, 0.10f, 0.12f, false);
+    drawTextUTF8(textX + 1.5f, textY + 1.5f, btn->label, 0.10f, 0.10f, 0.12f, FONT_SIZE_BODY, true);
 
-    // Front text
+    // Front text (brightened on hover/active without glyph scale jumping)
     if (hovered) {
-        drawText(textX, textY, btn->label, 1.0f, 1.0f, 0.60f, true);
+        drawTextUTF8(textX, textY, btn->label, 1.0f, 1.0f, 0.60f, FONT_SIZE_BODY, true);
     } else if (active) {
-        drawText(textX, textY, btn->label, 1.0f, 0.85f, 0.25f, true);
+        drawTextUTF8(textX, textY, btn->label, 1.0f, 0.85f, 0.25f, FONT_SIZE_BODY, true);
     } else {
-        drawText(textX, textY, btn->label, 0.95f, 0.95f, 0.95f, false);
+        drawTextUTF8(textX, textY, btn->label, 0.95f, 0.95f, 0.95f, FONT_SIZE_BODY, true);
     }
 }
 
@@ -319,7 +320,23 @@ static bool handleSettingsInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                         toggleSound();
                         showNotification(isSoundEnabled() ? LOC("游戏音效: 开启", "Sound Effects: Enabled") : LOC("游戏音效: 静音", "Sound Effects: Muted"), 0.4f, 0.9f, 1.0f);
                     } else if (i == 2) {
-                        // Option 3: Toggle Mode
+                        // Option 3: Cycle Resolution Preset
+                        cycleResolutionPreset(g_MainHwnd);
+                        char resNotif[128];
+                        if (isFullscreen()) {
+                            snprintf(resNotif, sizeof(resNotif), "%s: %s", LOC("已切换至", "Switched to"), LOC("无边框全屏模式", "Borderless Fullscreen"));
+                        } else {
+                            snprintf(resNotif, sizeof(resNotif), "%s: %dx%d", LOC("已切换分辨率", "Resolution changed"), (int)WINDOW_WIDTH, (int)WINDOW_HEIGHT);
+                        }
+                        showNotification(resNotif, 0.4f, 0.9f, 1.0f);
+                    } else if (i == 3) {
+                        // Option 4: Cycle Font Scale
+                        cycleFontScale();
+                        char fontNotif[128];
+                        snprintf(fontNotif, sizeof(fontNotif), "%s: %s", LOC("字体缩放已设为", "Font Scale set to"), getFontScaleName());
+                        showNotification(fontNotif, 1.0f, 0.9f, 0.4f);
+                    } else if (i == 4) {
+                        // Option 5: Toggle Mode
                         if (g_CurrentMode == MODE_SURVIVAL) {
                             setGameMode(MODE_CREATIVE);
                             showNotification(LOC("已切换至: 创造模式 [双击空格飞行]", "Switched to: Creative Mode [2x Space to Fly]"), 0.35f, 0.90f, 1.0f);
@@ -327,8 +344,8 @@ static bool handleSettingsInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                             setGameMode(MODE_SURVIVAL);
                             showNotification(LOC("已切换至: 生存模式", "Switched to: Survival Mode"), 0.35f, 0.95f, 0.45f);
                         }
-                    } else if (i == 3) {
-                        // Option 4: Done & Return
+                    } else if (i == 5) {
+                        // Option 6: Done & Return
                         setGameState(g_PreviousState);
                     }
                     return true;
@@ -380,8 +397,8 @@ static void renderSettingsDialog(void) {
     }
 
     // 2. Settings Stone Panel
-    float boxW = 460.0f;
-    float boxH = 410.0f;
+    float boxW = 480.0f;
+    float boxH = 460.0f;
     float boxX = ((float)WINDOW_WIDTH - boxW) * 0.5f;
     float boxY = ((float)WINDOW_HEIGHT - boxH) * 0.5f;
 
@@ -392,16 +409,16 @@ static void renderSettingsDialog(void) {
 
     // Header Title
     const char* titleText = LOC("游戏设置", "Settings");
-    float tW = getTextWidthUTF8(titleText, 16, true);
+    float tW = getTextWidth(titleText, true);
     drawText(boxX + (boxW - tW) * 0.5f, boxY + 32.0f, titleText, 1.0f, 0.85f, 0.25f, true);
 
     // Subtitle
-    const char* subText = LOC("配置语言、音效、分辨率与游戏模式偏好", "Configure Language, Audio, Display & Game Mode");
-    float sW = getTextWidthUTF8(subText, 12, false);
+    const char* subText = LOC("配置语言、音效、分辨率、字体与模式偏好", "Configure Language, Audio, Display, Font & Game Mode");
+    float sW = getTextWidth(subText, false);
     drawText(boxX + (boxW - sW) * 0.5f, boxY + 54.0f, subText, 0.75f, 0.85f, 0.95f, false);
 
     // 3. Settings Buttons
-    float btnW = 380.0f;
+    float btnW = 400.0f;
     float btnH = 42.0f;
     float btnGap = 10.0f;
     float btnX = boxX + (boxW - btnW) * 0.5f;
@@ -420,8 +437,13 @@ static void renderSettingsDialog(void) {
     }
     g_SettingsButtons[2].label = resLabel;
 
-    g_SettingsButtons[3].label = (g_CurrentMode == MODE_SURVIVAL) ? LOC("当前模式: 生存模式", "Game Mode: Survival") : LOC("当前模式: 创造模式", "Game Mode: Creative");
-    g_SettingsButtons[4].label = LOC("完成并返回", "Done & Return");
+    char fontLabel[128];
+    snprintf(fontLabel, sizeof(fontLabel), "%s: %s [%s]",
+        LOC("字体大小", "Font Size"), getFontScaleName(), LOC("点击切换", "Click"));
+    g_SettingsButtons[3].label = fontLabel;
+
+    g_SettingsButtons[4].label = (g_CurrentMode == MODE_SURVIVAL) ? LOC("当前模式: 生存模式", "Game Mode: Survival") : LOC("当前模式: 创造模式", "Game Mode: Creative");
+    g_SettingsButtons[5].label = LOC("完成并返回", "Done & Return");
 
     for (int i = 0; i < SETTINGS_BTN_COUNT; i++) {
         g_SettingsButtons[i].x = btnX;
@@ -568,11 +590,11 @@ static void renderWorldsListDialog(void) {
 
     // Title
     const char* title = LOC("选择世界存档", "Select World");
-    float tw = getTextWidthUTF8(title, 18, true);
+    float tw = getTextWidth(title, true);
     drawText(panelX + (panelW - tw) * 0.5f, panelY + 34.0f, title, 1.0f, 0.88f, 0.25f, true);
 
     const char* sub = LOC("请选择一个存档位进入游戏或创建新世界", "Select a world slot to play or create new world");
-    float sw = getTextWidthUTF8(sub, 12, false);
+    float sw = getTextWidth(sub, false);
     drawText(panelX + (panelW - sw) * 0.5f, panelY + 54.0f, sub, 0.7f, 0.8f, 0.9f, false);
 
     // Slots
@@ -597,7 +619,7 @@ static void renderWorldsListDialog(void) {
             float mr = (info.mode == 0) ? 1.0f : 0.35f;
             float mg = (info.mode == 0) ? 0.65f : 0.90f;
             float mb = (info.mode == 0) ? 0.25f : 1.0f;
-            drawText(slotX + 16.0f + getTextWidthUTF8(nameBuf, 15, true) + 12.0f, slotY + 28.0f, modeBadge, mr, mg, mb, true);
+            drawText(slotX + 16.0f + getTextWidth(nameBuf, true) + 12.0f, slotY + 28.0f, modeBadge, mr, mg, mb, true);
 
             char detailBuf[128];
             snprintf(detailBuf, sizeof(detailBuf), "%s: %d  |  %s: %s", LOC("种子", "Seed"), info.seed, LOC("存档时间", "Saved"), info.dateStr);
@@ -611,7 +633,8 @@ static void renderWorldsListDialog(void) {
             bool playHov = (g_MenuMouseX >= playX && g_MenuMouseX <= playX + playW && g_MenuMouseY >= playY && g_MenuMouseY <= playY + playH);
             menuDrawQuad(playX, playY, playW, playH, playHov ? 0.25f : 0.18f, playHov ? 0.55f : 0.38f, playHov ? 0.25f : 0.18f, 1.0f);
             menuDrawBorder(playX, playY, playW, playH, 0.4f, 0.9f, 0.4f, 1.5f);
-            drawText(playX + (getLanguage() == LANG_ZH ? 18.0f : 16.0f), playY + 26.0f, LOC("进入", "Play"), 1.0f, 1.0f, 1.0f, true);
+            float pw = getTextWidth(LOC("进入", "Play"), true);
+            drawText(playX + (playW - pw) * 0.5f, playY + 26.0f, LOC("进入", "Play"), 1.0f, 1.0f, 1.0f, true);
 
             // Delete Button
             float delX = slotX + slotW - 85.0f;
@@ -621,7 +644,8 @@ static void renderWorldsListDialog(void) {
             bool delHov = (g_MenuMouseX >= delX && g_MenuMouseX <= delX + delW && g_MenuMouseY >= delY && g_MenuMouseY <= delY + delH);
             menuDrawQuad(delX, delY, delW, delH, delHov ? 0.55f : 0.32f, delHov ? 0.18f : 0.14f, delHov ? 0.18f : 0.14f, 1.0f);
             menuDrawBorder(delX, delY, delW, delH, 0.9f, 0.3f, 0.3f, 1.5f);
-            drawText(delX + (getLanguage() == LANG_ZH ? 16.0f : 14.0f), delY + 26.0f, LOC("删除", "Del"), 1.0f, 0.85f, 0.85f, true);
+            float dw = getTextWidth(LOC("删除", "Del"), true);
+            drawText(delX + (delW - dw) * 0.5f, delY + 26.0f, LOC("删除", "Del"), 1.0f, 0.85f, 0.85f, true);
 
         } else {
             menuDrawQuad(slotX, slotY, slotW, slotH, 0.11f, 0.13f, 0.17f, 0.85f);
@@ -640,7 +664,8 @@ static void renderWorldsListDialog(void) {
             bool creHov = (g_MenuMouseX >= createX && g_MenuMouseX <= createX + createW && g_MenuMouseY >= createY && g_MenuMouseY <= createY + createH);
             menuDrawQuad(createX, createY, createW, createH, creHov ? 0.35f : 0.20f, creHov ? 0.40f : 0.26f, creHov ? 0.55f : 0.38f, 1.0f);
             menuDrawBorder(createX, createY, createW, createH, 0.4f, 0.75f, 1.0f, 1.5f);
-            drawText(createX + (getLanguage() == LANG_ZH ? 20.0f : 14.0f), createY + 26.0f, LOC("+ 创建新世界", "+ Create World"), 1.0f, 0.95f, 0.45f, true);
+            float cw = getTextWidth(LOC("+ 创建新世界", "+ Create World"), true);
+            drawText(createX + (createW - cw) * 0.5f, createY + 26.0f, LOC("+ 创建新世界", "+ Create World"), 1.0f, 0.95f, 0.45f, true);
         }
     }
 
@@ -652,7 +677,8 @@ static void renderWorldsListDialog(void) {
     bool bHov = (g_MenuMouseX >= backX && g_MenuMouseX <= backX + backW && g_MenuMouseY >= backY && g_MenuMouseY <= backY + backH);
     menuDrawQuad(backX, backY, backW, backH, bHov ? 0.28f : 0.18f, bHov ? 0.30f : 0.20f, bHov ? 0.36f : 0.26f, 1.0f);
     menuDrawBorder(backX, backY, backW, backH, 0.45f, 0.55f, 0.68f, 1.5f);
-    drawText(backX + (getLanguage() == LANG_ZH ? 62.0f : 55.0f), backY + 25.0f, LOC("返回主菜单", "Back to Menu"), 1.0f, 1.0f, 1.0f, true);
+    float bw = getTextWidth(LOC("返回主菜单", "Back to Menu"), true);
+    drawText(backX + (backW - bw) * 0.5f, backY + 25.0f, LOC("返回主菜单", "Back to Menu"), 1.0f, 1.0f, 1.0f, true);
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
@@ -786,11 +812,11 @@ static void renderCreateWorldDialog(void) {
 
     // Title
     const char* titleText = LOC("创建新世界", "Create New World");
-    float tW = getTextWidthUTF8(titleText, 18, true);
+    float tW = getTextWidth(titleText, true);
     drawText(boxX + (boxW - tW) * 0.5f, boxY + 34.0f, titleText, 1.0f, 0.85f, 0.25f, true);
 
     const char* subText = LOC("选择世界名称、游戏模式与初始种子", "Configure world name, game mode, and initial seed");
-    float sW = getTextWidthUTF8(subText, 12, false);
+    float sW = getTextWidth(subText, false);
     drawText(boxX + (boxW - sW) * 0.5f, boxY + 56.0f, subText, 0.75f, 0.85f, 0.95f, false);
 
     // 1. World Name Option
@@ -846,7 +872,8 @@ static void renderCreateWorldDialog(void) {
     bool crHov = (g_MenuMouseX >= cBtnX && g_MenuMouseX <= cBtnX + cBtnW && g_MenuMouseY >= cBtnY && g_MenuMouseY <= cBtnY + cBtnH);
     menuDrawQuad(cBtnX, cBtnY, cBtnW, cBtnH, crHov ? 0.25f : 0.18f, crHov ? 0.55f : 0.38f, crHov ? 0.25f : 0.18f, 1.0f);
     menuDrawBorder(cBtnX, cBtnY, cBtnW, cBtnH, 0.4f, 0.9f, 0.4f, 2.0f);
-    drawText(cBtnX + (getLanguage() == LANG_ZH ? 48.0f : 36.0f), cBtnY + 28.0f, LOC("确定创建并进入世界", "Create & Enter World"), 1.0f, 1.0f, 1.0f, true);
+    float cw = getTextWidth(LOC("确定创建并进入世界", "Create & Enter World"), true);
+    drawText(cBtnX + (cBtnW - cw) * 0.5f, cBtnY + 28.0f, LOC("确定创建并进入世界", "Create & Enter World"), 1.0f, 1.0f, 1.0f, true);
 
     float cancelW = 200.0f;
     float cancelH = 46.0f;
@@ -855,7 +882,8 @@ static void renderCreateWorldDialog(void) {
     bool canHov = (g_MenuMouseX >= cancelX && g_MenuMouseX <= cancelX + cancelW && g_MenuMouseY >= cancelY && g_MenuMouseY <= cancelY + cancelH);
     menuDrawQuad(cancelX, cancelY, cancelW, cancelH, canHov ? 0.30f : 0.20f, canHov ? 0.32f : 0.22f, canHov ? 0.38f : 0.28f, 1.0f);
     menuDrawBorder(cancelX, cancelY, cancelW, cancelH, 0.5f, 0.6f, 0.7f, 1.5f);
-    drawText(cancelX + (getLanguage() == LANG_ZH ? 62.0f : 68.0f), cancelY + 28.0f, LOC("取消并返回", "Cancel"), 0.9f, 0.9f, 0.9f, true);
+    float canW = getTextWidth(LOC("取消并返回", "Cancel"), true);
+    drawText(cancelX + (cancelW - canW) * 0.5f, cancelY + 28.0f, LOC("取消并返回", "Cancel"), 0.9f, 0.9f, 0.9f, true);
 
     glDisable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
@@ -1172,14 +1200,14 @@ static void renderMainMenu(void) {
 
     // Title: Luminora | 流明洛原 with drop shadow
     const char* titleStr = (getLanguage() == LANG_ZH) ? "Luminora | 流明洛原" : "LUMINORA";
-    float titleW = getTextWidthUTF8(titleStr, 22, true);
+    float titleW = getTextWidthUTF8(titleStr, FONT_SIZE_BANNER, true);
     float titleX = bannerX + (bannerW - titleW) * 0.5f;
-    drawText(titleX + 2.0f, bannerY + 45.0f + 2.0f, titleStr, 0.0f, 0.0f, 0.0f, true);
-    drawText(titleX, bannerY + 45.0f, titleStr, 1.0f, 0.88f, 0.25f, true);
+    drawTextUTF8(titleX + 2.0f, bannerY + 45.0f + 2.0f, titleStr, 0.0f, 0.0f, 0.0f, FONT_SIZE_BANNER, true);
+    drawTextUTF8(titleX, bannerY + 45.0f, titleStr, 1.0f, 0.88f, 0.25f, FONT_SIZE_BANNER, true);
 
     // Subtitle
     const char* subText = LOC("-- 光影交织的 2.5D 像素沙盒冒险 --", "-- 2.5D PROCEDURAL PIXEL SANDBOX ADVENTURE --");
-    float subW = getTextWidthUTF8(subText, 13, false);
+    float subW = getTextWidth(subText, false);
     drawText(bannerX + (bannerW - subW) * 0.5f, bannerY + 74.0f, subText, 0.75f, 0.85f, 0.95f, false);
 
     // Animated Splash text
@@ -1189,7 +1217,7 @@ static void renderMainMenu(void) {
     float splashG = 0.85f + sinf(s_SplashAngle) * 0.15f;
     float splashB = 0.20f;
     const char* splashText = LOC("* 包含创造模式与双击空格自由飞行！*", "* Now with Creative Mode & Double-Tap Space Flight! *");
-    float splashW = getTextWidthUTF8(splashText, 12, false);
+    float splashW = getTextWidth(splashText, false);
     drawText(bannerX + (bannerW - splashW) * 0.5f, bannerY + 98.0f, splashText, splashR, splashG, splashB, false);
 
     // 3. Main Menu Buttons
@@ -1216,7 +1244,7 @@ static void renderMainMenu(void) {
     // 4. Footer credits
     float footY = (float)WINDOW_HEIGHT - 28.0f;
     const char* footText = LOC("Luminora｜流明洛原 独立引擎 | [F11] 切换全屏/窗口 | [ESC] 暂停菜单", "Luminora Standalone Engine | [F11] Toggle Fullscreen | [ESC] Pause Menu");
-    float footW = getTextWidthUTF8(footText, 12, false);
+    float footW = getTextWidth(footText, false);
     drawText(((float)WINDOW_WIDTH - footW) * 0.5f, footY, footText, 0.65f, 0.70f, 0.78f, false);
 
     glDisable(GL_BLEND);
@@ -1259,7 +1287,7 @@ static void renderPauseMenu(void) {
 
     // Title
     const char* pauseTitle = LOC("游戏已暂停", "Game Paused");
-    float tW = getTextWidthUTF8(pauseTitle, 16, true);
+    float tW = getTextWidth(pauseTitle, true);
     drawText(boxX + (boxW - tW) * 0.5f, boxY + 30.0f, pauseTitle, 1.0f, 0.85f, 0.25f, true);
 
     // Mode Status badge
@@ -1268,7 +1296,7 @@ static void renderPauseMenu(void) {
         LOC("当前模式", "Active Mode"),
         (g_CurrentMode == MODE_CREATIVE ? LOC("创造模式", "Creative Mode") : LOC("生存模式", "Survival Mode")),
         (isCreativeFlying() ? LOC("[飞行开启]", "[Flying Active]") : ""));
-    float sW = getTextWidthUTF8(modeStatusBuf, 13, false);
+    float sW = getTextWidth(modeStatusBuf, false);
     drawText(boxX + (boxW - sW) * 0.5f, boxY + 54.0f, modeStatusBuf, 0.4f, 0.9f, 1.0f, false);
 
     // 3. Pause Menu Buttons

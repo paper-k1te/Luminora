@@ -58,14 +58,14 @@ def run_resolution_checks(WINDOW_W, WINDOW_H):
     check_bounds("Create & Enter Button", cBoxX + 45, cBoxY + cBoxH - 70, 240, 46)
     check_bounds("Cancel Button", cBoxX + cBoxW - 200 - 45, cBoxY + cBoxH - 70, 200, 46)
 
-    # 4. Settings Modal (5 Buttons: Lang, Sound, Res, Mode, Done)
+    # 4. Settings Modal (6 Buttons: Lang, Sound, Res, Font Scale, Mode, Done)
     print("\n--- 4. Settings Dialog ---")
-    sBoxW, sBoxH = 460, 410
+    sBoxW, sBoxH = 480, 460
     sBoxX, sBoxY = (WINDOW_W - sBoxW)*0.5, (WINDOW_H - sBoxH)*0.5
     check_bounds("Settings Modal Panel", sBoxX, sBoxY, sBoxW, sBoxH)
-    for i in range(5):
+    for i in range(6):
         by = sBoxY + 76 + i * (42 + 10)
-        check_bounds(f"Settings Option {i+1}", sBoxX + (sBoxW - 380)*0.5, by, 380, 42)
+        check_bounds(f"Settings Option {i+1}", sBoxX + (sBoxW - 400)*0.5, by, 400, 42)
 
     # 5. Pause Menu
     print("\n--- 5. Pause Menu ---")
@@ -94,10 +94,10 @@ def run_resolution_checks(WINDOW_W, WINDOW_H):
 
     # 8. In-Game HUD & Health Bar
     print("\n--- 8. In-Game HUD & Health Bar ---")
-    hudStatus = (15, 15, 310, 110)
+    hudStatus = (15, 15, 320, 116)
     check_bounds("HUD Status Box", *hudStatus)
 
-    hudHealth = (15, 15 + 110 + 7, 310, 26)
+    hudHealth = (15, 138, 320, 28)
     check_bounds("HUD Health Bar", *hudHealth)
 
     hudGuide = (WINDOW_W - 350 - 15, 15, 350, 105)

@@ -622,21 +622,21 @@ namespace Crafting
 
             _titleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 18,
+                fontSize = 21,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(1.0f, 0.88f, 0.35f) }
             };
 
             _subTitleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = 14,
                 fontStyle = FontStyle.Normal,
                 normal = { textColor = new Color(0.75f, 0.85f, 0.95f) }
             };
 
             _tabBtnStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 13,
+                fontSize = 15,
                 fontStyle = FontStyle.Bold,
                 normal = { background = _btnNormalTex, textColor = new Color(0.80f, 0.80f, 0.80f) },
                 hover = { background = _btnHoverTex, textColor = Color.white }
@@ -649,7 +649,7 @@ namespace Crafting
 
             _categoryBtnStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 11,
+                fontSize = 13,
                 fontStyle = FontStyle.Bold,
                 normal = { background = _btnNormalTex, textColor = new Color(0.85f, 0.85f, 0.85f) },
                 hover = { background = _btnHoverTex, textColor = Color.white }
@@ -663,7 +663,7 @@ namespace Crafting
             _recipeCardStyle = new GUIStyle(GUI.skin.button)
             {
                 alignment = TextAnchor.MiddleLeft,
-                fontSize = 12,
+                fontSize = 14,
                 fontStyle = FontStyle.Normal,
                 padding = new RectOffset(10, 10, 6, 6),
                 normal = { background = _cardBgTex, textColor = Color.white },
@@ -678,7 +678,7 @@ namespace Crafting
 
             _craftBtnStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = 15,
+                fontSize = 18,
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 normal = { background = _btnActiveTex, textColor = new Color(1.0f, 0.95f, 0.50f) },
@@ -687,20 +687,20 @@ namespace Crafting
 
             _itemLabelStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = 14,
                 normal = { textColor = Color.white }
             };
 
             _ingredientSatisfiedStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = 14,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(0.35f, 0.95f, 0.45f) }
             };
 
             _ingredientMissingStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 12,
+                fontSize = 14,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = new Color(1.0f, 0.35f, 0.35f) }
             };

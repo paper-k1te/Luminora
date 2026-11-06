@@ -757,7 +757,7 @@ static void cycleResolutionPreset(HWND hwnd) {
     int winW = wr.right - wr.left;
     int winH = wr.bottom - wr.top;
     int winX = (screenW - winW) / 2;
-    int winY = (screenH - winY) / 2;
+    int winY = (screenH - winH) / 2;
     if (winX < 0) winX = 0;
     if (winY < 0) winY = 0;
 
@@ -2132,15 +2132,15 @@ static void renderHUD(void) {
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
     // 1. Top-Left Status Panel
-    drawQuad2D(15, 15, 310, 110, 0.08f, 0.10f, 0.14f, 0.88f);
-    drawBorder2D(15, 15, 310, 110, 0.35f, 0.45f, 0.58f, 1.5f);
+    drawQuad2D(15, 15, 320, 116, 0.08f, 0.10f, 0.14f, 0.88f);
+    drawBorder2D(15, 15, 320, 116, 0.35f, 0.45f, 0.58f, 1.5f);
 
     BiomeType curBiome = getBiomeAt((int)floorf(g_Player.x));
     drawText(25, 34, g_BiomeNames[curBiome], 1.0f, 0.95f, 0.7f, true);
 
     char coordBuf[64];
     snprintf(coordBuf, sizeof(coordBuf), "Pos: X: %.1f, Y: %.1f", g_Player.x, g_Player.y);
-    drawText(25, 52, coordBuf, 0.8f, 0.9f, 1.0f, false);
+    drawText(25, 53, coordBuf, 0.8f, 0.9f, 1.0f, false);
 
     const char* depthName = (g_Player.y <= BEDROCK_LEVEL) ? LOC("基岩地层", "Bedrock") :
                             ((g_Player.y < UNDERWORLD_LEVEL) ? LOC("熔岩地狱", "Underworld") :
@@ -2149,19 +2149,19 @@ static void renderHUD(void) {
                             LOC("地表世界", "Surface"))));
     char depthBuf[64];
     snprintf(depthBuf, sizeof(depthBuf), "%s: %s", LOC("区域", "Zone"), depthName);
-    drawText(25, 68, depthBuf, 0.7f, 0.8f, 0.85f, false);
+    drawText(25, 71, depthBuf, 0.7f, 0.8f, 0.85f, false);
 
     char modeBadge[128];
     if (getGameMode() == MODE_CREATIVE) {
         snprintf(modeBadge, sizeof(modeBadge), "%s: %s %s",
             LOC("当前模式", "Mode"), LOC("创造模式", "Creative"),
             isCreativeFlying() ? LOC("[飞行开启]", "[FLYING]") : LOC("[双击空格飞行]", "[2x SPACE]"));
-        drawText(25, 86, modeBadge, isCreativeFlying() ? 0.35f : 1.0f, 0.90f, isCreativeFlying() ? 1.0f : 0.3f, true);
+        drawText(25, 89, modeBadge, isCreativeFlying() ? 0.35f : 1.0f, 0.90f, isCreativeFlying() ? 1.0f : 0.3f, true);
     } else {
         snprintf(modeBadge, sizeof(modeBadge), "%s: %s", LOC("当前模式", "Mode"), LOC("生存模式", "Survival"));
-        drawText(25, 86, modeBadge, 0.4f, 0.95f, 0.5f, false);
+        drawText(25, 89, modeBadge, 0.4f, 0.95f, 0.5f, false);
     }
-    drawText(25, 102, LOC("[ESC] 暂停/设置 | [F5] 保存 | [F9] 读取 | [H] 帮助", "[ESC] Pause/Settings | [F5] Save | [F9] Load | [H] Help"), 0.65f, 0.75f, 0.85f, false);
+    drawText(25, 107, LOC("[ESC] 暂停/设置 | [F5] 保存 | [F9] 读取 | [H] 帮助", "[ESC] Pause/Settings | [F5] Save | [F9] Load | [H] Help"), 0.65f, 0.75f, 0.85f, false);
 
     // 2. Novice Tutorial Quest Box (Top-Right)
     float qBoxW = 350.0f;
@@ -2326,9 +2326,9 @@ static void renderHUD(void) {
     // 0. Player Health Bar (Survival Mode - cleanly docked beneath top-left status panel)
     if (getGameMode() == MODE_SURVIVAL) {
         float barX = 15.0f;
-        float barY = 132.0f;
-        float barW = 310.0f;
-        float barH = 26.0f;
+        float barY = 138.0f;
+        float barW = 320.0f;
+        float barH = 28.0f;
 
         // Background
         drawQuad2D(barX, barY, barW, barH, 0.08f, 0.10f, 0.14f, 0.90f);
@@ -2357,7 +2357,7 @@ static void renderHUD(void) {
             if (secLeft < 0) secLeft = 0;
             snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d  (%s %ds)", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth, LOC("脱战回血倒计时", "Regen in"), secLeft);
         }
-        drawText(barX + 10.0f, barY + 18.0f, hpBuf, 1.0f, 1.0f, 1.0f, true);
+        drawText(barX + 10.0f, barY + 19.0f, hpBuf, 1.0f, 1.0f, 1.0f, true);
     }
 
     // Game Over Overlay
@@ -2365,11 +2365,11 @@ static void renderHUD(void) {
         drawQuad2D(0, 0, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 0.45f, 0.05f, 0.05f, 0.65f);
 
         const char* dTitle = LOC("💀 你阵亡了！", "💀 YOU DIED!");
-        float dtw = getTextWidthUTF8(dTitle, 24, true);
-        drawText(((float)WINDOW_WIDTH - dtw) * 0.5f, (float)WINDOW_HEIGHT * 0.38f, dTitle, 1.0f, 0.25f, 0.25f, true);
+        float dtw = getTextWidthUTF8(dTitle, FONT_SIZE_DEATH, true);
+        drawTextUTF8(((float)WINDOW_WIDTH - dtw) * 0.5f, (float)WINDOW_HEIGHT * 0.38f, dTitle, 1.0f, 0.25f, 0.25f, FONT_SIZE_DEATH, true);
 
         const char* dPrompt = LOC("[ 点击此处 或 按 R 键 立即重生 ]", "[ Click Here or Press R to Respawn ]");
-        float dpw = getTextWidthUTF8(dPrompt, 16, true);
+        float dpw = getTextWidth(dPrompt, true);
         float dbtnX = ((float)WINDOW_WIDTH - dpw - 40.0f) * 0.5f;
         float dbtnY = (float)WINDOW_HEIGHT * 0.48f;
         float dbtnW = dpw + 40.0f;

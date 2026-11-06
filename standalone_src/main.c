@@ -124,27 +124,27 @@ typedef struct {
 
 static BlockDef g_BlockDefs[BLOCK_TYPE_COUNT] = {
     { "Air",            "空气",       "无",         0.0f, 0.0f, 0.0f,  0.0f, false, true,  false, 0,0,0 },
-    { "Grass Block",    "草方块",     "泥土",       0.26f, 0.68f, 0.22f, 0.6f, true,  false, false, 0,0,0 },
+    { "Grass Block",    "草方块",     "泥土",       0.26f, 0.68f, 0.22f, 0.5f, true,  false, false, 0,0,0 },
     { "Dirt Block",     "泥土",       "泥土",       0.52f, 0.35f, 0.22f, 0.5f, true,  false, false, 0,0,0 },
-    { "Stone Block",    "石块",       "原石",       0.50f, 0.52f, 0.54f, 1.5f, true,  false, false, 0,0,0 },
-    { "Wood Log",       "原木",       "原木",       0.58f, 0.38f, 0.20f, 1.0f, false, true,  false, 0,0,0 },
-    { "Leaves",         "树叶",       "树叶",       0.18f, 0.55f, 0.20f, 0.3f, true,  true,  false, 0,0,0 },
+    { "Stone Block",    "石块",       "原石",       0.50f, 0.52f, 0.54f, 2.0f, true,  false, false, 0,0,0 },
+    { "Wood Log",       "原木",       "原木",       0.58f, 0.38f, 0.20f, 1.2f, false, true,  false, 0,0,0 },
+    { "Leaves",         "树叶",       "树叶",       0.18f, 0.55f, 0.20f, 0.25f, true,  true,  false, 0,0,0 },
     { "Sand Block",     "沙块",       "沙块",       0.88f, 0.78f, 0.52f, 0.4f, true,  false, false, 0,0,0 },
     { "Sandstone",      "砂岩",       "砂岩",       0.75f, 0.64f, 0.42f, 1.2f, true,  false, false, 0,0,0 },
     { "Cactus",         "仙人掌",     "仙人掌",     0.22f, 0.62f, 0.28f, 0.5f, true,  false, false, 0,0,0 },
     { "Snow Block",     "雪块",       "雪球",       0.92f, 0.95f, 0.98f, 0.3f, true,  false, false, 0,0,0 },
     { "Ice Block",      "坚冰",       "冰块",       0.65f, 0.85f, 0.95f, 0.8f, true,  true,  false, 0,0,0 },
     { "Clay Block",     "粘土",       "粘土块",     0.68f, 0.52f, 0.45f, 0.7f, true,  false, false, 0,0,0 },
-    { "Coal Ore",       "煤矿石",     "煤炭",       0.25f, 0.25f, 0.27f, 1.8f, true,  false, false, 0,0,0 },
-    { "Iron Ore",       "铁矿石",     "铁矿",       0.72f, 0.58f, 0.50f, 2.2f, true,  false, false, 0,0,0 },
-    { "Gold Ore",       "金矿石",     "金矿",       0.95f, 0.82f, 0.22f, 2.8f, true,  false, false, 0,0,0 },
-    { "Diamond Ore",    "钻石矿石",   "璀璨钻石",   0.28f, 0.88f, 0.95f, 3.5f, true,  false, true,  0.2f, 0.6f, 0.8f },
-    { "Ruby Ore",       "红宝石矿",   "红宝石",     0.92f, 0.18f, 0.28f, 3.0f, true,  false, true,  0.8f, 0.1f, 0.2f },
+    { "Coal Ore",       "煤矿石",     "煤炭",       0.25f, 0.25f, 0.27f, 2.5f, true,  false, false, 0,0,0 },
+    { "Iron Ore",       "铁矿石",     "铁矿",       0.72f, 0.58f, 0.50f, 3.2f, true,  false, false, 0,0,0 },
+    { "Gold Ore",       "金矿石",     "金矿",       0.95f, 0.82f, 0.22f, 4.0f, true,  false, false, 0,0,0 },
+    { "Diamond Ore",    "钻石矿石",   "璀璨钻石",   0.28f, 0.88f, 0.95f, 5.5f, true,  false, true,  0.2f, 0.6f, 0.8f },
+    { "Ruby Ore",       "红宝石矿",   "红宝石",     0.92f, 0.18f, 0.28f, 5.0f, true,  false, true,  0.8f, 0.1f, 0.2f },
     { "Stone Brick",    "石砖",       "石砖",       0.72f, 0.38f, 0.30f, 2.0f, true,  false, false, 0,0,0 },
-    { "Wood Plank",     "木板",       "木板",       0.68f, 0.48f, 0.28f, 0.8f, true,  false, false, 0,0,0 },
+    { "Wood Plank",     "木板",       "木板",       0.68f, 0.48f, 0.28f, 1.2f, true,  false, false, 0,0,0 },
     { "Glass Block",    "透明玻璃",   "玻璃",       0.75f, 0.90f, 0.98f, 0.3f, true,  true,  false, 0,0,0 },
     { "Torch",          "火把",       "火把",       1.00f, 0.85f, 0.25f, 0.1f, false, true,  true,  1.0f, 0.85f, 0.3f },
-    { "Obsidian",       "黑曜石",     "黑曜石",     0.16f, 0.12f, 0.22f, 5.0f, true,  false, false, 0,0,0 },
+    { "Obsidian",       "黑曜石",     "黑曜石",     0.16f, 0.12f, 0.22f, 12.0f, true,  false, false, 0,0,0 },
     { "Magma Block",    "熔岩块",     "岩浆块",     0.90f, 0.32f, 0.08f, 2.5f, true,  false, true,  0.9f, 0.35f, 0.1f },
     { "Mossy Stone",    "苔石",       "苔石",       0.42f, 0.52f, 0.40f, 1.6f, true,  false, false, 0,0,0 },
     { "Mud Block",      "泥浆块",     "泥浆",       0.40f, 0.30f, 0.22f, 0.5f, true,  false, false, 0,0,0 },
@@ -525,12 +525,9 @@ static void generateWorld(int seed) {
             } else if (y <= UNDERWORLD_LEVEL) {
                 g_World[x][y] = (fbm2D((float)x, (float)y, seed + 10, 2, 0.08f) > 0.65f) ? BLOCK_MAGMA : BLOCK_OBSIDIAN;
                 g_WallWorld[x][y] = BLOCK_OBSIDIAN;
-            } else if (y < CAVERN_LEVEL) {
+            } else if (y < surfaceY - 10) {
                 g_World[x][y] = BLOCK_STONE;
                 g_WallWorld[x][y] = BLOCK_STONE;
-            } else if (y < surfaceY - 4) {
-                g_World[x][y] = subBlock;
-                g_WallWorld[x][y] = wallBlock;
             } else if (y < surfaceY) {
                 g_World[x][y] = (biome == BIOME_FOREST) ? BLOCK_DIRT : subBlock;
                 g_WallWorld[x][y] = wallBlock;
@@ -554,16 +551,17 @@ static void generateWorld(int seed) {
     }
 
     for (int x = 1; x < WORLD_WIDTH - 1; x++) {
-        for (int y = BEDROCK_LEVEL + 3; y < CAVERN_LEVEL + 15; y++) {
+        int surfaceY = g_SurfaceHeight[x];
+        for (int y = BEDROCK_LEVEL + 3; y < surfaceY - 8; y++) {
             if (g_World[x][y] == BLOCK_STONE || g_World[x][y] == BLOCK_DIRT || g_World[x][y] == BLOCK_SANDSTONE) {
                 float oreN = fbm2D((float)x, (float)y, seed + 400, 2, 0.14f);
                 if (oreN > 0.88f) {
                     if (y < UNDERWORLD_LEVEL + 10) {
                         g_World[x][y] = (oreN > 0.93f) ? BLOCK_RUBY_ORE : BLOCK_DIAMOND_ORE;
-                    } else if (y < CAVERN_LEVEL) {
+                    } else if (y < surfaceY - 18) {
                         g_World[x][y] = (oreN > 0.92f) ? BLOCK_GOLD_ORE : BLOCK_IRON_ORE;
                     } else {
-                        g_World[x][y] = BLOCK_COAL_ORE;
+                        g_World[x][y] = (oreN > 0.93f) ? BLOCK_IRON_ORE : BLOCK_COAL_ORE;
                     }
                 }
             }
@@ -1701,10 +1699,10 @@ static void renderCube25D(float x, float y, int blockType, bool topCull, bool bt
     GetAtlasTileUV(frontTex, &u0, &v0, &u1, &v1);
     glColor3f(lightFactor, lightFactor, lightFactor);
     glBegin(GL_QUADS);
-    glTexCoord2f(u0, v1); glVertex3f(x, y, zFront);
-    glTexCoord2f(u1, v1); glVertex3f(x + 1.0f, y, zFront);
-    glTexCoord2f(u1, v0); glVertex3f(x + 1.0f, y + 1.0f, zFront);
-    glTexCoord2f(u0, v0); glVertex3f(x, y + 1.0f, zFront);
+    glTexCoord2f(u0, v0); glVertex3f(x, y, zFront);
+    glTexCoord2f(u1, v0); glVertex3f(x + 1.0f, y, zFront);
+    glTexCoord2f(u1, v1); glVertex3f(x + 1.0f, y + 1.0f, zFront);
+    glTexCoord2f(u0, v1); glVertex3f(x, y + 1.0f, zFront);
     glEnd();
 
     // Top Bevel Face (+Y)
@@ -2009,38 +2007,144 @@ static void renderWorld25D(void) {
     glEnd();
 
     // Pass 5: 2.5D Animated Player Character (Z = 0.0f ~ 0.03f, in front of background wall)
+    // Pass 5: 2.5D Animated Player Character with Rich Detail (Z = -0.04f ~ 0.04f)
     glPushMatrix();
     glTranslatef(g_Player.x, g_Player.y, 0.0f);
     if (!g_Player.isFacingRight) glScalef(-1.0f, 1.0f, 1.0f);
 
     float sinWalk = sinf(g_Player.walkCycle);
 
-    // Torso
-    glColor3f(0.24f, 0.48f, 0.92f);
+    // 1. Back Arm / Off-hand (Z = -0.04f, behind torso)
+    float backArmAngle = g_ToolIsSwinging ? (-g_ToolSwingTimer * 25.0f) : (-sinWalk * 18.0f);
+    glPushMatrix();
+    glTranslatef(-0.14f, 1.05f, -0.04f);
+    glRotatef(backArmAngle, 0.0f, 0.0f, 1.0f);
+    glColor3f(0.14f, 0.30f, 0.60f); // Shaded rear sleeve
+    glBegin(GL_QUADS);
+    glVertex3f(-0.07f, -0.28f, 0.0f);
+    glVertex3f( 0.07f, -0.28f, 0.0f);
+    glVertex3f( 0.07f,  0.02f, 0.0f);
+    glVertex3f(-0.07f,  0.02f, 0.0f);
+    glEnd();
+    glColor3f(0.82f, 0.68f, 0.56f); // Shaded rear hand
+    glBegin(GL_QUADS);
+    glVertex3f(-0.06f, -0.38f, 0.0f);
+    glVertex3f( 0.06f, -0.38f, 0.0f);
+    glVertex3f( 0.06f, -0.28f, 0.0f);
+    glVertex3f(-0.06f, -0.28f, 0.0f);
+    glEnd();
+    glPopMatrix();
+
+    // 2. Legs & Exploration Boots
+    float legAngleL = g_Player.isGrounded ? sinWalk * 0.18f : 0.15f;
+    float legAngleR = g_Player.isGrounded ? -sinWalk * 0.18f : -0.15f;
+
+    // Left Leg (Trousers + Leather Boot)
+    glColor3f(0.16f, 0.20f, 0.38f);
+    glBegin(GL_QUADS);
+    glVertex3f(-0.22f + legAngleL, 0.12f, 0.0f);
+    glVertex3f(-0.05f + legAngleL, 0.12f, 0.0f);
+    glVertex3f(-0.05f, 0.45f, 0.0f);
+    glVertex3f(-0.22f, 0.45f, 0.0f);
+    glEnd();
+    glColor3f(0.35f, 0.20f, 0.10f); // Boot Leather
+    glBegin(GL_QUADS);
+    glVertex3f(-0.23f + legAngleL, 0.03f, 0.01f);
+    glVertex3f(-0.04f + legAngleL, 0.03f, 0.01f);
+    glVertex3f(-0.04f + legAngleL, 0.14f, 0.01f);
+    glVertex3f(-0.23f + legAngleL, 0.14f, 0.01f);
+    glEnd();
+    glColor3f(0.12f, 0.08f, 0.05f); // Boot Sole
+    glBegin(GL_QUADS);
+    glVertex3f(-0.24f + legAngleL, 0.0f, 0.015f);
+    glVertex3f(-0.03f + legAngleL, 0.0f, 0.015f);
+    glVertex3f(-0.03f + legAngleL, 0.03f, 0.015f);
+    glVertex3f(-0.24f + legAngleL, 0.03f, 0.015f);
+    glEnd();
+
+    // Right Leg (Trousers + Leather Boot)
+    glColor3f(0.20f, 0.25f, 0.46f);
+    glBegin(GL_QUADS);
+    glVertex3f( 0.05f + legAngleR, 0.12f, 0.0f);
+    glVertex3f( 0.22f + legAngleR, 0.12f, 0.0f);
+    glVertex3f( 0.22f, 0.45f, 0.0f);
+    glVertex3f( 0.05f, 0.45f, 0.0f);
+    glEnd();
+    glColor3f(0.40f, 0.24f, 0.12f); // Boot Leather
+    glBegin(GL_QUADS);
+    glVertex3f( 0.04f + legAngleR, 0.03f, 0.01f);
+    glVertex3f( 0.23f + legAngleR, 0.03f, 0.01f);
+    glVertex3f( 0.23f + legAngleR, 0.14f, 0.01f);
+    glVertex3f( 0.04f + legAngleR, 0.14f, 0.01f);
+    glEnd();
+    glColor3f(0.12f, 0.08f, 0.05f); // Boot Sole
+    glBegin(GL_QUADS);
+    glVertex3f( 0.03f + legAngleR, 0.0f, 0.015f);
+    glVertex3f( 0.24f + legAngleR, 0.0f, 0.015f);
+    glVertex3f( 0.24f + legAngleR, 0.03f, 0.015f);
+    glVertex3f( 0.03f + legAngleR, 0.03f, 0.015f);
+    glEnd();
+
+    // 3. Torso & Adventurer Tunic
+    // Main Royal Blue Tunic
+    glColor3f(0.22f, 0.46f, 0.90f);
     glBegin(GL_QUADS);
     glVertex3f(-0.30f, 0.45f, 0.0f);
     glVertex3f( 0.30f, 0.45f, 0.0f);
     glVertex3f( 0.30f, 1.25f, 0.0f);
     glVertex3f(-0.30f, 1.25f, 0.0f);
     glEnd();
+    // Shaded side contour
+    glColor3f(0.16f, 0.34f, 0.70f);
+    glBegin(GL_QUADS);
+    glVertex3f(-0.30f, 0.45f, 0.01f);
+    glVertex3f(-0.20f, 0.45f, 0.01f);
+    glVertex3f(-0.20f, 1.25f, 0.01f);
+    glVertex3f(-0.30f, 1.25f, 0.01f);
+    glEnd();
+    // Cream V-Neck Collar & Undershirt
+    glColor3f(0.92f, 0.90f, 0.85f);
+    glBegin(GL_TRIANGLES);
+    glVertex3f(-0.09f, 1.25f, 0.02f);
+    glVertex3f( 0.09f, 1.25f, 0.02f);
+    glVertex3f( 0.0f,  1.05f, 0.02f);
+    glEnd();
 
-    // Belt & Buckle
-    glColor3f(0.42f, 0.26f, 0.14f);
+    // Leather Utility Belt
+    glColor3f(0.32f, 0.18f, 0.08f);
     glBegin(GL_QUADS);
     glVertex3f(-0.30f, 0.45f, 0.02f);
     glVertex3f( 0.30f, 0.45f, 0.02f);
     glVertex3f( 0.30f, 0.60f, 0.02f);
     glVertex3f(-0.30f, 0.60f, 0.02f);
     glEnd();
-    glColor3f(0.98f, 0.85f, 0.18f);
+    // Gleaming Golden Buckle
+    glColor3f(0.98f, 0.86f, 0.22f);
     glBegin(GL_QUADS);
     glVertex3f(-0.08f, 0.46f, 0.03f);
     glVertex3f( 0.08f, 0.46f, 0.03f);
     glVertex3f( 0.08f, 0.59f, 0.03f);
     glVertex3f(-0.08f, 0.59f, 0.03f);
     glEnd();
+    // Buckle Prong Center
+    glColor3f(0.40f, 0.25f, 0.05f);
+    glBegin(GL_QUADS);
+    glVertex3f(-0.02f, 0.49f, 0.035f);
+    glVertex3f( 0.02f, 0.49f, 0.035f);
+    glVertex3f( 0.02f, 0.56f, 0.035f);
+    glVertex3f(-0.02f, 0.56f, 0.035f);
+    glEnd();
+    // Side Leather Pouch
+    glColor3f(0.42f, 0.26f, 0.14f);
+    glBegin(GL_QUADS);
+    glVertex3f( 0.18f, 0.47f, 0.03f);
+    glVertex3f( 0.28f, 0.47f, 0.03f);
+    glVertex3f( 0.28f, 0.62f, 0.03f);
+    glVertex3f( 0.18f, 0.62f, 0.03f);
+    glEnd();
 
-    // Head
+    // 4. Head, Hair & Expressive Face
+    // Base Face Skin
     glColor3f(0.98f, 0.82f, 0.70f);
     glBegin(GL_QUADS);
     glVertex3f(-0.25f, 1.25f, 0.0f);
@@ -2048,43 +2152,103 @@ static void renderWorld25D(void) {
     glVertex3f( 0.25f, 1.70f, 0.0f);
     glVertex3f(-0.25f, 1.70f, 0.0f);
     glEnd();
-
-    // Helmet
-    glColor3f(0.88f, 0.58f, 0.20f);
+    // Chin Shadow
+    glColor3f(0.90f, 0.74f, 0.62f);
     glBegin(GL_QUADS);
-    glVertex3f(-0.28f, 1.55f, 0.02f);
-    glVertex3f( 0.28f, 1.55f, 0.02f);
-    glVertex3f( 0.28f, 1.82f, 0.02f);
-    glVertex3f(-0.28f, 1.82f, 0.02f);
+    glVertex3f(-0.20f, 1.25f, 0.01f);
+    glVertex3f( 0.20f, 1.25f, 0.01f);
+    glVertex3f( 0.20f, 1.30f, 0.01f);
+    glVertex3f(-0.20f, 1.30f, 0.01f);
     glEnd();
 
-    // Eyes
-    glColor3f(0.10f, 0.10f, 0.15f);
+    // Back & Top Hair (Rich Auburn/Brown Locks)
+    glColor3f(0.36f, 0.20f, 0.10f);
     glBegin(GL_QUADS);
-    glVertex3f(0.08f, 1.40f, 0.03f);
-    glVertex3f(0.18f, 1.40f, 0.03f);
-    glVertex3f(0.18f, 1.50f, 0.03f);
-    glVertex3f(0.08f, 1.50f, 0.03f);
+    glVertex3f(-0.28f, 1.55f, 0.015f);
+    glVertex3f( 0.28f, 1.55f, 0.015f);
+    glVertex3f( 0.28f, 1.80f, 0.015f);
+    glVertex3f(-0.28f, 1.80f, 0.015f);
+    // Rear wind-swept hair tuft
+    glVertex3f(-0.32f, 1.48f, 0.015f);
+    glVertex3f(-0.25f, 1.48f, 0.015f);
+    glVertex3f(-0.25f, 1.68f, 0.015f);
+    glVertex3f(-0.32f, 1.68f, 0.015f);
     glEnd();
 
-    // Legs
-    float legAngleL = g_Player.isGrounded ? sinWalk * 0.18f : 0.15f;
-    float legAngleR = g_Player.isGrounded ? -sinWalk * 0.18f : -0.15f;
-
-    glColor3f(0.20f, 0.24f, 0.45f);
+    // Adventurer Crimson Bandana / Headband
+    glColor3f(0.85f, 0.22f, 0.20f);
     glBegin(GL_QUADS);
-    glVertex3f(-0.22f + legAngleL, 0.0f, 0.0f);
-    glVertex3f(-0.05f + legAngleL, 0.0f, 0.0f);
-    glVertex3f(-0.05f, 0.45f, 0.0f);
-    glVertex3f(-0.22f, 0.45f, 0.0f);
-
-    glVertex3f( 0.05f + legAngleR, 0.0f, 0.0f);
-    glVertex3f( 0.22f + legAngleR, 0.0f, 0.0f);
-    glVertex3f( 0.22f, 0.45f, 0.0f);
-    glVertex3f( 0.05f, 0.45f, 0.0f);
+    glVertex3f(-0.28f, 1.56f, 0.025f);
+    glVertex3f( 0.28f, 1.56f, 0.025f);
+    glVertex3f( 0.28f, 1.66f, 0.025f);
+    glVertex3f(-0.28f, 1.66f, 0.025f);
+    // Trailing bandana ribbon at back
+    glVertex3f(-0.34f, 1.48f, 0.025f);
+    glVertex3f(-0.28f, 1.48f, 0.025f);
+    glVertex3f(-0.28f, 1.62f, 0.025f);
+    glVertex3f(-0.34f, 1.62f, 0.025f);
+    glEnd();
+    // Bandana golden knot accent
+    glColor3f(0.98f, 0.85f, 0.25f);
+    glBegin(GL_QUADS);
+    glVertex3f(-0.30f, 1.55f, 0.03f);
+    glVertex3f(-0.26f, 1.55f, 0.03f);
+    glVertex3f(-0.26f, 1.63f, 0.03f);
+    glVertex3f(-0.30f, 1.63f, 0.03f);
     glEnd();
 
-    // In-Hand Tool Rendering with Dynamic Arm Swing Arc
+    // Front Hair Bangs overlapping forehead
+    glColor3f(0.48f, 0.28f, 0.15f);
+    glBegin(GL_QUADS);
+    glVertex3f(-0.06f, 1.52f, 0.028f);
+    glVertex3f( 0.12f, 1.52f, 0.028f);
+    glVertex3f( 0.12f, 1.62f, 0.028f);
+    glVertex3f(-0.06f, 1.62f, 0.028f);
+    glEnd();
+
+    // Expressive Eyes with Pupil & Twinkle Glint
+    // Sclera (White)
+    glColor3f(0.96f, 0.98f, 1.0f);
+    glBegin(GL_QUADS);
+    glVertex3f(0.06f, 1.38f, 0.03f);
+    glVertex3f(0.19f, 1.38f, 0.03f);
+    glVertex3f(0.19f, 1.50f, 0.03f);
+    glVertex3f(0.06f, 1.50f, 0.03f);
+    glEnd();
+    // Dark Pupil / Iris
+    glColor3f(0.10f, 0.12f, 0.20f);
+    glBegin(GL_QUADS);
+    glVertex3f(0.09f, 1.38f, 0.035f);
+    glVertex3f(0.18f, 1.38f, 0.035f);
+    glVertex3f(0.18f, 1.49f, 0.035f);
+    glVertex3f(0.09f, 1.49f, 0.035f);
+    glEnd();
+    // Specular Twinkle Sparkle
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_QUADS);
+    glVertex3f(0.13f, 1.44f, 0.04f);
+    glVertex3f(0.17f, 1.44f, 0.04f);
+    glVertex3f(0.17f, 1.48f, 0.04f);
+    glVertex3f(0.13f, 1.48f, 0.04f);
+    glEnd();
+    // Eyebrow
+    glColor3f(0.30f, 0.16f, 0.08f);
+    glBegin(GL_QUADS);
+    glVertex3f(0.05f, 1.51f, 0.035f);
+    glVertex3f(0.20f, 1.51f, 0.035f);
+    glVertex3f(0.20f, 1.54f, 0.035f);
+    glVertex3f(0.05f, 1.54f, 0.035f);
+    glEnd();
+    // Cheek Blush
+    glColor3f(0.96f, 0.65f, 0.58f);
+    glBegin(GL_QUADS);
+    glVertex3f(0.08f, 1.31f, 0.02f);
+    glVertex3f(0.18f, 1.31f, 0.02f);
+    glVertex3f(0.18f, 1.36f, 0.02f);
+    glVertex3f(0.08f, 1.36f, 0.02f);
+    glEnd();
+
+    // 5. In-Hand Tool Rendering with Dynamic Arm Swing Arc & Motion Trail
     renderInHandTool(g_Hotbar[g_ActiveSlot].type, g_ToolSwingTimer, g_ToolIsSwinging, g_Player.isFacingRight);
 
     glPopMatrix();
@@ -2116,7 +2280,49 @@ static void renderWorld25D(void) {
     }
 }
 
+static void renderTutorialQuestBox(void) {
+    float qBoxW = 350.0f;
+    float qBoxH = 105.0f;
+    float qBoxX = (float)WINDOW_WIDTH - qBoxW - 15.0f;
+    float qBoxY = 15.0f;
+    drawQuad2D(qBoxX, qBoxY, qBoxW, qBoxH, 0.08f, 0.10f, 0.15f, 0.90f);
+    drawBorder2D(qBoxX, qBoxY, qBoxW, qBoxH, 1.0f, 0.82f, 0.20f, 2.0f);
 
+    drawText(qBoxX + 15, qBoxY + 22, LOC("新手探险指南", "Quest Guide"), 1.0f, 0.85f, 0.2f, true);
+
+    if (g_TutorialStep == TUTORIAL_MOVE_JUMP) {
+        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 1: 基础移动与跳跃", "Step 1: Movement & Jump"), 1.0f, 1.0f, 1.0f, false);
+        drawText(qBoxX + 15, qBoxY + 62, LOC("使用 [A / D] 移动，[Space] 跳跃", "Use [A / D] to move, [Space] to Jump"), 0.75f, 0.85f, 0.95f, false);
+        char prog[64];
+        snprintf(prog, sizeof(prog), "[%s] %s  [%s] %s  [%s] %s",
+            g_TutMovedLeft ? "V" : " ", LOC("左移", "Left"),
+            g_TutMovedRight ? "V" : " ", LOC("右移", "Right"),
+            g_TutJumped ? "V" : " ", LOC("跳跃", "Jump"));
+        drawText(qBoxX + 15, qBoxY + 82, prog, 0.3f, 0.95f, 0.4f, false);
+    } else if (g_TutorialStep == TUTORIAL_MINE) {
+        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 2: 资源采集", "Step 2: Resource Gathering"), 1.0f, 1.0f, 1.0f, false);
+        drawText(qBoxX + 15, qBoxY + 62, LOC("按住 [鼠标左键] 挖掘 5 个方块", "Hold [Left Click] to mine 5 blocks"), 0.75f, 0.85f, 0.95f, false);
+        char prog[64];
+        snprintf(prog, sizeof(prog), "%s: %d / 5", LOC("采集进度", "Progress"), g_MinedCount);
+        drawText(qBoxX + 15, qBoxY + 82, prog, 1.0f, 0.85f, 0.2f, false);
+    } else if (g_TutorialStep == TUTORIAL_BUILD) {
+        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 3: 方块搭建", "Step 3: Block Construction"), 1.0f, 1.0f, 1.0f, false);
+        drawText(qBoxX + 15, qBoxY + 62, LOC("选择方块 [1-9]，[鼠标右键] 放置", "Select block [1-9], [Right Click] to place"), 0.75f, 0.85f, 0.95f, false);
+        drawText(qBoxX + 15, qBoxY + 82, LOC("目标位置须与已有方块相邻", "Target must be adjacent to solid block"), 0.3f, 0.95f, 0.4f, false);
+    } else if (g_TutorialStep == TUTORIAL_TORCH) {
+        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 4: 地下照明", "Step 4: Underground Illumination"), 1.0f, 1.0f, 1.0f, false);
+        drawText(qBoxX + 15, qBoxY + 62, LOC("选择火把 [5] 并放置以照亮黑暗", "Select Torch [5] & place to light dark"), 0.75f, 0.85f, 0.95f, false);
+        drawText(qBoxX + 15, qBoxY + 82, LOC("火把可散发暖色动态照明", "Torches emit warm dynamic light"), 1.0f, 0.85f, 0.2f, false);
+    } else if (g_TutorialStep == TUTORIAL_EXPLORE) {
+        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 5: 快速存档与探索", "Step 5: Quick Save & Explore"), 1.0f, 1.0f, 1.0f, false);
+        drawText(qBoxX + 15, qBoxY + 62, LOC("按 [F5] 快速保存当前世界进度！", "Press [F5] to Quick Save your game!"), 0.75f, 0.85f, 0.95f, false);
+        drawText(qBoxX + 15, qBoxY + 82, LOC("随时按 [H] 可查看全键位说明", "Press [H] anytime for Keybinds"), 0.3f, 0.95f, 0.4f, false);
+    } else {
+        drawText(qBoxX + 15, qBoxY + 44, LOC("新手引导完成！探索大师", "Tutorial Complete! Master Explorer"), 0.3f, 0.95f, 0.3f, false);
+        drawText(qBoxX + 15, qBoxY + 62, LOC("自由探索沙漠、雪原与地下熔岩！", "Explore Desert, Tundra & Underworld!"), 0.75f, 0.85f, 0.95f, false);
+        drawText(qBoxX + 15, qBoxY + 82, LOC("[F5] 保存  [F9] 读取  [H] 帮助", "[F5] Quick Save  [F9] Quick Load  [H] Help"), 1.0f, 0.85f, 0.2f, false);
+    }
+}
 
 static void renderHUD(void) {
     glMatrixMode(GL_PROJECTION);
@@ -2164,46 +2370,8 @@ static void renderHUD(void) {
     drawText(25, 107, LOC("[ESC] 暂停/设置 | [F5] 保存 | [F9] 读取 | [H] 帮助", "[ESC] Pause/Settings | [F5] Save | [F9] Load | [H] Help"), 0.65f, 0.75f, 0.85f, false);
 
     // 2. Novice Tutorial Quest Box (Top-Right)
-    float qBoxW = 350.0f;
-    float qBoxH = 105.0f;
-    float qBoxX = (float)WINDOW_WIDTH - qBoxW - 15.0f;
-    float qBoxY = 15.0f;
-    drawQuad2D(qBoxX, qBoxY, qBoxW, qBoxH, 0.08f, 0.10f, 0.15f, 0.90f);
-    drawBorder2D(qBoxX, qBoxY, qBoxW, qBoxH, 1.0f, 0.82f, 0.20f, 2.0f);
-
-    drawText(qBoxX + 15, qBoxY + 22, LOC("新手探险指南", "Quest Guide"), 1.0f, 0.85f, 0.2f, true);
-
-    if (g_TutorialStep == TUTORIAL_MOVE_JUMP) {
-        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 1: 基础移动与跳跃", "Step 1: Movement & Jump"), 1.0f, 1.0f, 1.0f, false);
-        drawText(qBoxX + 15, qBoxY + 62, LOC("使用 [A / D] 移动，[Space] 跳跃", "Use [A / D] to move, [Space] to Jump"), 0.75f, 0.85f, 0.95f, false);
-        char prog[64];
-        snprintf(prog, sizeof(prog), "[%s] %s  [%s] %s  [%s] %s",
-            g_TutMovedLeft ? "V" : " ", LOC("左移", "Left"),
-            g_TutMovedRight ? "V" : " ", LOC("右移", "Right"),
-            g_TutJumped ? "V" : " ", LOC("跳跃", "Jump"));
-        drawText(qBoxX + 15, qBoxY + 82, prog, 0.3f, 0.95f, 0.4f, false);
-    } else if (g_TutorialStep == TUTORIAL_MINE) {
-        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 2: 资源采集", "Step 2: Resource Gathering"), 1.0f, 1.0f, 1.0f, false);
-        drawText(qBoxX + 15, qBoxY + 62, LOC("按住 [鼠标左键] 挖掘 5 个方块", "Hold [Left Click] to mine 5 blocks"), 0.75f, 0.85f, 0.95f, false);
-        char prog[64];
-        snprintf(prog, sizeof(prog), "%s: %d / 5", LOC("采集进度", "Progress"), g_MinedCount);
-        drawText(qBoxX + 15, qBoxY + 82, prog, 1.0f, 0.85f, 0.2f, false);
-    } else if (g_TutorialStep == TUTORIAL_BUILD) {
-        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 3: 方块搭建", "Step 3: Block Construction"), 1.0f, 1.0f, 1.0f, false);
-        drawText(qBoxX + 15, qBoxY + 62, LOC("选择方块 [1-9]，[鼠标右键] 放置", "Select block [1-9], [Right Click] to place"), 0.75f, 0.85f, 0.95f, false);
-        drawText(qBoxX + 15, qBoxY + 82, LOC("目标位置须与已有方块相邻", "Target must be adjacent to solid block"), 0.3f, 0.95f, 0.4f, false);
-    } else if (g_TutorialStep == TUTORIAL_TORCH) {
-        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 4: 地下照明", "Step 4: Underground Illumination"), 1.0f, 1.0f, 1.0f, false);
-        drawText(qBoxX + 15, qBoxY + 62, LOC("选择火把 [5] 并放置以照亮黑暗", "Select Torch [5] & place to light dark"), 0.75f, 0.85f, 0.95f, false);
-        drawText(qBoxX + 15, qBoxY + 82, LOC("火把可散发暖色动态照明", "Torches emit warm dynamic light"), 1.0f, 0.85f, 0.2f, false);
-    } else if (g_TutorialStep == TUTORIAL_EXPLORE) {
-        drawText(qBoxX + 15, qBoxY + 44, LOC("步骤 5: 快速存档与探索", "Step 5: Quick Save & Explore"), 1.0f, 1.0f, 1.0f, false);
-        drawText(qBoxX + 15, qBoxY + 62, LOC("按 [F5] 快速保存当前世界进度！", "Press [F5] to Quick Save your game!"), 0.75f, 0.85f, 0.95f, false);
-        drawText(qBoxX + 15, qBoxY + 82, LOC("随时按 [H] 可查看全键位说明", "Press [H] anytime for Keybinds"), 0.3f, 0.95f, 0.4f, false);
-    } else {
-        drawText(qBoxX + 15, qBoxY + 44, LOC("新手引导完成！探索大师", "Tutorial Complete! Master Explorer"), 0.3f, 0.95f, 0.3f, false);
-        drawText(qBoxX + 15, qBoxY + 62, LOC("自由探索沙漠、雪原与地下熔岩！", "Explore Desert, Tundra & Underworld!"), 0.75f, 0.85f, 0.95f, false);
-        drawText(qBoxX + 15, qBoxY + 82, LOC("[F5] 保存  [F9] 读取  [H] 帮助", "[F5] Quick Save  [F9] Quick Load  [H] Help"), 1.0f, 0.85f, 0.2f, false);
+    if (getGameMode() != MODE_SURVIVAL) {
+        renderTutorialQuestBox();
     }
 
     // 3. Hovered Block Inspector Tooltip
@@ -2353,9 +2521,7 @@ static void renderHUD(void) {
         } else if (g_Player.timeSinceCombat >= 20.0f) {
             snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d  [%s]", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth, LOC("自然回血中 +3.5/s", "Regen +3.5/s"));
         } else {
-            int secLeft = (int)ceilf(20.0f - g_Player.timeSinceCombat);
-            if (secLeft < 0) secLeft = 0;
-            snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d  (%s %ds)", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth, LOC("脱战回血倒计时", "Regen in"), secLeft);
+            snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth);
         }
         drawText(barX + 10.0f, barY + 19.0f, hpBuf, 1.0f, 1.0f, 1.0f, true);
     }
@@ -2680,6 +2846,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (g_CamX > (float)WORLD_WIDTH - 25.0f) g_CamX = 25.0f;
             g_WorldTime += dt / 300.0f;
             if (g_WorldTime > 1.0f) g_WorldTime -= 1.0f;
+        }
+
+        // Update Procedural Background Music (BGM) context
+        {
+            bool inMenu = (getGameState() == STATE_MENU ||
+                           getGameState() == STATE_WORLDS_LIST ||
+                           getGameState() == STATE_CREATE_WORLD ||
+                           (getGameState() == STATE_SETTINGS && getPreviousGameState() != STATE_PAUSED));
+            int px = (int)g_Player.x;
+            if (px < 0) px = 0;
+            if (px >= WORLD_WIDTH) px = WORLD_WIDTH - 1;
+            float surfaceY = (float)g_SurfaceHeight[px];
+            float sunAngle = g_WorldTime * (float)M_PI * 2.0f;
+            bool isDay = (sinf(sunAngle) > 0.0f);
+            int curBiome = (int)getBiomeAt(px);
+            updateBgmContext(inMenu, g_Player.y, surfaceY, isDay, curBiome);
         }
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

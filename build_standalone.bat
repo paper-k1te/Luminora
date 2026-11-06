@@ -49,5 +49,5 @@ echo.
 echo [Key System Highlights]
 echo  * Subsystem: Windows GUI (-mwindows) [Zero CMD console popup on launch!]
 echo  * TrueType Font Renderer (font_render.h) [Win32 GDI DrawTextW with dynamic texture cache]
-echo  * Procedural Audio Engine (sound_engine.h) [11 retro 2.5D sound effects via winmm waveOut]
+echo  * Procedural Audio & Music Engine (sound_engine.h) [5 dynamic crossfading BGM tracks + 11 retro 2.5D SFX via winmm waveOut]
 echo.

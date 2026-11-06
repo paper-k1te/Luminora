@@ -834,17 +834,6 @@ static bool handleCraftingInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                         }
                     }
                 }
-
-                // 3. Click "Switch to Crafting" in Inventory tab
-                float switchW = 260.0f;
-                float switchH = 36.0f;
-                float switchX = modalX + 24.0f;
-                float switchY = modalY + modalH - 56.0f;
-                if (g_CraftingMouseX >= switchX && g_CraftingMouseX <= switchX + switchW &&
-                    g_CraftingMouseY >= switchY && g_CraftingMouseY <= switchY + switchH) {
-                    g_CraftingCurrentTab = CRAFT_TAB_CRAFTING;
-                    return true;
-                }
             }
             return true;
         }
@@ -1251,15 +1240,6 @@ static void renderCraftingUI(void) {
                 }
             }
         }
-
-        // Switch back to Crafting Button
-        float switchW = 260.0f;
-        float switchH = 36.0f;
-        float switchX = startX;
-        float switchY = modalY + modalH - 56.0f;
-        menuDrawQuad(switchX, switchY, switchW, switchH, 0.38f, 0.30f, 0.12f, 1.0f);
-        menuDrawBorder(switchX, switchY, switchW, switchH, 1.0f, 0.85f, 0.25f, 2.0f);
-        drawText(switchX + 24, switchY + 23, LOC("返回合成工作台", "Switch to Crafting"), 1.0f, 0.92f, 0.40f, true);
     }
 
     // Draw floating cursor item held during slot drag/swap

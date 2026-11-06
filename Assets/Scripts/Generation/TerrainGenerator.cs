@@ -166,9 +166,9 @@ namespace Generation
                 BiomeType biome = columnBiomes[x];
                 BiomeConfig config = GetConfig(biome);
 
-                // Subsurface transition depth (e.g. 4 to 7 blocks of dirt/sandstone)
+                // Subsurface transition depth (strictly ~10 blocks of dirt/sandstone before stone strata)
                 float depthNoise = NoiseGenerator.Fbm1D(worldX, seed + 333, octaves: 2, frequency: 0.08f);
-                int subsurfaceDepth = 4 + Mathf.RoundToInt(depthNoise * 3f);
+                int subsurfaceDepth = 9 + Mathf.RoundToInt(depthNoise * 2f); // ~10 blocks deep
                 int subsurfaceStartY = surfaceY - subsurfaceDepth;
 
                 for (int y = 0; y < height; y++)

@@ -616,7 +616,10 @@ namespace UI
             DrawMiningProgressBar();
             DrawHotbarHUD();
             DrawPlayerHealthHUD();
-            DrawNoviceTutorialQuestBox();
+            if (_player == null || _player.CurrentGameMode != GameMode.Survival)
+            {
+                DrawNoviceTutorialQuestBox();
+            }
             DrawBlockInspectorTooltip();
             DrawFloatingTextPopups();
             DrawQuestBannerCelebration();
@@ -685,6 +688,8 @@ namespace UI
         /// </summary>
         private void DrawNoviceTutorialQuestBox()
         {
+            if (_player != null && _player.CurrentGameMode == GameMode.Survival) return;
+
             float questWidth = 330f;
             float questX = Screen.width - questWidth - 16f;
             float questY = 16f;
@@ -1144,8 +1149,7 @@ namespace UI
             }
             else
             {
-                int sec = _player != null ? Mathf.CeilToInt(20f - _player.TimeSinceCombat) : 0;
-                hpString = $"HP: {Mathf.CeilToInt(health)} / {Mathf.CeilToInt(maxHealth)} ({sec}s)";
+                hpString = $"HP: {Mathf.CeilToInt(health)} / {Mathf.CeilToInt(maxHealth)}";
             }
             GUI.Label(bgRect, hpString, hpTextStyle);
         }

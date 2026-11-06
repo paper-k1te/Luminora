@@ -1110,14 +1110,6 @@ namespace Crafting
                     GUI.Label(new Rect(floatRect.x + 6, floatRect.y + 18, floatRect.width - 12, 16f), $"x{selSlot.count}", _ingredientSatisfiedStyle);
                 }
             }
-
-            // Quick Crafting button inside inventory tab
-            float craftBtnY = startY + 3 * (slotSize + slotGap) + 16f;
-            if (GUI.Button(new Rect(startX, craftBtnY, 260f, 36f), LocalizationManager.Get("🔨 切换至合成站", "🔨 Switch to Crafting"), _craftBtnStyle))
-            {
-                currentTab = CraftingModalTab.Crafting;
-                PlayTone(580f, 0.05f, 0.2f);
-            }
         }
 
         private void DrawBorder(Rect rect, int thickness, Color color)

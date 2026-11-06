@@ -50,3 +50,5 @@ desktop.ini
 # Game saves & user settings
 savegame.bin
 settings.bin
+
+saves/*.bin

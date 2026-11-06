@@ -2151,16 +2151,16 @@ static void renderHUD(void) {
         drawText(sx + 4, sy + 14, numBuf, 0.7f, 0.7f, 0.7f, false);
     }
 
-    // 0. Player Health Bar (Survival Mode)
+    // 0. Player Health Bar (Survival Mode - cleanly docked beneath top-left status panel)
     if (getGameMode() == MODE_SURVIVAL) {
-        float barX = 20.0f;
-        float barY = 20.0f;
-        float barW = 200.0f;
-        float barH = 22.0f;
+        float barX = 15.0f;
+        float barY = 132.0f;
+        float barW = 310.0f;
+        float barH = 26.0f;
 
         // Background
-        drawQuad2D(barX, barY, barW, barH, 0.12f, 0.14f, 0.18f, 0.92f);
-        drawBorder2D(barX, barY, barW, barH, 0.40f, 0.45f, 0.55f, 1.5f);
+        drawQuad2D(barX, barY, barW, barH, 0.08f, 0.10f, 0.14f, 0.90f);
+        drawBorder2D(barX, barY, barW, barH, 0.35f, 0.45f, 0.58f, 1.5f);
 
         // Fill
         float hpPct = g_Player.health / (g_Player.maxHealth > 0.0f ? g_Player.maxHealth : 100.0f);
@@ -2168,16 +2168,16 @@ static void renderHUD(void) {
         if (hpPct > 1.0f) hpPct = 1.0f;
         float fillW = (barW - 4.0f) * hpPct;
         if (fillW > 0.0f) {
-            float fR = (g_Player.hurtTimer > 0.0f) ? 1.0f : 0.90f;
-            float fG = (g_Player.hurtTimer > 0.0f) ? 0.75f : 0.20f;
-            float fB = (g_Player.hurtTimer > 0.0f) ? 0.75f : 0.20f;
+            float fR = (g_Player.hurtTimer > 0.0f) ? 1.0f : 0.88f;
+            float fG = (g_Player.hurtTimer > 0.0f) ? 0.75f : 0.18f;
+            float fB = (g_Player.hurtTimer > 0.0f) ? 0.75f : 0.22f;
             drawQuad2D(barX + 2.0f, barY + 2.0f, fillW, barH - 4.0f, fR, fG, fB, 0.95f);
         }
 
-        // Text
+        // Text with centered baseline
         char hpBuf[64];
         snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth);
-        drawText(barX + 12.0f, barY + 16.0f, hpBuf, 1.0f, 1.0f, 1.0f, true);
+        drawText(barX + 12.0f, barY + 18.0f, hpBuf, 1.0f, 1.0f, 1.0f, true);
     }
 
     // Game Over Overlay

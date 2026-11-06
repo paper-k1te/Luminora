@@ -1056,8 +1056,8 @@ void renderCreativeInventory(int screenW, int screenH, int mouseX, int mouseY) {
 
     // 7. Floating Hover Tooltip
     if (hoveredItemId > 0) {
-        float tipW = 340.0f;
-        float tipH = 92.0f;
+        float tipW = 360.0f;
+        float tipH = 96.0f;
         if (tooltipX + tipW > (float)screenW - 20.0f) tooltipX = (float)screenW - tipW - 20.0f;
         if (tooltipY + tipH > (float)screenH - 20.0f) tooltipY = (float)screenH - tipH - 20.0f;
 
@@ -1079,6 +1079,7 @@ void renderCreativeInventory(int screenW, int screenH, int mouseX, int mouseY) {
                          LOC("击退强度: ", "Knockback: "), def->knockback,
                          LOC("挖掘倍率: ", "Mining Speed: "), def->speedMultiplier);
                 drawText(tooltipX + 12.0f, tooltipY + 64.0f, statBuf, def->r, def->g, def->b, false);
+                drawText(tooltipX + 12.0f, tooltipY + 84.0f, LOC("左键点击装备到当前快捷栏", "Click item to equip to Hotbar"), 0.35f, 0.90f, 1.0f, false);
             }
         } else if (hoveredItemId < BLOCK_TYPE_COUNT) {
             char blkStatBuf[128];
@@ -1089,10 +1090,9 @@ void renderCreativeInventory(int screenW, int screenH, int mouseX, int mouseY) {
                      g_BlockDefs[hoveredItemId].isSolid ? LOC("是", "Yes") : LOC("否", "No"),
                      LOC("创造模式无限", "Infinite In Creative"));
             drawText(tooltipX + 12.0f, tooltipY + 46.0f, blkStatBuf, 0.75f, 0.85f, 0.95f, false);
-            drawText(tooltipX + 12.0f, tooltipY + 66.0f, LOC("左键点击装备 999 到快捷栏", "Left-click to assign 999 into active hotbar slot"), 0.35f, 0.95f, 0.45f, false);
+            drawText(tooltipX + 12.0f, tooltipY + 68.0f, LOC("左键点击装备 999 堆叠到快捷栏", "Left-click to assign 999 into active hotbar slot"), 0.35f, 0.95f, 0.45f, false);
+            drawText(tooltipX + 12.0f, tooltipY + 86.0f, LOC("右键快速清空当前手持槽位", "Right-click to clear current slot"), 0.50f, 0.75f, 0.90f, false);
         }
-
-        drawText(tooltipX + 12.0f, tooltipY + 84.0f, LOC("左键点击物品装备到快捷栏", "Click item to equip to Hotbar"), 0.35f, 0.90f, 1.0f, false);
     }
 
     // Restore Projection & Modelview

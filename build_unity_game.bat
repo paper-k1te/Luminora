@@ -45,7 +45,7 @@ echo.
 echo To build directly from Unity:
 echo 1. Open Unity Hub
 echo 2. Add and open the project at: %PROJECT_PATH%
-echo 3. In the Unity top menu, click: "Sandbox 2.5D" -> "Build Windows Executable (.exe)"
+echo 3. In the Unity top menu, click: "Luminora 2.5D" -> "Build Windows Executable (.exe)"
 echo.
 echo Alternatively, you can run the pre-compiled standalone game executable:
 echo   %PROJECT_PATH%Luminora_Standalone.exe

@@ -5,7 +5,7 @@
 
 本项目提供 **双重运行方案**：
 1. **即开即玩原生独立版 EXE (`Luminora_Standalone.exe`)**：已经由 GCC 编译打包好的独立 Windows 64位游戏可执行文件，无需安装任何引擎，双击即可直接在电脑上畅玩！
-2. **完整 Unity 工程工程源码 (`Assets/`, `ProjectSettings/`, `Packages/`)**：结构完备的 Unity 项目，支持在 Unity 2021/2022/Unity 6 编辑器中打开、深度二开，并可通过内置的 `Sandbox 2.5D -> Build Windows Executable (.exe)` 或 `build_unity_game.bat` 自动化打包 Unity 独立版！
+2. **完整 Unity 工程工程源码 (`Assets/`, `ProjectSettings/`, `Packages/`)**：结构完备的 Unity 项目，支持在 Unity 2021/2022/Unity 6 编辑器中打开、深度二开，并可通过内置的 `Luminora 2.5D -> Build Windows Executable (.exe)` 或 `build_unity_game.bat` 自动化打包 Unity 独立版！
 
 ---
 
@@ -270,12 +270,12 @@
 1. 打开 **Unity Hub**。
 2. 点击 **Add (添加)**，选择项目目录：
    ```
-   c:\Users\10447\Desktop\tokenproject
+   c:\Users\10447\Desktop\Luminora
    ```
 3. 推荐使用 **Unity 2022.3 LTS** 或 **Unity 2021.3 LTS / Unity 6** 打开项目。
 4. 项目初次打开后，在 Project 视窗中定位到：
    ```
-   Assets / Scenes / SandboxWorld.unity
+   Assets / Scenes / LuminoraWorld.unity
    ```
 5. 双击打开场景，点击编辑器顶部的 **▶ Play (运行)** 按钮即可直接开玩！
 6. **调试工具**：

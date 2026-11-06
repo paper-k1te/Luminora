@@ -6,5 +6,5 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - m_Enabled: 1
-    m_Path: Assets/Scenes/SandboxWorld.unity
+    m_Path: Assets/Scenes/LuminoraWorld.unity
     m_Guid: 00000000000000000000000000000001

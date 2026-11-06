@@ -74,7 +74,7 @@ namespace Editor
             }
         }
 
-        [MenuItem("Sandbox 2.5D/Regenerate World")]
+        [MenuItem("Luminora 2.5D/Regenerate World")]
         private static void MenuRegenerateWorld()
         {
             if (Application.isPlaying && WorldManager.Instance != null)

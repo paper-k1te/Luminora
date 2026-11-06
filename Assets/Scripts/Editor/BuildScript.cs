@@ -13,11 +13,11 @@ namespace Editor
     /// </summary>
     public static class BuildScript
     {
-        private const string ScenePath = "Assets/Scenes/SandboxWorld.unity";
+        private const string ScenePath = "Assets/Scenes/LuminoraWorld.unity";
         private const string OutputDirectory = "Build/Windows";
         private const string ExeName = "Luminora_Sandbox.exe";
 
-        [MenuItem("Sandbox 2.5D/Build Windows Executable (.exe)", false, 10)]
+        [MenuItem("Luminora 2.5D/Build Windows Executable (.exe)", false, 10)]
         public static void BuildWindowsExecutableMenu()
         {
             BuildWindowsPlayer();

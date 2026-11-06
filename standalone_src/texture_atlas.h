@@ -800,7 +800,7 @@ static void paint_item_sticky_bomb(unsigned char* diff, int tile_idx) {
 
 
 // ---------------------------------------------------------------------------
-// Terraria Furniture Painters (Tiles 45 - 54)
+// Luminora Furniture Painters (Tiles 45 - 54)
 // ---------------------------------------------------------------------------
 
 static void paint_workbench(unsigned char* diff, int tile_idx) {

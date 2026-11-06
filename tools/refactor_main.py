@@ -66,8 +66,8 @@ assert old_add_inv in c, "old_add_inv not found"
 c = c.replace(old_add_inv, new_add_inv, 1)
 
 # 4. In-game notifications
-c = c.replace('showNotification("Welcome to Terraria 2.5D! Press [H] for Help, [F5] to Save.", 1.0f, 0.85f, 0.3f);',
-              'showNotification(LOC("欢迎来到 Terraria 2.5D！按 [H] 查看指南，[F5] 快速保存。", "Welcome to Terraria 2.5D! Press [H] for Help, [F5] to Save."), 1.0f, 0.85f, 0.3f);')
+c = c.replace('showNotification("Welcome to Luminora! Press [H] for Help, [F5] to Save.", 1.0f, 0.85f, 0.3f);',
+              'showNotification(LOC("欢迎来到 Luminora｜流明洛原！按 [H] 查看指南，[F5] 快速保存。", "Welcome to Luminora! Press [H] for Help, [F5] to Save."), 1.0f, 0.85f, 0.3f);')
 
 c = c.replace('showNotification("Quest 1 Completed! Now mine 5 blocks with Left-Click.", 0.3f, 0.95f, 0.3f);',
               'showNotification(LOC("任务 1 已完成！按住鼠标左键挖掘 5 个方块。", "Quest 1 Completed! Now mine 5 blocks with Left-Click."), 0.3f, 0.95f, 0.3f);')

@@ -10,7 +10,7 @@
 #include "../standalone_src/font_render.h"
 
 int main(void) {
-    printf("=== Terraria 2.5D Audio & Font Engine Verification ===\n\n");
+    printf("=== Luminora 2.5D Audio & Font Engine Verification ===\n\n");
 
     // 1. Test Sound Engine
     printf("[1/3] Testing Sound Engine (sound_engine.h)...\n");

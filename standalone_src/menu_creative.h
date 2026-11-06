@@ -1153,14 +1153,15 @@ static void renderMainMenu(void) {
     menuDrawQuad(bannerX, bannerY, bannerW, bannerH, 0.08f, 0.10f, 0.14f, 0.90f);
     menuDrawBorder(bannerX, bannerY, bannerW, bannerH, 0.35f, 0.45f, 0.58f, 2.0f);
 
-    // Title: TERRARIA 2.5D with drop shadow
-    float titleW = getTextWidthUTF8("TERRARIA 2.5D", 22, true);
+    // Title: Luminora | 流明洛原 with drop shadow
+    const char* titleStr = (getLanguage() == LANG_ZH) ? "Luminora | 流明洛原" : "LUMINORA";
+    float titleW = getTextWidthUTF8(titleStr, 22, true);
     float titleX = bannerX + (bannerW - titleW) * 0.5f;
-    drawText(titleX + 2.0f, bannerY + 45.0f + 2.0f, "TERRARIA 2.5D", 0.0f, 0.0f, 0.0f, true);
-    drawText(titleX, bannerY + 45.0f, "TERRARIA 2.5D", 1.0f, 0.85f, 0.22f, true);
+    drawText(titleX + 2.0f, bannerY + 45.0f + 2.0f, titleStr, 0.0f, 0.0f, 0.0f, true);
+    drawText(titleX, bannerY + 45.0f, titleStr, 1.0f, 0.88f, 0.25f, true);
 
     // Subtitle
-    const char* subText = LOC("-- 像素沙盒冒险与创造 --", "-- MINECRAFT & TERRARIA SANDBOX HYBRID --");
+    const char* subText = LOC("-- 光影交织的 2.5D 像素沙盒冒险 --", "-- 2.5D PROCEDURAL PIXEL SANDBOX ADVENTURE --");
     float subW = getTextWidthUTF8(subText, 13, false);
     drawText(bannerX + (bannerW - subW) * 0.5f, bannerY + 74.0f, subText, 0.75f, 0.85f, 0.95f, false);
 
@@ -1197,7 +1198,7 @@ static void renderMainMenu(void) {
 
     // 4. Footer credits
     float footY = (float)WINDOW_HEIGHT - 28.0f;
-    const char* footText = LOC("Terraria 2.5D 独立引擎 | 游戏中随时按 [ESC] 暂停或切换模式", "Terraria 2.5D Standalone Engine | Press [ESC] anytime for Pause Menu & Mode Switch");
+    const char* footText = LOC("Luminora｜流明洛原 独立引擎 | 游戏中随时按 [ESC] 暂停或切换模式", "Luminora Standalone Engine | Press [ESC] anytime for Pause Menu & Mode Switch");
     float footW = getTextWidthUTF8(footText, 12, false);
     drawText(((float)WINDOW_WIDTH - footW) * 0.5f, footY, footText, 0.65f, 0.70f, 0.78f, false);
 

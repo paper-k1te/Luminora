@@ -1,14 +1,14 @@
 @echo off
 setlocal enabledelayedexpansion
-title Build Terraria 2.5D Windows Executable
+title Build Luminora (流明洛原) Windows Executable
 
 echo =======================================================
-echo   Terraria 2.5D Sandbox - Unity Windows Standalone Builder
+echo   Luminora (流明洛原) Sandbox - Unity Windows Standalone Builder
 echo =======================================================
 echo.
 
 set PROJECT_PATH=%~dp0
-set OUTPUT_PATH=%PROJECT_PATH%Build\Windows\Terraria25D_Sandbox.exe
+set OUTPUT_PATH=%PROJECT_PATH%Build\Windows\Luminora_Sandbox.exe
 set UNITY_EXE=
 
 :: Check common Unity Hub / Unity Editor locations
@@ -48,7 +48,7 @@ echo 2. Add and open the project at: %PROJECT_PATH%
 echo 3. In the Unity top menu, click: "Sandbox 2.5D" -> "Build Windows Executable (.exe)"
 echo.
 echo Alternatively, you can run the pre-compiled standalone game executable:
-echo   %PROJECT_PATH%Terraria25D_Standalone.exe
+echo   %PROJECT_PATH%Luminora_Standalone.exe
 echo.
 pause
 exit /b 1

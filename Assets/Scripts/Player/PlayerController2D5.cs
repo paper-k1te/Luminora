@@ -8,7 +8,7 @@ namespace Player
     /// <summary>
     /// Smooth 2.5D side-scrolling platformer controller strictly constrained to the Z = 0 plane.
     /// Features responsive acceleration/deceleration, variable jump heights, coyote time,
-    /// automatic 1-block Terraria step climbing, fall gravity with terminal velocity,
+    /// automatic 1-block Luminora step climbing, fall gravity with terminal velocity,
     /// and a procedurally generated charming 2.5D animated character model.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
@@ -30,7 +30,7 @@ namespace Player
         [SerializeField] private float coyoteTime = 0.15f;
         [SerializeField] private float jumpBufferTime = 0.15f;
 
-        [Header("Terraria Step-Climbing")]
+        [Header("Luminora Step-Climbing")]
         [SerializeField] private float maxStepHeight = 1.15f; // Handles standard 1.0 unit blocks seamlessly
         [SerializeField] private float stepClimbSpeed = 16.0f;
 
@@ -284,7 +284,7 @@ namespace Player
         }
 
         /// <summary>
-        /// Terraria-style automatic step climbing:
+        /// Luminora-style automatic step climbing:
         /// When walking into a 1-block high tile, detects if knee/step is clear and assists
         /// smooth elevation over the obstacle without needing to jump.
         /// </summary>

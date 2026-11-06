@@ -518,7 +518,7 @@ namespace Core
 
         /// <summary>
         /// Retrieves the corresponding background wall type for a given foreground block.
-        /// Matches Terraria's dual-layer philosophy where background walls adapt to foreground strata.
+        /// Matches Luminora's dual-layer philosophy where background walls adapt to foreground strata.
         /// </summary>
         public static BlockType GetMatchingWallType(BlockType type)
         {

@@ -4,7 +4,7 @@ namespace Core
 {
     /// <summary>
     /// Defines the active gameplay mode for the sandbox world.
-    /// Modeled after Minecraft / Terraria gameplay mechanics.
+    /// Modeled after Minecraft / Luminora gameplay mechanics.
     /// </summary>
     public enum GameMode
     {

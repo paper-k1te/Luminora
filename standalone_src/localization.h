@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 // ============================================================================
-// Terraria 2.5D Localization (i18n) Architecture
+// Luminora 2.5D Localization (i18n) Architecture
 // ============================================================================
 typedef enum {
     LANG_ZH = 0, // 简体中文 (Default)

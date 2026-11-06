@@ -7,7 +7,7 @@ using UnityEngine;
 namespace Rendering
 {
     /// <summary>
-    /// Terraria-like multi-layer 2.5D parallax background system.
+    /// Luminora-like multi-layer 2.5D parallax background system.
     /// Manages 3 infinite scrolling depth planes (Far Mountains, Mid Hills, Clouds)
     /// that dynamically adapt their color silhouettes based on active biome and day/night progression.
     /// </summary>

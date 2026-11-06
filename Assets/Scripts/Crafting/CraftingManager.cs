@@ -173,7 +173,7 @@ namespace Crafting
         }
 
         /// <summary>
-        /// Populates the authentic classic Terraria / Minecraft recipe catalog.
+        /// Populates the authentic classic Luminora / Minecraft recipe catalog.
         /// </summary>
         private void BuildRecipeCatalog()
         {
@@ -316,7 +316,7 @@ namespace Crafting
             // 16. 1 Slime Gel + 1 Stick -> 4 Torches (凝胶火把)
             recipes.Add(new RecipeDefinition(
                 id++, "Torches (Gel)", "火把 (凝胶)", "Supplies",
-                "Terraria-style torch fueled by flammable slime gelatin.",
+                "Luminora-style torch fueled by flammable slime gelatin.",
                 BlockType.Torch, 4, "🔥",
                 new IngredientRequirement(BlockType.Gel, 1),
                 new IngredientRequirement(BlockType.Stick, 1)

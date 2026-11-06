@@ -1,9 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
-title Build Terraria 2.5D Standalone Executable (Windows GUI)
+title Build Luminora Standalone (流明洛原) Executable (Windows GUI)
 
 echo =======================================================
-echo   Terraria 2.5D Standalone - MinGW GCC Windows Builder
+echo   Luminora Standalone (流明洛原) - MinGW GCC Windows Builder
 echo =======================================================
 echo.
 
@@ -23,14 +23,14 @@ echo [+] GCC compiler detected:
 gcc --version | findstr /i "gcc"
 
 echo.
-echo [+] Compiling Terraria25D_Standalone.exe ...
+echo [+] Compiling Luminora_Standalone.exe ...
 echo     Subsystem: Windows GUI (-mwindows)
 echo     Libraries: opengl32, gdi32, winmm
 echo.
 
 gcc -O2 -std=c99 -Wall -Wextra -Wno-unused-parameter -Wno-unused-function ^
     standalone_src/main.c ^
-    -o Terraria25D_Standalone.exe ^
+    -o Luminora_Standalone.exe ^
     -lopengl32 -lgdi32 -lwinmm -mwindows
 
 if %ERRORLEVEL% neq 0 (
@@ -43,7 +43,7 @@ if %ERRORLEVEL% neq 0 (
 
 echo.
 echo =======================================================
-echo [SUCCESS] Terraria25D_Standalone.exe built successfully!
+echo [SUCCESS] Luminora_Standalone.exe built successfully!
 echo =======================================================
 echo.
 echo [Key System Highlights]

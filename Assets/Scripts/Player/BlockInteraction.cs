@@ -6,7 +6,7 @@ using UnityEngine;
 namespace Player
 {
     /// <summary>
-    /// Terraria-style mining and block placement interaction controller.
+    /// Luminora-style mining and block placement interaction controller.
     /// Projects mouse cursor ray onto the Z = 0 gameplay plane, displays a 3D wireframe
     /// selection highlight box with distance and validity states, tracks mining progress
     /// with crack feedback, spawns debris and dropped items upon destruction,
@@ -289,7 +289,7 @@ namespace Player
         }
 
         /// <summary>
-        /// Terraria placement rule: placement is valid if adjacent to at least one solid block,
+        /// Luminora placement rule: placement is valid if adjacent to at least one solid block,
         /// or placed directly against a non-air background wall.
         /// For Torches: directional support requires solid floor (y - 1), solid left wall (x - 1),
         /// solid right wall (x + 1), or an existing background wall.

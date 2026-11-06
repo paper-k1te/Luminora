@@ -12,7 +12,8 @@
 #include "localization.h"
 
 #define MAX_SAVE_SLOTS 4
-#define SAVE_MAGIC_V2 0x54455232 // "TER2" (Terraria 2.5D Version 2)
+#define SAVE_MAGIC_V2 0x4C554D32 // "LUM2" (Luminora Version 2)
+#define SAVE_MAGIC_LEGACY 0x54455232 // "TER2"
 
 typedef struct {
     int slotIndex;
@@ -92,7 +93,7 @@ static inline bool getSlotInfo(int slotIdx, WorldSlotInfo* info) {
     }
 
     SaveFileHeader hdr;
-    if (fread(&hdr, sizeof(SaveFileHeader), 1, f) != 1 || hdr.magic != SAVE_MAGIC_V2) {
+    if (fread(&hdr, sizeof(SaveFileHeader), 1, f) != 1 || (hdr.magic != SAVE_MAGIC_V2 && hdr.magic != SAVE_MAGIC_LEGACY)) {
         fclose(f);
         info->exists = false;
         return false;

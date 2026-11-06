@@ -8,14 +8,14 @@ using UnityEngine;
 namespace Editor
 {
     /// <summary>
-    /// Automated batch and menu build script for exporting the complete 2.5D Terraria sandbox
+    /// Automated batch and menu build script for exporting the complete 2.5D Luminora sandbox
     /// as a standalone Windows 64-bit executable (.exe).
     /// </summary>
     public static class BuildScript
     {
         private const string ScenePath = "Assets/Scenes/SandboxWorld.unity";
         private const string OutputDirectory = "Build/Windows";
-        private const string ExeName = "Terraria25D_Sandbox.exe";
+        private const string ExeName = "Luminora_Sandbox.exe";
 
         [MenuItem("Sandbox 2.5D/Build Windows Executable (.exe)", false, 10)]
         public static void BuildWindowsExecutableMenu()

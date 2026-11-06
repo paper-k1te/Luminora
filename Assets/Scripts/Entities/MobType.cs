@@ -1,7 +1,7 @@
 namespace Entities
 {
     /// <summary>
-    /// Distinct 2.5D mob varieties inspired by Terraria and Minecraft.
+    /// Distinct 2.5D mob varieties inspired by Luminora and Minecraft.
     /// </summary>
     public enum MobType
     {

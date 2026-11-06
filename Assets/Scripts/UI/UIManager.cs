@@ -648,7 +648,7 @@ namespace UI
             GUILayout.BeginArea(new Rect(panelRect.x + 12f, panelRect.y + 8f, panelWidth - 24f, panelHeight - 16f));
 
             // Title
-            GUILayout.Label(LocalizationManager.Get("⚔️ <b>泰拉瑞亚 2.5D 沙盒</b>", "⚔️ <b>TERRARIA 2.5D SANDBOX</b>"), _titleStyle);
+            GUILayout.Label(LocalizationManager.Get("⚔️ <b>Luminora｜流明洛原</b>", "⚔️ <b>LUMINORA 2.5D SANDBOX</b>"), _titleStyle);
 
             // Biome & Geological Depth
             Vector3 playerPos = _player != null ? _player.Position : Vector3.zero;
@@ -799,7 +799,7 @@ namespace UI
                 default:
                     // Completed All
                     GUILayout.Label($"<b>{LocalizationManager.Get("🎉 新手向导已全部完成！", "🎉 Tutorial Completed!")}</b>", _activeItemNameStyle);
-                    GUILayout.Label(LocalizationManager.Get("<color=#FFEEAA>你已掌握泰拉瑞亚核心法则！</color>", "<color=#FFEEAA>You have mastered sandbox essentials!</color>"), _bodyStyle);
+                    GUILayout.Label(LocalizationManager.Get("<color=#FFEEAA>你已掌握流明洛原核心法则！</color>", "<color=#FFEEAA>You have mastered Luminora essentials!</color>"), _bodyStyle);
                     GUILayout.Space(4f);
                     GUILayout.Label(LocalizationManager.Get("<color=#CCCCCC>探索沙漠、雪原与地下熔岩深渊！</color>", "<color=#CCCCCC>Explore deserts, snow peaks, and underworld caverns!</color>"), _bodyStyle);
                     GUILayout.Label(LocalizationManager.Get("<color=#88DDFF>[F5] 随时快捷存档 | [F9] 随时快捷读取</color>", "<color=#88DDFF>[F5] Quick Save anytime | [F9] Quick Load</color>"), _bodyStyle);
@@ -1012,7 +1012,7 @@ namespace UI
         }
 
         /// <summary>
-        /// Terraria-style Player Health HUD for Survival Mode:
+        /// Luminora-style Player Health HUD for Survival Mode:
         /// 10 animated heart icons, smooth status bar with HP numbers, low-health danger pulse,
         /// and death respawn banner.
         /// </summary>
@@ -1084,7 +1084,7 @@ namespace UI
                 : (health > 25f ? new Color(1.0f, 0.75f, 0.20f, 0.95f) : new Color(1.0f, 0.25f, 0.25f, 0.95f));
             DrawSolidRect(fillRect, fillColor);
 
-            // 10 Terraria Heart Icons ❤️ directly above the bar
+            // 10 Luminora Heart Icons ❤️ directly above the bar
             int totalHearts = Mathf.Max(1, Mathf.RoundToInt(maxHealth / 10f));
             float heartSize = 16f;
             float heartGap = 2f;
@@ -1336,10 +1336,10 @@ namespace UI
             float bannerY = Mathf.Max(26f, Screen.height * 0.12f);
 
             // Title drop shadow
-            GUI.Label(new Rect(bannerX + 2f, bannerY + 2f, bannerW, 46f), "TERRARIA 2.5D", new GUIStyle(_menuTitleStyle) { normal = { textColor = Color.black } });
-            GUI.Label(new Rect(bannerX, bannerY, bannerW, 46f), "TERRARIA 2.5D", _menuTitleStyle);
+            GUI.Label(new Rect(bannerX + 2f, bannerY + 2f, bannerW, 46f), "LUMINORA", new GUIStyle(_menuTitleStyle) { normal = { textColor = Color.black } });
+            GUI.Label(new Rect(bannerX, bannerY, bannerW, 46f), "LUMINORA", _menuTitleStyle);
 
-            GUI.Label(new Rect(bannerX, bannerY + 46f, bannerW, 22f), "— MINECRAFT & TERRARIA SANDBOX HYBRID —", _menuSubtitleStyle);
+            GUI.Label(new Rect(bannerX, bannerY + 46f, bannerW, 22f), "— 2.5D PROCEDURAL PIXEL SANDBOX —", _menuSubtitleStyle);
 
             // Floating pulsing splash text
             string splash = LocalizationManager.Get("★ 4大独立存档槽位 & 生存0道具开荒 & 实体伤害击退! ★", "★ 4 Independent Save Slots & Survival Fresh Start & Mob Knockback! ★");
@@ -1401,7 +1401,7 @@ namespace UI
 
             // Footer credits
             float footerY = Screen.height - 32f;
-            GUI.Label(new Rect(0, footerY, Screen.width, 24f), LocalizationManager.Get("<color=#888888>泰拉瑞亚 2.5D 沙盒 | 4组独立存档系统 | 游戏内按 [ESC] 暂停 | [F5] 快速存档</color>", "<color=#888888>Terraria 2.5D Sandbox | 4 Save Slots System | Press [ESC] in game for Pause | [F5] Quick Save</color>"), _bodyStyle);
+            GUI.Label(new Rect(0, footerY, Screen.width, 24f), LocalizationManager.Get("<color=#888888>Luminora｜流明洛原 | 4组独立存档系统 | 游戏内按 [ESC] 暂停 | [F5] 快速存档</color>", "<color=#888888>Luminora Sandbox | 4 Save Slots System | Press [ESC] in game for Pause | [F5] Quick Save</color>"), _bodyStyle);
         }
 
         /// <summary>

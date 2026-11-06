@@ -41,7 +41,7 @@ typedef struct {
     RecipeIngredient ingredients[MAX_INGREDIENTS];
 } RecipeDef;
 
-// Authentic Terraria / Minecraft Recipe Catalog
+// Luminora Comprehensive Recipe Catalog
 static RecipeDef g_Recipes[RECIPE_COUNT] = {
     // 1. 1 Wood -> 4 Wood Planks (木板)
     { 1, "Wood Planks", "木板", "BLOCKS",
@@ -135,8 +135,8 @@ static RecipeDef g_Recipes[RECIPE_COUNT] = {
 
     // 16. 1 Slime Gel + 1 Stick -> 4 Torches (史莱姆火把)
     { 16, "Gel Torches", "史莱姆火把", "SUPPLIES",
-      "Terraria-style torch fueled by flammable slime gelatin.",
-      "泰拉风格火把，由可燃史莱姆凝胶制成。",
+      "Luminous torch fueled by flammable slime gelatin.",
+      "明亮火把，由可燃史莱姆凝胶制成。",
       BLOCK_TORCH, 4, 2, { { ITEM_GEL, 1 }, { ITEM_STICK, 1 } } },
 
     // 17. 4 Stone -> 4 Stone Bricks (石砖)

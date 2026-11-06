@@ -28,7 +28,7 @@ VK_F9 = 0x78
 def make_lparam(x, y):
     return (int(y) << 16) | (int(x) & 0xFFFF)
 
-def find_game_window(title_substring="Terraria 2.5D"):
+def find_game_window(title_substring="Luminora"):
     found_hwnd = None
     def enum_windows_callback(hwnd, extra):
         nonlocal found_hwnd
@@ -47,8 +47,8 @@ def find_game_window(title_substring="Terraria 2.5D"):
     return found_hwnd
 
 def run_playtest():
-    print("[1/5] Launching Terraria25D_Standalone.exe in live mode...")
-    exe_path = os.path.abspath("Terraria25D_Standalone.exe")
+    print("[1/5] Launching Luminora_Standalone.exe in live mode...")
+    exe_path = os.path.abspath("Luminora_Standalone.exe")
     if not os.path.exists(exe_path):
         print(f"ERROR: {exe_path} not found!")
         return False

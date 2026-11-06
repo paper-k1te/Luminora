@@ -493,7 +493,7 @@ namespace Entities
             float accel = isGrounded ? 30.0f : 15.0f;
             velocity.x = Mathf.MoveTowards(velocity.x, targetVX, accel * dt);
 
-            // Terraria 1-Block Step Climbing for Zombie
+            // Luminora 1-Block Step Climbing for Zombie
             HandleZombieStepClimbing(dt);
 
             // Apply movement
@@ -661,7 +661,7 @@ namespace Entities
             // Spawn death particles
             SpawnDeathParticles();
 
-            // Terraria Authentic Loot Drops
+            // Luminora Authentic Loot Drops
             DropLoot();
 
             // Clean up entity

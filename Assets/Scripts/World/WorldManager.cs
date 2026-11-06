@@ -184,7 +184,7 @@ namespace World
                     SaveManager.Instance?.RecordBlockModification(worldX, worldY, type, isWall: false);
                     WorldSaveSystem.RegisterBlockChange(worldX, worldY, type);
 
-                    // Terraria dual-layer logic: if placing foreground block where background wall is empty, adapt background wall
+                    // Luminora dual-layer logic: if placing foreground block where background wall is empty, adapt background wall
                     if (type != BlockType.Air && chunk.GetWall(localX, worldY) == BlockType.Air)
                     {
                         BlockType matchingWall = BlockRegistry.GetMatchingWallType(type);

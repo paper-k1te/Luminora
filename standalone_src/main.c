@@ -1001,7 +1001,7 @@ static void initGame(void) {
     g_CamX = g_Player.x;
     g_CamY = g_Player.y;
 
-    showNotification(LOC("欢迎来到 Terraria 2.5D！按 [H] 查看指南，[F5] 快速保存。", "Welcome to Terraria 2.5D! Press [H] for Help, [F5] to Save."), 1.0f, 0.85f, 0.3f);
+    showNotification(LOC("欢迎来到 Luminora｜流明洛原！按 [H] 查看指南，[F5] 快速保存。", "Welcome to Luminora! Press [H] for Help, [F5] to Save."), 1.0f, 0.85f, 0.3f);
 }
 
 
@@ -2445,7 +2445,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.lpfnWndProc = WindowProc;
     wc.hInstance = hInstance;
     wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.lpszClassName = "Terraria25DSandboxClass";
+    wc.lpszClassName = "LuminoraSandboxClass";
     RegisterClassEx(&wc);
 
     RECT wr = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
@@ -2453,8 +2453,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     HWND hwnd = CreateWindowEx(
         0,
-        "Terraria25DSandboxClass",
-        "Terraria 2.5D Open Sandbox World",
+        "LuminoraSandboxClass",
+        "Luminora | 流明洛原",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         CW_USEDEFAULT, CW_USEDEFAULT,
         wr.right - wr.left, wr.bottom - wr.top,

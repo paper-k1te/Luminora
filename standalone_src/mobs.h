@@ -354,7 +354,7 @@ void updateMobs(float dt, float playerX, float playerY) {
             float accel = m->isGrounded ? 32.0f : 16.0f;
             m->vx += (targetVX - m->vx) * accel * dt;
 
-            // Terraria 1-Block Auto Step Climbing for Zombie
+            // Luminora 1-Block Auto Step Climbing for Zombie
             if (m->isGrounded && fabsf(m->vx) > 0.2f) {
                 int checkX = (m->vx > 0.0f) ? (int)floorf(m->x + m->width * 0.5f + 0.15f)
                                             : (int)floorf(m->x - m->width * 0.5f - 0.15f);
@@ -716,7 +716,7 @@ void renderMobs(float daylight, float camX, float camY) {
             glVertex3f( 0.06f,             0.48f, 0.0f);
             glEnd();
 
-            // Horizontal Outstretched Arms (Terraria / Minecraft Zombie classic pose!)
+            // Horizontal Outstretched Arms (Luminora / Minecraft Zombie classic pose!)
             float armLurch = sinf(m->animTimer * 4.0f) * 0.04f;
             // Sleeve
             glColor3f(cr, cg, cb);
@@ -865,7 +865,7 @@ bool checkMobAttackEx(float clickWorldX, float clickWorldY, float damage, float 
                 );
             }
 
-            // Authentic Terraria Loot Drops:
+            // Authentic Luminora Loot Drops:
             if (hitMob->type == MOB_SLIME) {
                 // Slime drops authentic Gel (represented by Glow Shroom)
                 spawnDroppedItem(hitMob->x, hitMob->y + 0.4f, BLOCK_GLOW_SHROOM, 2);

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace Player
 {
     /// <summary>
-    /// Smooth 2.5D camera controller tailored for Terraria-like side-scrolling sandbox gameplay.
+    /// Smooth 2.5D camera controller tailored for Luminora-like side-scrolling sandbox gameplay.
     /// Features:
     /// - Smooth position damping (Vector3.SmoothDamp)
     /// - Dynamic horizontal lookahead in player movement / facing direction

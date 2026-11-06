@@ -14,6 +14,7 @@
 
 #include "font_render.h"
 #include "localization.h"
+#include "save_system.h"
 
 // Mob System Forward Declarations
 void initMobs(void);
@@ -101,7 +102,7 @@ static BlockDef g_BlockDefs[BLOCK_TYPE_COUNT] = {
     { "Grass Block",    "草方块",     "泥土",       0.26f, 0.68f, 0.22f, 0.6f, true,  false, false, 0,0,0 },
     { "Dirt Block",     "泥土",       "泥土",       0.52f, 0.35f, 0.22f, 0.5f, true,  false, false, 0,0,0 },
     { "Stone Block",    "石块",       "原石",       0.50f, 0.52f, 0.54f, 1.5f, true,  false, false, 0,0,0 },
-    { "Wood Log",       "原木",       "原木",       0.58f, 0.38f, 0.20f, 1.0f, true,  false, false, 0,0,0 },
+    { "Wood Log",       "原木",       "原木",       0.58f, 0.38f, 0.20f, 1.0f, false, true,  false, 0,0,0 },
     { "Leaves",         "树叶",       "树叶",       0.18f, 0.55f, 0.20f, 0.3f, true,  true,  false, 0,0,0 },
     { "Sand Block",     "沙块",       "沙块",       0.88f, 0.78f, 0.52f, 0.4f, true,  false, false, 0,0,0 },
     { "Sandstone",      "砂岩",       "砂岩",       0.75f, 0.64f, 0.42f, 1.2f, true,  false, false, 0,0,0 },
@@ -286,6 +287,11 @@ typedef struct {
     float moveSpeed;
     float jumpSpeed;
     float walkCycle;
+    float health;
+    float maxHealth;
+    float hurtTimer;
+    bool isDead;
+    float deathTimer;
 } Player;
 
 static Player g_Player;
@@ -551,106 +557,7 @@ static void generateWorld(int seed) {
 // ============================================================================
 #define SAVE_MAGIC 0x54455252 // "TERR"
 
-static bool saveGame(void) {
-    FILE* f = fopen("savegame.bin", "wb");
-    if (!f) return false;
 
-    unsigned int magic = SAVE_MAGIC;
-    int version = 1;
-    fwrite(&magic, sizeof(unsigned int), 1, f);
-    fwrite(&version, sizeof(int), 1, f);
-
-    fwrite(&g_Player.x, sizeof(float), 1, f);
-    fwrite(&g_Player.y, sizeof(float), 1, f);
-    fwrite(&g_Player.vx, sizeof(float), 1, f);
-    fwrite(&g_Player.vy, sizeof(float), 1, f);
-    fwrite(&g_Player.isFacingRight, sizeof(bool), 1, f);
-
-    fwrite(&g_ActiveSlot, sizeof(int), 1, f);
-    fwrite(g_Hotbar, sizeof(InventorySlot), HOTBAR_SLOTS, f);
-
-    fwrite(&g_WorldTime, sizeof(float), 1, f);
-    int tutStep = (int)g_TutorialStep;
-    fwrite(&tutStep, sizeof(int), 1, f);
-    fwrite(&g_MinedCount, sizeof(int), 1, f);
-
-    fwrite(&g_ModifiedBlockCount, sizeof(int), 1, f);
-    if (g_ModifiedBlockCount > 0) {
-        fwrite(g_ModifiedBlocks, sizeof(BlockDelta), g_ModifiedBlockCount, f);
-    }
-
-    int currentLang = (int)getLanguage();
-    fwrite(&currentLang, sizeof(int), 1, f);
-
-    fclose(f);
-    showNotification(LOC("世界保存成功！[F5]", "World Saved! [F5]"), 0.2f, 0.95f, 0.4f);
-    return true;
-}
-
-static bool loadGame(void) {
-    FILE* f = fopen("savegame.bin", "rb");
-    if (!f) {
-        showNotification(LOC("未找到世界存档文件！", "No save file found!"), 0.95f, 0.3f, 0.2f);
-        return false;
-    }
-
-    unsigned int magic = 0;
-    int version = 0;
-    if (fread(&magic, sizeof(unsigned int), 1, f) != 1 || magic != SAVE_MAGIC) {
-        fclose(f);
-        showNotification(LOC("世界存档文件已损坏！", "Save file corrupted!"), 0.95f, 0.2f, 0.2f);
-        return false;
-    }
-    fread(&version, sizeof(int), 1, f);
-
-    generateWorld(1337);
-
-    fread(&g_Player.x, sizeof(float), 1, f);
-    fread(&g_Player.y, sizeof(float), 1, f);
-    fread(&g_Player.vx, sizeof(float), 1, f);
-    fread(&g_Player.vy, sizeof(float), 1, f);
-    fread(&g_Player.isFacingRight, sizeof(bool), 1, f);
-
-    fread(&g_ActiveSlot, sizeof(int), 1, f);
-    fread(g_Hotbar, sizeof(InventorySlot), HOTBAR_SLOTS, f);
-
-    fread(&g_WorldTime, sizeof(float), 1, f);
-    int tutStep = 0;
-    fread(&tutStep, sizeof(int), 1, f);
-    g_TutorialStep = (TutorialStep)tutStep;
-    fread(&g_MinedCount, sizeof(int), 1, f);
-
-    int count = 0;
-    fread(&count, sizeof(int), 1, f);
-    if (count > 0 && count <= MAX_MODIFIED_BLOCKS) {
-        fread(g_ModifiedBlocks, sizeof(BlockDelta), count, f);
-        g_ModifiedBlockCount = count;
-        for (int i = 0; i < count; i++) {
-            int x = g_ModifiedBlocks[i].x;
-            int y = g_ModifiedBlocks[i].y;
-            if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
-                if (g_ModifiedBlocks[i].isWall) {
-                    g_WallWorld[x][y] = g_ModifiedBlocks[i].blockType;
-                } else {
-                    g_World[x][y] = g_ModifiedBlocks[i].blockType;
-                }
-            }
-        }
-    }
-
-    int savedLang = 0;
-    if (fread(&savedLang, sizeof(int), 1, f) == 1) {
-        if (savedLang == LANG_ZH || savedLang == LANG_EN) {
-            setLanguage((Language)savedLang);
-        }
-    }
-
-    fclose(f);
-    g_CamX = g_Player.x;
-    g_CamY = g_Player.y;
-    showNotification(LOC("世界读取成功！[F9]", "World Loaded! [F9]"), 0.3f, 0.85f, 1.0f);
-    return true;
-}
 
 static void spawnParticle(float x, float y, float r, float g, float b, float vx, float vy) {
     for (int i = 0; i < MAX_PARTICLES; i++) {
@@ -738,25 +645,318 @@ static void drawBorder2D(float x, float y, float w, float h, float r, float g, f
     glLineWidth(1.0f);
 }
 
-#include "mobs.h"
 #include "menu_creative.h"
 #include "creative_inventory.h"
 #include "crafting_system.h"
+#include "mobs.h"
+
+static bool saveWorldSlot(int slotIdx) {
+    char path[128];
+    getSlotFilePath(slotIdx, path, sizeof(path));
+
+    FILE* f = fopen(path, "wb");
+    if (!f) return false;
+
+    SaveFileHeader hdr;
+    memset(&hdr, 0, sizeof(hdr));
+    hdr.magic = SAVE_MAGIC_V2;
+    hdr.version = 2;
+    snprintf(hdr.worldName, sizeof(hdr.worldName), "%s", g_CurrentWorldName);
+    hdr.mode = (int)getGameMode();
+    hdr.seed = g_Seed;
+    hdr.timestamp = (long long)time(NULL);
+    hdr.playerHealth = g_Player.health;
+    hdr.playerMaxHealth = g_Player.maxHealth;
+    hdr.playerX = g_Player.x;
+    hdr.playerY = g_Player.y;
+    hdr.playerVx = g_Player.vx;
+    hdr.playerVy = g_Player.vy;
+    hdr.isFacingRight = g_Player.isFacingRight;
+    hdr.worldTime = g_WorldTime;
+    hdr.tutorialStep = (int)g_TutorialStep;
+    hdr.minedCount = g_MinedCount;
+    hdr.activeSlot = g_ActiveSlot;
+
+    for (int i = 0; i < 9; i++) {
+        hdr.hotbar[i].type = g_Hotbar[i].type;
+        hdr.hotbar[i].count = g_Hotbar[i].count;
+    }
+    for (int i = 0; i < 27; i++) {
+        hdr.backpack[i].type = g_Backpack[i].type;
+        hdr.backpack[i].count = g_Backpack[i].count;
+    }
+    hdr.modifiedBlockCount = g_ModifiedBlockCount;
+
+    fwrite(&hdr, sizeof(SaveFileHeader), 1, f);
+    if (g_ModifiedBlockCount > 0) {
+        fwrite(g_ModifiedBlocks, sizeof(BlockDelta), g_ModifiedBlockCount, f);
+    }
+    fclose(f);
+
+    if (slotIdx == 0) {
+        FILE* lf = fopen("savegame.bin", "wb");
+        if (lf) {
+            unsigned int magic = 0x54455252;
+            int version = 1;
+            fwrite(&magic, sizeof(unsigned int), 1, lf);
+            fwrite(&version, sizeof(int), 1, lf);
+            fwrite(&g_Player.x, sizeof(float), 1, lf);
+            fwrite(&g_Player.y, sizeof(float), 1, lf);
+            fwrite(&g_Player.vx, sizeof(float), 1, lf);
+            fwrite(&g_Player.vy, sizeof(float), 1, lf);
+            fwrite(&g_Player.isFacingRight, sizeof(bool), 1, lf);
+            fwrite(&g_ActiveSlot, sizeof(int), 1, lf);
+            fwrite(g_Hotbar, sizeof(InventorySlot), HOTBAR_SLOTS, lf);
+            fwrite(&g_WorldTime, sizeof(float), 1, lf);
+            int tutStep = (int)g_TutorialStep;
+            fwrite(&tutStep, sizeof(int), 1, lf);
+            fwrite(&g_MinedCount, sizeof(int), 1, lf);
+            fwrite(&g_ModifiedBlockCount, sizeof(int), 1, lf);
+            if (g_ModifiedBlockCount > 0) fwrite(g_ModifiedBlocks, sizeof(BlockDelta), g_ModifiedBlockCount, lf);
+            int currentLang = (int)getLanguage();
+            fwrite(&currentLang, sizeof(int), 1, lf);
+            fclose(lf);
+        }
+    }
+
+    char msg[128];
+    snprintf(msg, sizeof(msg), LOC("世界已保存至存档位 %d！[F5]", "World Saved to Slot %d! [F5]"), slotIdx + 1);
+    showNotification(msg, 0.2f, 0.95f, 0.4f);
+    return true;
+}
+
+static bool loadWorldSlot(int slotIdx) {
+    char path[128];
+    getSlotFilePath(slotIdx, path, sizeof(path));
+
+    FILE* f = fopen(path, "rb");
+    if (!f) {
+        if (slotIdx == 0) {
+            FILE* lf = fopen("savegame.bin", "rb");
+            if (lf) {
+                fclose(lf);
+                FILE* f2 = fopen("savegame.bin", "rb");
+                unsigned int magic = 0; int version = 0;
+                fread(&magic, sizeof(unsigned int), 1, f2);
+                fread(&version, sizeof(int), 1, f2);
+                generateWorld(1337);
+                fread(&g_Player.x, sizeof(float), 1, f2);
+                fread(&g_Player.y, sizeof(float), 1, f2);
+                fread(&g_Player.vx, sizeof(float), 1, f2);
+                fread(&g_Player.vy, sizeof(float), 1, f2);
+                fread(&g_Player.isFacingRight, sizeof(bool), 1, f2);
+                fread(&g_ActiveSlot, sizeof(int), 1, f2);
+                fread(g_Hotbar, sizeof(InventorySlot), HOTBAR_SLOTS, f2);
+                fread(&g_WorldTime, sizeof(float), 1, f2);
+                int tutStep = 0; fread(&tutStep, sizeof(int), 1, f2); g_TutorialStep = (TutorialStep)tutStep;
+                fread(&g_MinedCount, sizeof(int), 1, f2);
+                int count = 0; fread(&count, sizeof(int), 1, f2);
+                if (count > 0 && count <= MAX_MODIFIED_BLOCKS) {
+                    fread(g_ModifiedBlocks, sizeof(BlockDelta), count, f2);
+                    g_ModifiedBlockCount = count;
+                    for (int i = 0; i < count; i++) {
+                        int x = g_ModifiedBlocks[i].x; int y = g_ModifiedBlocks[i].y;
+                        if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
+                            if (g_ModifiedBlocks[i].isWall) g_WallWorld[x][y] = g_ModifiedBlocks[i].blockType;
+                            else g_World[x][y] = g_ModifiedBlocks[i].blockType;
+                        }
+                    }
+                }
+                fclose(f2);
+                g_Player.health = 100.0f; g_Player.maxHealth = 100.0f; g_Player.isDead = false;
+                showNotification(LOC("已读取旧版世界存档！", "Loaded legacy save!"), 0.35f, 0.95f, 0.45f);
+                return true;
+            }
+        }
+        showNotification(LOC("未找到世界存档文件！", "Save file not found!"), 0.95f, 0.3f, 0.2f);
+        return false;
+    }
+
+    SaveFileHeader hdr;
+    if (fread(&hdr, sizeof(SaveFileHeader), 1, f) != 1 || hdr.magic != SAVE_MAGIC_V2) {
+        fclose(f);
+        showNotification(LOC("世界存档文件已损坏！", "Save file corrupted!"), 0.95f, 0.2f, 0.2f);
+        return false;
+    }
+
+    g_ActiveSaveSlot = slotIdx;
+    snprintf(g_CurrentWorldName, sizeof(g_CurrentWorldName), "%s", hdr.worldName);
+    g_Seed = hdr.seed;
+    generateWorld(hdr.seed);
+    initMobs();
+
+    setGameMode((hdr.mode == 0) ? MODE_SURVIVAL : MODE_CREATIVE);
+
+    g_Player.x = hdr.playerX;
+    g_Player.y = hdr.playerY;
+    g_Player.vx = hdr.playerVx;
+    g_Player.vy = hdr.playerVy;
+    g_Player.isFacingRight = hdr.isFacingRight;
+    g_Player.health = (hdr.playerHealth > 0.0f) ? hdr.playerHealth : 100.0f;
+    g_Player.maxHealth = (hdr.playerMaxHealth > 0.0f) ? hdr.playerMaxHealth : 100.0f;
+    g_Player.hurtTimer = 0.0f;
+    g_Player.isDead = false;
+    g_Player.deathTimer = 0.0f;
+
+    g_WorldTime = hdr.worldTime;
+    g_TutorialStep = (TutorialStep)hdr.tutorialStep;
+    g_MinedCount = hdr.minedCount;
+    g_ActiveSlot = hdr.activeSlot;
+
+    for (int i = 0; i < 9; i++) {
+        g_Hotbar[i].type = hdr.hotbar[i].type;
+        g_Hotbar[i].count = hdr.hotbar[i].count;
+    }
+    for (int i = 0; i < 27; i++) {
+        g_Backpack[i].type = hdr.backpack[i].type;
+        g_Backpack[i].count = hdr.backpack[i].count;
+    }
+
+    int count = hdr.modifiedBlockCount;
+    g_ModifiedBlockCount = 0;
+    if (count > 0 && count <= MAX_MODIFIED_BLOCKS) {
+        fread(g_ModifiedBlocks, sizeof(BlockDelta), count, f);
+        g_ModifiedBlockCount = count;
+        for (int i = 0; i < count; i++) {
+            int x = g_ModifiedBlocks[i].x;
+            int y = g_ModifiedBlocks[i].y;
+            if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
+                if (g_ModifiedBlocks[i].isWall) {
+                    g_WallWorld[x][y] = g_ModifiedBlocks[i].blockType;
+                } else {
+                    g_World[x][y] = g_ModifiedBlocks[i].blockType;
+                }
+            }
+        }
+    }
+    fclose(f);
+
+    char msg[128];
+    snprintf(msg, sizeof(msg), LOC("世界已成功读取！(%s)", "World loaded! (%s)"), g_CurrentWorldName);
+    showNotification(msg, 0.35f, 0.95f, 0.45f);
+    return true;
+}
+
+static bool saveGame(void) {
+    return saveWorldSlot(g_ActiveSaveSlot);
+}
+
+static bool loadGame(void) {
+    return loadWorldSlot(g_ActiveSaveSlot);
+}
+
+static void startNewWorld(int slotIdx, const char* name, int mode, int seed) {
+    g_ActiveSaveSlot = slotIdx;
+    snprintf(g_CurrentWorldName, sizeof(g_CurrentWorldName), "%s", name);
+    g_Seed = seed;
+    g_ModifiedBlockCount = 0;
+    generateWorld(seed);
+    initMobs();
+
+    setGameMode((mode == 0) ? MODE_SURVIVAL : MODE_CREATIVE);
+
+    int spawnX = WORLD_WIDTH / 2;
+    int spawnY = getSurfaceHeight(spawnX, seed) + 2;
+    g_Player.x = (float)spawnX;
+    g_Player.y = (float)spawnY;
+    g_Player.vx = 0.0f;
+    g_Player.vy = 0.0f;
+    g_Player.health = 100.0f;
+    g_Player.maxHealth = 100.0f;
+    g_Player.hurtTimer = 0.0f;
+    g_Player.isDead = false;
+    g_Player.deathTimer = 0.0f;
+
+    // Requirement 3: In Survival Mode start from 0 items (empty hotbar & backpack)
+    if (mode == 0) { // Survival
+        for (int i = 0; i < HOTBAR_SLOTS; i++) {
+            g_Hotbar[i].type = BLOCK_AIR;
+            g_Hotbar[i].count = 0;
+        }
+        for (int i = 0; i < BACKPACK_SLOTS; i++) {
+            g_Backpack[i].type = BLOCK_AIR;
+            g_Backpack[i].count = 0;
+        }
+    } else { // Creative
+        g_Hotbar[0] = (InventorySlot){ ITEM_TOOL_DIAMOND_PICKAXE, 1 };
+        g_Hotbar[1] = (InventorySlot){ ITEM_TOOL_DIAMOND_SWORD, 1 };
+        g_Hotbar[2] = (InventorySlot){ BLOCK_DIRT, 999 };
+        g_Hotbar[3] = (InventorySlot){ BLOCK_STONE, 999 };
+        g_Hotbar[4] = (InventorySlot){ BLOCK_TORCH, 999 };
+        g_Hotbar[5] = (InventorySlot){ BLOCK_GLASS, 999 };
+        g_Hotbar[6] = (InventorySlot){ BLOCK_BRICK, 999 };
+        g_Hotbar[7] = (InventorySlot){ BLOCK_GLOW_SHROOM, 999 };
+        g_Hotbar[8] = (InventorySlot){ BLOCK_WOOD_PLANK, 999 };
+        for (int i = 0; i < BACKPACK_SLOTS; i++) {
+            g_Backpack[i].type = BLOCK_AIR;
+            g_Backpack[i].count = 0;
+        }
+    }
+
+    saveWorldSlot(slotIdx);
+}
+
+void onPlayerHurt(float damage, float sourceX) {
+    if (getGameMode() != MODE_SURVIVAL) return;
+    if (g_Player.isDead || g_Player.hurtTimer > 0.0f) return;
+
+    g_Player.health -= damage;
+    g_Player.hurtTimer = 0.65f;
+    playSound(SFX_HIT);
+
+    float pushDir = (g_Player.x >= sourceX) ? 1.0f : -1.0f;
+    g_Player.vx = pushDir * 6.5f;
+    g_Player.vy = 5.8f;
+
+    char dmgStr[16];
+    snprintf(dmgStr, sizeof(dmgStr), "-%d", (int)damage);
+    spawnFloatingText(dmgStr, g_Player.x, g_Player.y + 1.8f, 1.0f, 0.2f, 0.2f);
+
+    if (g_Player.health <= 0.0f) {
+        g_Player.health = 0.0f;
+        g_Player.isDead = true;
+        g_Player.deathTimer = 0.0f;
+        playSound(SFX_KILL);
+    }
+}
+
+static void respawnPlayer(void) {
+    int spawnX = WORLD_WIDTH / 2;
+    int spawnY = getSurfaceHeight(spawnX, g_Seed) + 2;
+    g_Player.x = (float)spawnX;
+    g_Player.y = (float)spawnY;
+    g_Player.vx = 0.0f;
+    g_Player.vy = 0.0f;
+    g_Player.health = g_Player.maxHealth;
+    g_Player.hurtTimer = 1.0f;
+    g_Player.isDead = false;
+    g_Player.deathTimer = 0.0f;
+    playSound(SFX_CRAFT);
+    showNotification(LOC("你已重新复活！", "You have respawned!"), 0.35f, 0.95f, 0.45f);
+}
+
 
 static void initGame(void) {
+    initSaveSystem();
     srand(1337);
     generateWorld(1337);
     initMobs();
 
-    g_Hotbar[0] = (InventorySlot){ ITEM_TOOL_DIAMOND_PICKAXE, 1 };
-    g_Hotbar[1] = (InventorySlot){ ITEM_TOOL_DIAMOND_SWORD, 1 };
-    g_Hotbar[2] = (InventorySlot){ BLOCK_DIRT, 64 };
-    g_Hotbar[3] = (InventorySlot){ BLOCK_STONE, 32 };
-    g_Hotbar[4] = (InventorySlot){ BLOCK_TORCH, 24 };
-    g_Hotbar[5] = (InventorySlot){ BLOCK_GLASS, 16 };
-    g_Hotbar[6] = (InventorySlot){ BLOCK_BRICK, 24 };
-    g_Hotbar[7] = (InventorySlot){ BLOCK_GLOW_SHROOM, 8 };
-    g_Hotbar[8] = (InventorySlot){ BLOCK_SAND, 32 };
+    g_Player.health = 100.0f;
+    g_Player.maxHealth = 100.0f;
+    g_Player.hurtTimer = 0.0f;
+    g_Player.isDead = false;
+    g_Player.deathTimer = 0.0f;
+
+    // Requirement 3: In Survival Mode start from 0 items (empty hotbar & backpack)
+    for (int i = 0; i < HOTBAR_SLOTS; i++) {
+        g_Hotbar[i].type = BLOCK_AIR;
+        g_Hotbar[i].count = 0;
+    }
+    for (int i = 0; i < BACKPACK_SLOTS; i++) {
+        g_Backpack[i].type = BLOCK_AIR;
+        g_Backpack[i].count = 0;
+    }
 
     int spawnX = WORLD_WIDTH / 2;
     int spawnY = getSurfaceHeight(spawnX, 1337) + 2;
@@ -780,6 +980,21 @@ static void initGame(void) {
 
 
 static void updatePhysics(float dt) {
+    if (g_Player.hurtTimer > 0.0f) {
+        g_Player.hurtTimer -= dt;
+        if (g_Player.hurtTimer < 0.0f) g_Player.hurtTimer = 0.0f;
+    }
+
+    if (g_Player.isDead) {
+        g_Player.deathTimer += dt;
+        g_Player.vx = 0.0f;
+        if (!g_Player.isGrounded) {
+            g_Player.vy -= 34.0f * dt;
+            g_Player.y += g_Player.vy * dt;
+        }
+        return;
+    }
+
     if (isCreativeFlying()) {
         updateFlightPhysics(dt);
         return;
@@ -1181,10 +1396,133 @@ static void setPerspective(float fovy, float aspect, float zNear, float zFar) {
     glMultMatrixf(m);
 }
 
-static void renderCube25D(float x, float y, int blockType, bool topCull, bool btmCull, bool leftCull, bool rightCull, float lightFactor) {
+typedef enum {
+    TORCH_DIR_FLOOR = 0,
+    TORCH_DIR_LEFT_WALL,
+    TORCH_DIR_RIGHT_WALL,
+    TORCH_DIR_BACK_WALL
+} TorchOrientation;
+
+static inline TorchOrientation getTorchOrientation(int x, int y) {
+    if (y - 1 >= 0 && isSolidBlock(x, y - 1)) return TORCH_DIR_FLOOR;
+    if (x - 1 >= 0 && isSolidBlock(x - 1, y)) return TORCH_DIR_LEFT_WALL;
+    if (x + 1 < WORLD_WIDTH && isSolidBlock(x + 1, y)) return TORCH_DIR_RIGHT_WALL;
+    return TORCH_DIR_BACK_WALL;
+}
+
+static void renderTorch25D(float x, float y, int orientation, float lightFactor) {
     float u0, v0, u1, v1;
-    float zFront = 0.0f;
-    float zBack = -BLOCK_DEPTH;
+    int texIdx = GetBlockFaceTextureIndex(BLOCK_WOOD, 0);
+    GetAtlasTileUV(texIdx, &u0, &v0, &u1, &v1);
+
+    float sx0 = x + 0.43f, sx1 = x + 0.57f;
+    float sy0 = y, sy1 = y + 0.58f;
+    float sz = 0.01f;
+
+    if (orientation == TORCH_DIR_LEFT_WALL) {
+        sx0 = x + 0.04f; sx1 = x + 0.36f;
+        sy0 = y + 0.22f; sy1 = y + 0.68f;
+    } else if (orientation == TORCH_DIR_RIGHT_WALL) {
+        sx0 = x + 0.96f; sx1 = x + 0.64f;
+        sy0 = y + 0.22f; sy1 = y + 0.68f;
+    } else if (orientation == TORCH_DIR_BACK_WALL) {
+        sx0 = x + 0.43f; sx1 = x + 0.57f;
+        sy0 = y + 0.15f; sy1 = y + 0.68f;
+    }
+
+    // Wooden Stick
+    glColor3f(0.55f * lightFactor, 0.35f * lightFactor, 0.20f * lightFactor);
+    glBegin(GL_QUADS);
+    glTexCoord2f(u0, v1); glVertex3f(sx0, sy0, sz);
+    glTexCoord2f(u1, v1); glVertex3f(sx1, sy0, sz);
+    glTexCoord2f(u1, v0); glVertex3f(sx1, sy1, sz);
+    glTexCoord2f(u0, v0); glVertex3f(sx0, sy1, sz);
+    glEnd();
+
+    // Animated Flame
+    float fx = (sx0 + sx1) * 0.5f;
+    float fy = sy1 + 0.04f;
+    float flicker = sinf(g_WorldTime * 80.0f + x * 2.7f + y * 1.9f) * 0.03f;
+    float flameW = 0.12f + flicker;
+    float flameH = 0.20f + flicker;
+
+    glDisable(GL_TEXTURE_2D);
+
+    // Warm Orange Flame Glow Outer
+    glColor4f(1.0f, 0.52f, 0.12f, 0.60f);
+    glBegin(GL_QUADS);
+    glVertex3f(fx - flameW * 1.4f, fy - flameH * 0.4f, sz + 0.02f);
+    glVertex3f(fx + flameW * 1.4f, fy - flameH * 0.4f, sz + 0.02f);
+    glVertex3f(fx + flameW * 1.4f, fy + flameH * 1.2f, sz + 0.02f);
+    glVertex3f(fx - flameW * 1.4f, fy + flameH * 1.2f, sz + 0.02f);
+    glEnd();
+
+    // Bright Golden Inner Flame Core
+    glColor4f(1.0f, 0.95f, 0.35f, 0.95f);
+    glBegin(GL_QUADS);
+    glVertex3f(fx - flameW * 0.65f, fy - flameH * 0.2f, sz + 0.03f);
+    glVertex3f(fx + flameW * 0.65f, fy - flameH * 0.2f, sz + 0.03f);
+    glVertex3f(fx + flameW * 0.65f, fy + flameH * 0.85f, sz + 0.03f);
+    glVertex3f(fx - flameW * 0.65f, fy + flameH * 0.85f, sz + 0.03f);
+    glEnd();
+
+    glEnable(GL_TEXTURE_2D);
+}
+
+static void renderGlowShroom25D(float x, float y, float lightFactor) {
+    float u0, v0, u1, v1;
+    int texIdx = GetBlockFaceTextureIndex(BLOCK_GLOW_SHROOM, 0);
+    GetAtlasTileUV(texIdx, &u0, &v0, &u1, &v1);
+
+    glColor3f(0.6f * lightFactor, 0.75f * lightFactor, 0.8f * lightFactor);
+    glBegin(GL_QUADS);
+    glTexCoord2f(u0, v1); glVertex3f(x + 0.42f, y, 0.01f);
+    glTexCoord2f(u1, v1); glVertex3f(x + 0.58f, y, 0.01f);
+    glTexCoord2f(u1, v0); glVertex3f(x + 0.58f, y + 0.35f, 0.01f);
+    glTexCoord2f(u0, v0); glVertex3f(x + 0.42f, y + 0.35f, 0.01f);
+    glEnd();
+
+    float capL = 1.15f;
+    glColor3f(0.2f * capL, 0.9f * capL, 0.98f * capL);
+    glBegin(GL_QUADS);
+    glTexCoord2f(u0, v1); glVertex3f(x + 0.18f, y + 0.30f, 0.02f);
+    glTexCoord2f(u1, v1); glVertex3f(x + 0.82f, y + 0.30f, 0.02f);
+    glTexCoord2f(u1, v0); glVertex3f(x + 0.72f, y + 0.65f, 0.02f);
+    glTexCoord2f(u0, v0); glVertex3f(x + 0.28f, y + 0.65f, 0.02f);
+    glEnd();
+}
+
+static void renderCactus25D(float x, float y, float lightFactor) {
+    float u0, v0, u1, v1;
+    int texIdx = GetBlockFaceTextureIndex(BLOCK_CACTUS, 0);
+    GetAtlasTileUV(texIdx, &u0, &v0, &u1, &v1);
+
+    glColor3f(lightFactor, lightFactor, lightFactor);
+    glBegin(GL_QUADS);
+    glTexCoord2f(u0, v1); glVertex3f(x + 0.25f, y, 0.01f);
+    glTexCoord2f(u1, v1); glVertex3f(x + 0.75f, y, 0.01f);
+    glTexCoord2f(u1, v0); glVertex3f(x + 0.75f, y + 1.0f, 0.01f);
+    glTexCoord2f(u0, v0); glVertex3f(x + 0.25f, y + 1.0f, 0.01f);
+    glEnd();
+}
+static void renderCube25D(float x, float y, int blockType, bool topCull, bool btmCull, bool leftCull, bool rightCull, float lightFactor) {
+    if (blockType == BLOCK_TORCH) {
+        int ori = (int)getTorchOrientation((int)x, (int)y);
+        renderTorch25D(x, y, ori, lightFactor);
+        return;
+    }
+    if (blockType == BLOCK_GLOW_SHROOM) {
+        renderGlowShroom25D(x, y, lightFactor);
+        return;
+    }
+    if (blockType == BLOCK_CACTUS) {
+        renderCactus25D(x, y, lightFactor);
+        return;
+    }
+
+    float u0, v0, u1, v1;
+    float zFront = (blockType == BLOCK_WOOD) ? -0.15f : 0.0f;
+    float zBack = (blockType == BLOCK_WOOD) ? -0.55f : -BLOCK_DEPTH;
 
     // Front Face (Z = 0)
     int frontTex = GetBlockFaceTextureIndex(blockType, 0);
@@ -1813,6 +2151,55 @@ static void renderHUD(void) {
         drawText(sx + 4, sy + 14, numBuf, 0.7f, 0.7f, 0.7f, false);
     }
 
+    // 0. Player Health Bar (Survival Mode)
+    if (getGameMode() == MODE_SURVIVAL) {
+        float barX = 20.0f;
+        float barY = 20.0f;
+        float barW = 200.0f;
+        float barH = 22.0f;
+
+        // Background
+        drawQuad2D(barX, barY, barW, barH, 0.12f, 0.14f, 0.18f, 0.92f);
+        drawBorder2D(barX, barY, barW, barH, 0.40f, 0.45f, 0.55f, 1.5f);
+
+        // Fill
+        float hpPct = g_Player.health / (g_Player.maxHealth > 0.0f ? g_Player.maxHealth : 100.0f);
+        if (hpPct < 0.0f) hpPct = 0.0f;
+        if (hpPct > 1.0f) hpPct = 1.0f;
+        float fillW = (barW - 4.0f) * hpPct;
+        if (fillW > 0.0f) {
+            float fR = (g_Player.hurtTimer > 0.0f) ? 1.0f : 0.90f;
+            float fG = (g_Player.hurtTimer > 0.0f) ? 0.75f : 0.20f;
+            float fB = (g_Player.hurtTimer > 0.0f) ? 0.75f : 0.20f;
+            drawQuad2D(barX + 2.0f, barY + 2.0f, fillW, barH - 4.0f, fR, fG, fB, 0.95f);
+        }
+
+        // Text
+        char hpBuf[64];
+        snprintf(hpBuf, sizeof(hpBuf), "❤️ %s: %d / %d", LOC("生命值", "HP"), (int)ceilf(g_Player.health), (int)g_Player.maxHealth);
+        drawText(barX + 12.0f, barY + 16.0f, hpBuf, 1.0f, 1.0f, 1.0f, true);
+    }
+
+    // Game Over Overlay
+    if (g_Player.isDead) {
+        drawQuad2D(0, 0, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 0.45f, 0.05f, 0.05f, 0.65f);
+
+        const char* dTitle = LOC("💀 你阵亡了！", "💀 YOU DIED!");
+        float dtw = getTextWidthUTF8(dTitle, 24, true);
+        drawText(((float)WINDOW_WIDTH - dtw) * 0.5f, (float)WINDOW_HEIGHT * 0.38f, dTitle, 1.0f, 0.25f, 0.25f, true);
+
+        const char* dPrompt = LOC("[ 点击此处 或 按 R 键 立即重生 ]", "[ Click Here or Press R to Respawn ]");
+        float dpw = getTextWidthUTF8(dPrompt, 16, true);
+        float dbtnX = ((float)WINDOW_WIDTH - dpw - 40.0f) * 0.5f;
+        float dbtnY = (float)WINDOW_HEIGHT * 0.48f;
+        float dbtnW = dpw + 40.0f;
+        float dbtnH = 46.0f;
+
+        drawQuad2D(dbtnX, dbtnY, dbtnW, dbtnH, 0.22f, 0.10f, 0.10f, 0.92f);
+        drawBorder2D(dbtnX, dbtnY, dbtnW, dbtnH, 1.0f, 0.40f, 0.30f, 2.0f);
+        drawText(dbtnX + 20.0f, dbtnY + 28.0f, dPrompt, 1.0f, 0.95f, 0.40f, true);
+    }
+
     // 5. Mining Progress Bar
     if (g_MiningProgress > 0.0f) {
         float bw = 200.0f;
@@ -1920,11 +2307,15 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
                 loadGame();
             }
             if (wParam == 'R') {
-                int sx = (int)floorf(g_Player.x);
-                g_Player.y = (float)(getSurfaceHeight(sx, 1337) + 3);
-                g_Player.vx = 0.0f;
-                g_Player.vy = 0.0f;
-                showNotification(LOC("已在地面安全区域重生！", "Respawned on surface safe ground!"), 0.4f, 0.8f, 1.0f);
+                if (g_Player.isDead) {
+                    respawnPlayer();
+                } else {
+                    int sx = (int)floorf(g_Player.x);
+                    g_Player.y = (float)(getSurfaceHeight(sx, g_Seed) + 3);
+                    g_Player.vx = 0.0f;
+                    g_Player.vy = 0.0f;
+                    showNotification(LOC("已在地面安全区域重生！", "Respawned on surface safe ground!"), 0.4f, 0.8f, 1.0f);
+                }
             }
             return 0;
 
@@ -1938,6 +2329,10 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             return 0;
 
         case WM_LBUTTONDOWN:
+            if (g_Player.isDead) {
+                respawnPlayer();
+                return 0;
+            }
             g_MouseLeft = true;
             return 0;
 
@@ -2077,6 +2472,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         } else if (getGameState() == STATE_MENU) {
             renderMainMenu();
+        } else if (getGameState() == STATE_WORLDS_LIST) {
+            renderWorldsListDialog();
+        } else if (getGameState() == STATE_CREATE_WORLD) {
+            renderCreateWorldDialog();
         } else if (getGameState() == STATE_PAUSED) {
             renderHUD();
             renderPauseMenu();

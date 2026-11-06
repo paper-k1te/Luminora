@@ -892,10 +892,21 @@ namespace Crafting
                 return;
             }
 
+            // Right-click anywhere in modal clears picked-up moving slot
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
+            {
+                _inventory.ClearSelectedSlot();
+            }
+
             float startX = contentRect.x + 10f;
             float startY = contentRect.y + 10f;
 
             GUI.Label(new Rect(startX, startY, 400f, 24f), LocalizationManager.Get("🎒 玩家全部物品栏 (9 快捷栏 + 27 背包):", "🎒 Player Storage (9 Hotbar + 27 Backpack):"), _titleStyle);
+            
+            // Instruction tip
+            GUI.Label(new Rect(startX + 410f, startY + 2f, 380f, 20f), 
+                LocalizationManager.Get("💡 单击槽位拿起 / 再次单击调换或合并 [右键取消]", "💡 Click to pick up / Click another to swap or stack [RMB cancel]"), _subTitleStyle);
+
             startY += 30f;
 
             // 1. Hotbar (Slots 0 to 8)
@@ -904,6 +915,7 @@ namespace Crafting
 
             float slotSize = 64f;
             float slotGap = 8f;
+            Vector2 mousePos = Event.current.mousePosition;
 
             for (int i = 0; i < InventorySystem.HotbarSlotCount; i++)
             {
@@ -912,13 +924,23 @@ namespace Crafting
                 Rect slotRect = new Rect(sx, startY, slotSize, slotSize);
 
                 bool isActive = (i == _inventory.ActiveSlotIndex);
+                bool isSelected = (_inventory.SelectedSlotForMove == i);
+                bool isHovered = slotRect.Contains(mousePos);
+
                 GUI.Box(slotRect, GUIContent.none, _panelStyle);
 
-                if (isActive)
+                if (isSelected)
                 {
-                    GUI.color = new Color(1.0f, 0.85f, 0.25f, 1.0f);
-                    GUI.Box(new Rect(slotRect.x - 2, slotRect.y - 2, slotSize + 4, slotSize + 4), GUIContent.none);
-                    GUI.color = Color.white;
+                    float pulse = 0.5f + Mathf.Sin(Time.time * 8f) * 0.5f;
+                    DrawBorder(slotRect, 2, new Color(0.35f, 0.85f, 1.0f, pulse));
+                }
+                else if (isActive)
+                {
+                    DrawBorder(slotRect, 2, new Color(1.0f, 0.85f, 0.25f, 1.0f));
+                }
+                else if (isHovered)
+                {
+                    DrawBorder(slotRect, 1, new Color(0.8f, 0.8f, 0.9f, 0.8f));
                 }
 
                 GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 2, 20f, 16f), $"{i + 1}", _subTitleStyle);
@@ -929,6 +951,12 @@ namespace Crafting
                     if (nameShort.Length > 7) nameShort = nameShort.Substring(0, 6) + "..";
                     GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 22, slotSize - 8, 18f), nameShort, _itemLabelStyle);
                     GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 42, slotSize - 8, 18f), $"x{slot.count}", _ingredientSatisfiedStyle);
+                }
+
+                if (GUI.Button(slotRect, GUIContent.none, GUIStyle.none))
+                {
+                    _inventory.ClickSlot(i);
+                    PlayTone(600f, 0.04f, 0.2f);
                 }
             }
 
@@ -949,7 +977,20 @@ namespace Crafting
                     float sy = startY + row * (slotSize + slotGap);
                     Rect slotRect = new Rect(sx, sy, slotSize, slotSize);
 
+                    bool isSelected = (_inventory.SelectedSlotForMove == slotIdx);
+                    bool isHovered = slotRect.Contains(mousePos);
+
                     GUI.Box(slotRect, GUIContent.none, _panelStyle);
+
+                    if (isSelected)
+                    {
+                        float pulse = 0.5f + Mathf.Sin(Time.time * 8f) * 0.5f;
+                        DrawBorder(slotRect, 2, new Color(0.35f, 0.85f, 1.0f, pulse));
+                    }
+                    else if (isHovered)
+                    {
+                        DrawBorder(slotRect, 1, new Color(0.8f, 0.8f, 0.9f, 0.8f));
+                    }
 
                     if (slot != null && !slot.IsEmpty)
                     {
@@ -958,6 +999,28 @@ namespace Crafting
                         GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 20, slotSize - 8, 18f), nameShort, _itemLabelStyle);
                         GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 40, slotSize - 8, 18f), $"x{slot.count}", _ingredientSatisfiedStyle);
                     }
+
+                    if (GUI.Button(slotRect, GUIContent.none, GUIStyle.none))
+                    {
+                        _inventory.ClickSlot(slotIdx);
+                        PlayTone(600f, 0.04f, 0.2f);
+                    }
+                }
+            }
+
+            // Floating preview of picked up slot
+            if (_inventory.SelectedSlotForMove >= 0 && _inventory.SelectedSlotForMove < InventorySystem.TotalSlotCount)
+            {
+                InventorySlot selSlot = _inventory.GetSlot(_inventory.SelectedSlotForMove);
+                if (selSlot != null && !selSlot.IsEmpty)
+                {
+                    Rect floatRect = new Rect(mousePos.x + 12f, mousePos.y + 12f, 100f, 36f);
+                    GUI.Box(floatRect, GUIContent.none, _selectedRecipeCardStyle);
+                    DrawBorder(floatRect, 1, new Color(0.35f, 0.85f, 1.0f));
+                    string bName = BlockRegistry.GetBlockName(selSlot.type);
+                    if (bName.Length > 8) bName = bName.Substring(0, 7) + "..";
+                    GUI.Label(new Rect(floatRect.x + 6, floatRect.y + 2, floatRect.width - 12, 16f), bName, _subTitleStyle);
+                    GUI.Label(new Rect(floatRect.x + 6, floatRect.y + 18, floatRect.width - 12, 16f), $"x{selSlot.count}", _ingredientSatisfiedStyle);
                 }
             }
 
@@ -968,6 +1031,16 @@ namespace Crafting
                 currentTab = CraftingModalTab.Crafting;
                 PlayTone(580f, 0.05f, 0.2f);
             }
+        }
+
+        private void DrawBorder(Rect rect, int thickness, Color color)
+        {
+            GUI.color = color;
+            GUI.DrawTexture(new Rect(rect.x, rect.y, rect.width, thickness), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x, rect.y + rect.height - thickness, rect.width, thickness), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x, rect.y, thickness, rect.height), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(rect.x + rect.width - thickness, rect.y, thickness, rect.height), Texture2D.whiteTexture);
+            GUI.color = Color.white;
         }
     }
 }

@@ -22,12 +22,34 @@ typedef enum {
     MODE_CREATIVE = 1
 } GameMode;
 
+#include "save_system.h"
+
 typedef enum {
     STATE_MENU = 0,
     STATE_PLAYING = 1,
     STATE_PAUSED = 2,
-    STATE_SETTINGS = 3
+    STATE_SETTINGS = 3,
+    STATE_WORLDS_LIST = 4,
+    STATE_CREATE_WORLD = 5
 } GameState;
+
+// Forward references to main.c
+static void startNewWorld(int slotIdx, const char* name, int mode, int seed);
+static bool loadWorldSlot(int slotIdx);
+static bool saveWorldSlot(int slotIdx);
+
+static int g_SelectedSaveSlot = 0;
+static int g_CreateWorldMode = 0; // 0: Survival, 1: Creative
+static int g_CreateWorldNameIdx = 0;
+static int g_CreateWorldSeed = 1337;
+
+static const char* g_WorldNamePresets_ZH[] = {
+    "冒险新大陆", "像素王国", "无尽荒野", "探索者之境", "星光圣境", "地下探秘"
+};
+static const char* g_WorldNamePresets_EN[] = {
+    "New Adventure", "Pixel Kingdom", "Wilderness", "Explorer Base", "Starlight Realm", "Underworld Cave"
+};
+#define PRESET_NAMES_COUNT 6
 
 // ============================================================================
 // Button UI Structure
@@ -401,12 +423,444 @@ static void renderSettingsDialog(void) {
     glMatrixMode(GL_MODELVIEW);
 }
 
+
+// ============================================================================
+// Multi-Save Worlds List Screen (STATE_WORLDS_LIST)
+// ============================================================================
+static bool handleWorldsListInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    float panelW = 720.0f;
+    float panelH = 550.0f;
+    float panelX = ((float)WINDOW_WIDTH - panelW) * 0.5f;
+    float panelY = ((float)WINDOW_HEIGHT - panelH) * 0.5f;
+
+    switch (uMsg) {
+        case WM_MOUSEMOVE: {
+            g_MenuMouseX = (int)(short)LOWORD(lParam);
+            g_MenuMouseY = (int)(short)HIWORD(lParam);
+            return true;
+        }
+
+        case WM_LBUTTONDOWN: {
+            g_MenuMouseX = (int)(short)LOWORD(lParam);
+            g_MenuMouseY = (int)(short)HIWORD(lParam);
+
+            // 1. Check each of the 4 world slots
+            for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
+                float slotY = panelY + 68.0f + i * 94.0f;
+                float slotW = panelW - 60.0f;
+                float slotX = panelX + 30.0f;
+                
+                WorldSlotInfo info;
+                bool exists = getSlotInfo(i, &info);
+
+                if (exists) {
+                    // Play Button [进入]
+                    float playX = slotX + slotW - 170.0f;
+                    float playY = slotY + 20.0f;
+                    float playW = 75.0f;
+                    float playH = 42.0f;
+                    if (g_MenuMouseX >= playX && g_MenuMouseX <= playX + playW &&
+                        g_MenuMouseY >= playY && g_MenuMouseY <= playY + playH) {
+                        playSound(SFX_CLICK);
+                        g_ActiveSaveSlot = i;
+                        if (loadWorldSlot(i)) {
+                            setGameState(STATE_PLAYING);
+                        }
+                        return true;
+                    }
+
+                    // Delete Button [删除]
+                    float delX = slotX + slotW - 85.0f;
+                    float delY = slotY + 20.0f;
+                    float delW = 70.0f;
+                    float delH = 42.0f;
+                    if (g_MenuMouseX >= delX && g_MenuMouseX <= delX + delW &&
+                        g_MenuMouseY >= delY && g_MenuMouseY <= delY + delH) {
+                        playSound(SFX_BREAK);
+                        deleteWorldSlot(i);
+                        showNotification(LOC("世界存档已删除", "World save deleted"), 1.0f, 0.4f, 0.4f);
+                        return true;
+                    }
+                } else {
+                    // Create Button [+ 新建世界]
+                    float createX = slotX + slotW - 165.0f;
+                    float createY = slotY + 20.0f;
+                    float createW = 150.0f;
+                    float createH = 42.0f;
+                    if (g_MenuMouseX >= createX && g_MenuMouseX <= createX + createW &&
+                        g_MenuMouseY >= createY && g_MenuMouseY <= createY + createH) {
+                        playSound(SFX_CLICK);
+                        g_SelectedSaveSlot = i;
+                        g_CreateWorldSeed = rand() % 90000 + 1000;
+                        setGameState(STATE_CREATE_WORLD);
+                        return true;
+                    }
+                }
+            }
+
+            // 2. Back Button
+            float backW = 240.0f;
+            float backH = 40.0f;
+            float backX = panelX + (panelW - backW) * 0.5f;
+            float backY = panelY + panelH - 52.0f;
+            if (g_MenuMouseX >= backX && g_MenuMouseX <= backX + backW &&
+                g_MenuMouseY >= backY && g_MenuMouseY <= backY + backH) {
+                playSound(SFX_CLICK);
+                setGameState(STATE_MENU);
+                return true;
+            }
+            return true;
+        }
+
+        case WM_KEYDOWN: {
+            if (wParam == VK_ESCAPE) {
+                setGameState(STATE_MENU);
+                return true;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+static void renderWorldsListDialog(void) {
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // Dirt background
+    menuDrawMinecraftDirtBackground((float)WINDOW_WIDTH, (float)WINDOW_HEIGHT);
+
+    float panelW = 720.0f;
+    float panelH = 550.0f;
+    float panelX = ((float)WINDOW_WIDTH - panelW) * 0.5f;
+    float panelY = ((float)WINDOW_HEIGHT - panelH) * 0.5f;
+
+    // Panel
+    menuDrawQuad(panelX, panelY, panelW, panelH, 0.10f, 0.12f, 0.16f, 0.95f);
+    menuDrawBorder(panelX, panelY, panelW, panelH, 0.35f, 0.45f, 0.55f, 2.0f);
+    menuDrawBorder(panelX + 3.0f, panelY + 3.0f, panelW - 6.0f, panelH - 6.0f, 1.0f, 0.82f, 0.20f, 1.5f);
+
+    // Title
+    const char* title = LOC("选择世界存档", "Select World");
+    float tw = getTextWidthUTF8(title, 18, true);
+    drawText(panelX + (panelW - tw) * 0.5f, panelY + 34.0f, title, 1.0f, 0.88f, 0.25f, true);
+
+    const char* sub = LOC("请选择一个存档位进入游戏或创建新世界", "Select a world slot to play or create new world");
+    float sw = getTextWidthUTF8(sub, 12, false);
+    drawText(panelX + (panelW - sw) * 0.5f, panelY + 54.0f, sub, 0.7f, 0.8f, 0.9f, false);
+
+    // Slots
+    for (int i = 0; i < MAX_SAVE_SLOTS; i++) {
+        float slotY = panelY + 68.0f + i * 94.0f;
+        float slotW = panelW - 60.0f;
+        float slotX = panelX + 30.0f;
+        float slotH = 82.0f;
+        WorldSlotInfo info;
+        bool exists = getSlotInfo(i, &info);
+
+        if (exists) {
+            menuDrawQuad(slotX, slotY, slotW, slotH, 0.16f, 0.19f, 0.26f, 0.95f);
+            menuDrawBorder(slotX, slotY, slotW, slotH, 0.45f, 0.55f, 0.70f, 1.5f);
+
+            // World Name & Badge
+            char nameBuf[128];
+            snprintf(nameBuf, sizeof(nameBuf), "%d. %s", i + 1, info.worldName);
+            drawText(slotX + 16.0f, slotY + 28.0f, nameBuf, 1.0f, 0.92f, 0.40f, true);
+
+            const char* modeBadge = (info.mode == 0) ? LOC("【生存模式】", "[Survival]") : LOC("【创造模式】", "[Creative]");
+            float mr = (info.mode == 0) ? 1.0f : 0.35f;
+            float mg = (info.mode == 0) ? 0.65f : 0.90f;
+            float mb = (info.mode == 0) ? 0.25f : 1.0f;
+            drawText(slotX + 16.0f + getTextWidthUTF8(nameBuf, 15, true) + 12.0f, slotY + 28.0f, modeBadge, mr, mg, mb, true);
+
+            char detailBuf[128];
+            snprintf(detailBuf, sizeof(detailBuf), "%s: %d  |  %s: %s", LOC("种子", "Seed"), info.seed, LOC("存档时间", "Saved"), info.dateStr);
+            drawText(slotX + 16.0f, slotY + 54.0f, detailBuf, 0.75f, 0.80f, 0.88f, false);
+
+            // Play Button
+            float playX = slotX + slotW - 170.0f;
+            float playY = slotY + 20.0f;
+            float playW = 75.0f;
+            float playH = 42.0f;
+            bool playHov = (g_MenuMouseX >= playX && g_MenuMouseX <= playX + playW && g_MenuMouseY >= playY && g_MenuMouseY <= playY + playH);
+            menuDrawQuad(playX, playY, playW, playH, playHov ? 0.25f : 0.18f, playHov ? 0.55f : 0.38f, playHov ? 0.25f : 0.18f, 1.0f);
+            menuDrawBorder(playX, playY, playW, playH, 0.4f, 0.9f, 0.4f, 1.5f);
+            drawText(playX + (getLanguage() == LANG_ZH ? 18.0f : 16.0f), playY + 26.0f, LOC("进入", "Play"), 1.0f, 1.0f, 1.0f, true);
+
+            // Delete Button
+            float delX = slotX + slotW - 85.0f;
+            float delY = slotY + 20.0f;
+            float delW = 70.0f;
+            float delH = 42.0f;
+            bool delHov = (g_MenuMouseX >= delX && g_MenuMouseX <= delX + delW && g_MenuMouseY >= delY && g_MenuMouseY <= delY + delH);
+            menuDrawQuad(delX, delY, delW, delH, delHov ? 0.55f : 0.32f, delHov ? 0.18f : 0.14f, delHov ? 0.18f : 0.14f, 1.0f);
+            menuDrawBorder(delX, delY, delW, delH, 0.9f, 0.3f, 0.3f, 1.5f);
+            drawText(delX + (getLanguage() == LANG_ZH ? 16.0f : 14.0f), delY + 26.0f, LOC("删除", "Del"), 1.0f, 0.85f, 0.85f, true);
+
+        } else {
+            menuDrawQuad(slotX, slotY, slotW, slotH, 0.11f, 0.13f, 0.17f, 0.85f);
+            menuDrawBorder(slotX, slotY, slotW, slotH, 0.25f, 0.30f, 0.38f, 1.0f);
+
+            char emptyBuf[64];
+            snprintf(emptyBuf, sizeof(emptyBuf), LOC("【 空存档位 %d 】", "[ Empty Slot %d ]"), i + 1);
+            drawText(slotX + 20.0f, slotY + 32.0f, emptyBuf, 0.65f, 0.70f, 0.78f, true);
+            drawText(slotX + 20.0f, slotY + 54.0f, LOC("点击右侧按钮新建世界", "Click button on right to create world"), 0.50f, 0.55f, 0.62f, false);
+
+            // Create Button
+            float createX = slotX + slotW - 165.0f;
+            float createY = slotY + 20.0f;
+            float createW = 150.0f;
+            float createH = 42.0f;
+            bool creHov = (g_MenuMouseX >= createX && g_MenuMouseX <= createX + createW && g_MenuMouseY >= createY && g_MenuMouseY <= createY + createH);
+            menuDrawQuad(createX, createY, createW, createH, creHov ? 0.35f : 0.20f, creHov ? 0.40f : 0.26f, creHov ? 0.55f : 0.38f, 1.0f);
+            menuDrawBorder(createX, createY, createW, createH, 0.4f, 0.75f, 1.0f, 1.5f);
+            drawText(createX + (getLanguage() == LANG_ZH ? 20.0f : 14.0f), createY + 26.0f, LOC("+ 创建新世界", "+ Create World"), 1.0f, 0.95f, 0.45f, true);
+        }
+    }
+
+    // Back Button
+    float backW = 240.0f;
+    float backH = 40.0f;
+    float backX = panelX + (panelW - backW) * 0.5f;
+    float backY = panelY + panelH - 52.0f;
+    bool bHov = (g_MenuMouseX >= backX && g_MenuMouseX <= backX + backW && g_MenuMouseY >= backY && g_MenuMouseY <= backY + backH);
+    menuDrawQuad(backX, backY, backW, backH, bHov ? 0.28f : 0.18f, bHov ? 0.30f : 0.20f, bHov ? 0.36f : 0.26f, 1.0f);
+    menuDrawBorder(backX, backY, backW, backH, 0.45f, 0.55f, 0.68f, 1.5f);
+    drawText(backX + (getLanguage() == LANG_ZH ? 62.0f : 55.0f), backY + 25.0f, LOC("返回主菜单", "Back to Menu"), 1.0f, 1.0f, 1.0f, true);
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+
+// ============================================================================
+// World Creation Screen with Options (STATE_CREATE_WORLD)
+// ============================================================================
+static bool handleCreateWorldInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    float boxW = 600.0f;
+    float boxH = 450.0f;
+    float boxX = ((float)WINDOW_WIDTH - boxW) * 0.5f;
+    float boxY = ((float)WINDOW_HEIGHT - boxH) * 0.5f;
+
+    switch (uMsg) {
+        case WM_MOUSEMOVE: {
+            g_MenuMouseX = (int)(short)LOWORD(lParam);
+            g_MenuMouseY = (int)(short)HIWORD(lParam);
+            return true;
+        }
+
+        case WM_LBUTTONDOWN: {
+            g_MenuMouseX = (int)(short)LOWORD(lParam);
+            g_MenuMouseY = (int)(short)HIWORD(lParam);
+
+            // Option 1: Cycle Name Preset
+            float nameBtnY = boxY + 85.0f;
+            float nameBtnW = 480.0f;
+            float nameBtnH = 46.0f;
+            float nameBtnX = boxX + (boxW - nameBtnW) * 0.5f;
+            if (g_MenuMouseX >= nameBtnX && g_MenuMouseX <= nameBtnX + nameBtnW &&
+                g_MenuMouseY >= nameBtnY && g_MenuMouseY <= nameBtnY + nameBtnH) {
+                playSound(SFX_CLICK);
+                g_CreateWorldNameIdx = (g_CreateWorldNameIdx + 1) % PRESET_NAMES_COUNT;
+                return true;
+            }
+
+            // Option 2: Toggle Game Mode (Survival <-> Creative)
+            float modeBtnY = boxY + 165.0f;
+            float modeBtnW = 480.0f;
+            float modeBtnH = 50.0f;
+            float modeBtnX = boxX + (boxW - modeBtnW) * 0.5f;
+            if (g_MenuMouseX >= modeBtnX && g_MenuMouseX <= modeBtnX + modeBtnW &&
+                g_MenuMouseY >= modeBtnY && g_MenuMouseY <= modeBtnY + modeBtnH) {
+                playSound(SFX_CLICK);
+                g_CreateWorldMode = 1 - g_CreateWorldMode;
+                return true;
+            }
+
+            // Option 3: Randomize Seed
+            float seedBtnY = boxY + 245.0f;
+            float seedBtnW = 480.0f;
+            float seedBtnH = 46.0f;
+            float seedBtnX = boxX + (boxW - seedBtnW) * 0.5f;
+            if (g_MenuMouseX >= seedBtnX && g_MenuMouseX <= seedBtnX + seedBtnW &&
+                g_MenuMouseY >= seedBtnY && g_MenuMouseY <= seedBtnY + seedBtnH) {
+                playSound(SFX_CLICK);
+                g_CreateWorldSeed = rand() % 90000 + 1000;
+                return true;
+            }
+
+            // Button: Create & Play
+            float cBtnW = 240.0f;
+            float cBtnH = 46.0f;
+            float cBtnX = boxX + 45.0f;
+            float cBtnY = boxY + boxH - 70.0f;
+            if (g_MenuMouseX >= cBtnX && g_MenuMouseX <= cBtnX + cBtnW &&
+                g_MenuMouseY >= cBtnY && g_MenuMouseY <= cBtnY + cBtnH) {
+                playSound(SFX_CRAFT);
+                const char* chosenName = (getLanguage() == LANG_ZH) ? g_WorldNamePresets_ZH[g_CreateWorldNameIdx] : g_WorldNamePresets_EN[g_CreateWorldNameIdx];
+                startNewWorld(g_SelectedSaveSlot, chosenName, g_CreateWorldMode, g_CreateWorldSeed);
+                g_ActiveSaveSlot = g_SelectedSaveSlot;
+                setGameState(STATE_PLAYING);
+                return true;
+            }
+
+            // Button: Cancel
+            float cancelW = 200.0f;
+            float cancelH = 46.0f;
+            float cancelX = boxX + boxW - cancelW - 45.0f;
+            float cancelY = boxY + boxH - 70.0f;
+            if (g_MenuMouseX >= cancelX && g_MenuMouseX <= cancelX + cancelW &&
+                g_MenuMouseY >= cancelY && g_MenuMouseY <= cancelY + cancelH) {
+                playSound(SFX_CLICK);
+                setGameState(STATE_WORLDS_LIST);
+                return true;
+            }
+
+            return true;
+        }
+
+        case WM_KEYDOWN: {
+            if (wParam == VK_ESCAPE) {
+                setGameState(STATE_WORLDS_LIST);
+                return true;
+            }
+            return true;
+        }
+    }
+    return false;
+}
+
+static void renderCreateWorldDialog(void) {
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0, WINDOW_WIDTH, WINDOW_HEIGHT, 0, -1, 1);
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    menuDrawMinecraftDirtBackground((float)WINDOW_WIDTH, (float)WINDOW_HEIGHT);
+
+    float boxW = 600.0f;
+    float boxH = 450.0f;
+    float boxX = ((float)WINDOW_WIDTH - boxW) * 0.5f;
+    float boxY = ((float)WINDOW_HEIGHT - boxH) * 0.5f;
+
+    menuDrawQuad(boxX, boxY, boxW, boxH, 0.12f, 0.14f, 0.18f, 0.96f);
+    menuDrawBorder(boxX, boxY, boxW, boxH, 0.35f, 0.45f, 0.58f, 2.0f);
+    menuDrawBorder(boxX + 3.0f, boxY + 3.0f, boxW - 6.0f, boxH - 6.0f, 1.0f, 0.82f, 0.20f, 1.5f);
+
+    // Title
+    const char* titleText = LOC("创建新世界", "Create New World");
+    float tW = getTextWidthUTF8(titleText, 18, true);
+    drawText(boxX + (boxW - tW) * 0.5f, boxY + 34.0f, titleText, 1.0f, 0.85f, 0.25f, true);
+
+    const char* subText = LOC("选择世界名称、游戏模式与初始种子", "Configure world name, game mode, and initial seed");
+    float sW = getTextWidthUTF8(subText, 12, false);
+    drawText(boxX + (boxW - sW) * 0.5f, boxY + 56.0f, subText, 0.75f, 0.85f, 0.95f, false);
+
+    // 1. World Name Option
+    float nameBtnY = boxY + 85.0f;
+    float nameBtnW = 480.0f;
+    float nameBtnH = 46.0f;
+    float nameBtnX = boxX + (boxW - nameBtnW) * 0.5f;
+    bool nHov = (g_MenuMouseX >= nameBtnX && g_MenuMouseX <= nameBtnX + nameBtnW && g_MenuMouseY >= nameBtnY && g_MenuMouseY <= nameBtnY + nameBtnH);
+    menuDrawQuad(nameBtnX, nameBtnY, nameBtnW, nameBtnH, nHov ? 0.22f : 0.16f, nHov ? 0.26f : 0.19f, nHov ? 0.34f : 0.25f, 1.0f);
+    menuDrawBorder(nameBtnX, nameBtnY, nameBtnW, nameBtnH, 0.45f, 0.55f, 0.65f, 1.5f);
+
+    const char* currentName = (getLanguage() == LANG_ZH) ? g_WorldNamePresets_ZH[g_CreateWorldNameIdx] : g_WorldNamePresets_EN[g_CreateWorldNameIdx];
+    char namePrompt[128];
+    snprintf(namePrompt, sizeof(namePrompt), "%s: %s [%s]", LOC("世界名称", "World Name"), currentName, LOC("点击切换预设", "Click to Cycle"));
+    drawText(nameBtnX + 20.0f, nameBtnY + 28.0f, namePrompt, 1.0f, 0.95f, 0.45f, true);
+
+    // 2. Game Mode Option
+    float modeBtnY = boxY + 165.0f;
+    float modeBtnW = 480.0f;
+    float modeBtnH = 50.0f;
+    float modeBtnX = boxX + (boxW - modeBtnW) * 0.5f;
+    bool mHov = (g_MenuMouseX >= modeBtnX && g_MenuMouseX <= modeBtnX + modeBtnW && g_MenuMouseY >= modeBtnY && g_MenuMouseY <= modeBtnY + modeBtnH);
+    menuDrawQuad(modeBtnX, modeBtnY, modeBtnW, modeBtnH, mHov ? 0.24f : 0.18f, mHov ? 0.28f : 0.21f, mHov ? 0.36f : 0.27f, 1.0f);
+
+    if (g_CreateWorldMode == 0) {
+        menuDrawBorder(modeBtnX, modeBtnY, modeBtnW, modeBtnH, 1.0f, 0.65f, 0.25f, 2.0f);
+        drawText(modeBtnX + 20.0f, modeBtnY + 24.0f, LOC("游戏模式: 【生存模式】 [点击切换]", "Game Mode: [Survival Mode] [Click to Toggle]"), 1.0f, 0.70f, 0.25f, true);
+        drawText(modeBtnX + 20.0f, modeBtnY + 42.0f, LOC("从0开局 · 拥有生命值 · 受到怪物攻击掉血", "Start from 0 · Player HP · Take damage from mobs"), 0.85f, 0.85f, 0.85f, false);
+    } else {
+        menuDrawBorder(modeBtnX, modeBtnY, modeBtnW, modeBtnH, 0.35f, 0.90f, 1.0f, 2.0f);
+        drawText(modeBtnX + 20.0f, modeBtnY + 24.0f, LOC("游戏模式: 【创造模式】 [点击切换]", "Game Mode: [Creative Mode] [Click to Toggle]"), 0.35f, 0.90f, 1.0f, true);
+        drawText(modeBtnX + 20.0f, modeBtnY + 42.0f, LOC("双击空格飞行 · 全量物品库 · 自由建筑无伤", "Double Space to fly · Full big inventory · God build"), 0.85f, 0.85f, 0.85f, false);
+    }
+
+    // 3. Seed Option
+    float seedBtnY = boxY + 245.0f;
+    float seedBtnW = 480.0f;
+    float seedBtnH = 46.0f;
+    float seedBtnX = boxX + (boxW - seedBtnW) * 0.5f;
+    bool sHov = (g_MenuMouseX >= seedBtnX && g_MenuMouseX <= seedBtnX + seedBtnW && g_MenuMouseY >= seedBtnY && g_MenuMouseY <= seedBtnY + seedBtnH);
+    menuDrawQuad(seedBtnX, seedBtnY, seedBtnW, seedBtnH, sHov ? 0.22f : 0.16f, sHov ? 0.26f : 0.19f, sHov ? 0.34f : 0.25f, 1.0f);
+    menuDrawBorder(seedBtnX, seedBtnY, seedBtnW, seedBtnH, 0.45f, 0.55f, 0.65f, 1.5f);
+
+    char seedBuf[128];
+    snprintf(seedBuf, sizeof(seedBuf), "%s: %d  [%s]", LOC("世界种子", "World Seed"), g_CreateWorldSeed, LOC("🎲 点击随机种子", "🎲 Randomize"));
+    drawText(seedBtnX + 20.0f, seedBtnY + 28.0f, seedBuf, 0.40f, 0.85f, 1.0f, true);
+
+    // Action Buttons
+    float cBtnW = 240.0f;
+    float cBtnH = 46.0f;
+    float cBtnX = boxX + 45.0f;
+    float cBtnY = boxY + boxH - 70.0f;
+    bool crHov = (g_MenuMouseX >= cBtnX && g_MenuMouseX <= cBtnX + cBtnW && g_MenuMouseY >= cBtnY && g_MenuMouseY <= cBtnY + cBtnH);
+    menuDrawQuad(cBtnX, cBtnY, cBtnW, cBtnH, crHov ? 0.25f : 0.18f, crHov ? 0.55f : 0.38f, crHov ? 0.25f : 0.18f, 1.0f);
+    menuDrawBorder(cBtnX, cBtnY, cBtnW, cBtnH, 0.4f, 0.9f, 0.4f, 2.0f);
+    drawText(cBtnX + (getLanguage() == LANG_ZH ? 48.0f : 36.0f), cBtnY + 28.0f, LOC("确定创建并进入世界", "Create & Enter World"), 1.0f, 1.0f, 1.0f, true);
+
+    float cancelW = 200.0f;
+    float cancelH = 46.0f;
+    float cancelX = boxX + boxW - cancelW - 45.0f;
+    float cancelY = boxY + boxH - 70.0f;
+    bool canHov = (g_MenuMouseX >= cancelX && g_MenuMouseX <= cancelX + cancelW && g_MenuMouseY >= cancelY && g_MenuMouseY <= cancelY + cancelH);
+    menuDrawQuad(cancelX, cancelY, cancelW, cancelH, canHov ? 0.30f : 0.20f, canHov ? 0.32f : 0.22f, canHov ? 0.38f : 0.28f, 1.0f);
+    menuDrawBorder(cancelX, cancelY, cancelW, cancelH, 0.5f, 0.6f, 0.7f, 1.5f);
+    drawText(cancelX + (getLanguage() == LANG_ZH ? 62.0f : 68.0f), cancelY + 28.0f, LOC("取消并返回", "Cancel"), 0.9f, 0.9f, 0.9f, true);
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+
 // ============================================================================
 // Input Handling
 // ============================================================================
 static bool handleMenuInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
     if (g_CurrentState == STATE_SETTINGS) {
         return handleSettingsInput(uMsg, wParam, lParam);
+    }
+    if (g_CurrentState == STATE_WORLDS_LIST) {
+        return handleWorldsListInput(uMsg, wParam, lParam);
+    }
+    if (g_CurrentState == STATE_CREATE_WORLD) {
+        return handleCreateWorldInput(uMsg, wParam, lParam);
     }
 
     switch (uMsg) {
@@ -445,20 +899,16 @@ static bool handleMenuInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                         playSound(SFX_CLICK);
 
                         if (i == 0) {
-                            // [SURVIVAL MODE]
-                            setGameMode(MODE_SURVIVAL);
-                            setGameState(STATE_PLAYING);
-                            showNotification(LOC("生存模式已启动", "Survival Mode Started"), 0.35f, 0.95f, 0.45f);
+                            // [SURVIVAL MODE] -> Open World List / Create with Survival preset
+                            g_CreateWorldMode = 0;
+                            setGameState(STATE_WORLDS_LIST);
                         } else if (i == 1) {
-                            // [CREATIVE MODE]
-                            setGameMode(MODE_CREATIVE);
-                            g_IsCreativeFlying = false;
-                            setGameState(STATE_PLAYING);
-                            showNotification(LOC("创造模式已启动 (双击空格飞行)", "Creative Mode Started (2x Space to Fly)"), 0.35f, 0.90f, 1.0f);
+                            // [CREATIVE MODE] -> Open World List / Create with Creative preset
+                            g_CreateWorldMode = 1;
+                            setGameState(STATE_WORLDS_LIST);
                         } else if (i == 2) {
-                            // [CONTINUE / LOAD]
-                            loadGame();
-                            setGameState(STATE_PLAYING);
+                            // [CONTINUE / LOAD WORLDS]
+                            setGameState(STATE_WORLDS_LIST);
                         } else if (i == 3) {
                             // [SETTINGS]
                             g_PreviousState = STATE_MENU;

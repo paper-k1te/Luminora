@@ -257,8 +257,8 @@ namespace Player
             BlockType blockToPlace = activeItem.type;
             BlockData blockData = BlockRegistry.GetBlock(blockToPlace);
 
-            // Validate adjacency (must be touching another solid block or background wall)
-            if (!IsPlacementLocationSupported(targetBlockX, targetBlockY))
+            // Validate adjacency (must be touching another solid block or background wall, directional for torches)
+            if (!IsPlacementLocationSupported(targetBlockX, targetBlockY, blockToPlace))
             {
                 return;
             }
@@ -291,14 +291,25 @@ namespace Player
         /// <summary>
         /// Terraria placement rule: placement is valid if adjacent to at least one solid block,
         /// or placed directly against a non-air background wall.
+        /// For Torches: directional support requires solid floor (y - 1), solid left wall (x - 1),
+        /// solid right wall (x + 1), or an existing background wall.
         /// </summary>
-        private bool IsPlacementLocationSupported(int x, int y)
+        private bool IsPlacementLocationSupported(int x, int y, BlockType blockType = BlockType.Dirt)
         {
             // Check background wall support
             BlockType wall = GetWorldWall(x, y);
             if (wall != BlockType.Air) return true;
 
-            // Check 4-connected neighbors
+            // Directional support checks specifically for torches
+            if (blockType == BlockType.Torch)
+            {
+                if (BlockRegistry.IsSolid(GetWorldBlock(x, y - 1))) return true; // Floor-standing
+                if (BlockRegistry.IsSolid(GetWorldBlock(x - 1, y))) return true; // Left-wall mounted
+                if (BlockRegistry.IsSolid(GetWorldBlock(x + 1, y))) return true; // Right-wall mounted
+                return false;
+            }
+
+            // Standard blocks: check 4-connected neighbors
             if (BlockRegistry.IsSolid(GetWorldBlock(x + 1, y))) return true;
             if (BlockRegistry.IsSolid(GetWorldBlock(x - 1, y))) return true;
             if (BlockRegistry.IsSolid(GetWorldBlock(x, y + 1))) return true;

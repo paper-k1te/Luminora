@@ -86,6 +86,7 @@ static float g_MobSpawnTimer = 0.0f;
 // ============================================================================
 // Function Declarations
 // ============================================================================
+void onPlayerHurt(float damage, float sourceX);
 void initMobs(void);
 void spawnMob(float x, float y, int type);
 void updateMobs(float dt, float playerX, float playerY);
@@ -425,6 +426,25 @@ void updateMobs(float dt, float playerX, float playerY) {
             }
         }
         m->y = nextY;
+
+        // Player Contact Combat Collision (Survival Mode Damage & Knockback)
+        float pLeft = playerX - 0.38f;
+        float pRight = playerX + 0.38f;
+        float pBottom = playerY;
+        float pTop = playerY + 1.8f;
+
+        float mLeft = m->x - m->width * 0.45f;
+        float mRight = m->x + m->width * 0.45f;
+        float mBottom = m->y;
+        float mTop = m->y + m->height;
+
+        if (pRight > mLeft && pLeft < mRight && pTop > mBottom && pBottom < mTop) {
+            float mobDmg = 12.0f;
+            if (m->type == MOB_SLIME) mobDmg = 10.0f;
+            else if (m->type == MOB_BAT) mobDmg = 8.0f;
+            else if (m->type == MOB_ZOMBIE) mobDmg = 18.0f;
+            onPlayerHurt(mobDmg, m->x);
+        }
     }
 }
 

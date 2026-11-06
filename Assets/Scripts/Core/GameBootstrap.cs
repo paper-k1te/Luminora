@@ -82,7 +82,14 @@ namespace Core
                 playerObj.tag = "Player";
                 player = playerObj.AddComponent<PlayerController2D5>();
                 playerObj.AddComponent<BlockInteraction>();
-                playerObj.AddComponent<InventorySystem>();
+                InventorySystem inv = playerObj.AddComponent<InventorySystem>();
+
+                // In Survival mode (GameMode.Survival), start from 0 items (completely empty from scratch).
+                // Do not pre-populate starter tools or blocks.
+                if (WorldSettings.CurrentGameMode == GameMode.Survival)
+                {
+                    inv.ClearAllSlots();
+                }
 
                 // Spawn at surface
                 Vector3 spawnPos = worldManager.FindSurfaceSpawnPosition(0f);

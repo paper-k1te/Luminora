@@ -31,7 +31,8 @@ namespace Player
             Blocks = 0,
             Tools = 1,
             Materials = 2,
-            Decor = 3
+            Decor = 3,
+            Backpack = 4
         }
 
         [Header("State")]
@@ -238,9 +239,15 @@ namespace Player
                 return;
             }
 
+            // Right-click or ESC to clear picked-up moving slot
+            if (Event.current.type == EventType.MouseDown && Event.current.button == 1)
+            {
+                InventorySystem.Instance?.ClearSelectedSlot();
+            }
+
             // 4. Categorized Tabs
             float tabY = winY + headerH + 12f;
-            float tabW = 196f;
+            float tabW = 158f;
             float tabH = 34f;
             float tabGap = 8f;
             float tabStartX = winX + 16f;
@@ -250,10 +257,11 @@ namespace Player
                 LocalizationManager.Get("🧱 建筑方块", "🧱 Blocks"),
                 LocalizationManager.Get("⚔️ 工具武器", "⚔️ Tools"),
                 LocalizationManager.Get("💎 矿物材料", "💎 Materials"),
-                LocalizationManager.Get("💡 装饰光源", "💡 Decor")
+                LocalizationManager.Get("💡 装饰光源", "💡 Decor"),
+                LocalizationManager.Get("🎒 玩家背包", "🎒 Backpack")
             };
 
-            for (int t = 0; t < 4; t++)
+            for (int t = 0; t < 5; t++)
             {
                 Rect tabRect = new Rect(tabStartX + t * (tabW + tabGap), tabY, tabW, tabH);
                 bool isActive = (int)activeTab == t;
@@ -286,9 +294,12 @@ namespace Player
             // 6. Bottom Hotbar Equipment Bar
             float hotbarSectionY = gridY + gridH + 12f;
             GUI.Label(new Rect(winX + 20, hotbarSectionY + 8f, 500, 20),
-                LocalizationManager.Get("<b>当前快捷栏 [1-9] (点击任意方格直接装配，创造模式无限使用):</b>", "<b>Active Hotbar [1-9] (Click any slot to equip, infinite in Creative):</b>"), _tooltipTitleStyle);
+                LocalizationManager.Get("<b>当前快捷栏 [1-9] (点击任意方格装备或调换位置，支持堆叠合并):</b>", "<b>Active Hotbar [1-9] (Click to equip, swap or combine):</b>"), _tooltipTitleStyle);
 
             DrawBottomHotbar(winX + 22, hotbarSectionY + 30f, winW);
+
+            // 7. Draw Floating Dragged/Picked-up Item Cursor
+            DrawFloatingCursorItem();
         }
 
         private void DrawCurrentTabGrid(float gridX, float gridY, float gridW, float gridH)
@@ -438,6 +449,45 @@ namespace Player
                     }
                     break;
                 }
+
+                case TabType.Backpack:
+                {
+                    if (inv == null) break;
+
+                    float slotSz = 48f;
+                    float gap = 6f;
+                    float bStartX = gridX + 18f;
+                    float curY = gridY + 10f;
+
+                    // Header 1: Hotbar
+                    GUI.Label(new Rect(bStartX, curY, 500f, 20f),
+                        LocalizationManager.Get("<b>★ 快捷栏 [1-9] (点击拿起 / 再次点击放置或调换):</b>", "<b>★ Hotbar [1-9] (Click to pick up / swap / combine):</b>"), _tooltipTitleStyle);
+                    curY += 24f;
+
+                    for (int i = 0; i < InventorySystem.HotbarSlotCount; i++)
+                    {
+                        Rect slotRect = new Rect(bStartX + i * (slotSz + gap), curY, slotSz, slotSz);
+                        DrawInventorySlotButton(slotRect, i, inv, ref hoveredTooltipTitle, ref hoveredTooltipBody);
+                    }
+
+                    curY += slotSz + 14f;
+
+                    // Header 2: Backpack Storage
+                    GUI.Label(new Rect(bStartX, curY, 500f, 20f),
+                        LocalizationManager.Get("<b>📦 背包主储物区 (27 格) (可与快捷栏自由互换):</b>", "<b>📦 Backpack Storage (27 Slots) (Drag / Click to Swap):</b>"), _tooltipTitleStyle);
+                    curY += 24f;
+
+                    for (int row = 0; row < 3; row++)
+                    {
+                        for (int col = 0; col < 9; col++)
+                        {
+                            int slotIdx = InventorySystem.HotbarSlotCount + (row * 9 + col);
+                            Rect slotRect = new Rect(bStartX + col * (slotSz + gap), curY + row * (slotSz + gap), slotSz, slotSz);
+                            DrawInventorySlotButton(slotRect, slotIdx, inv, ref hoveredTooltipTitle, ref hoveredTooltipBody);
+                        }
+                    }
+                    break;
+                }
             }
 
             // Draw Floating Tooltip
@@ -460,6 +510,109 @@ namespace Player
             }
         }
 
+        private void DrawInventorySlotButton(Rect slotRect, int slotIndex, InventorySystem inv, ref string tooltipTitle, ref string tooltipBody)
+        {
+            Vector2 mousePos = Event.current.mousePosition;
+            bool isHovered = slotRect.Contains(mousePos);
+            bool isSelected = (inv.SelectedSlotForMove == slotIndex);
+            bool isActiveHotbar = (slotIndex == inv.ActiveSlotIndex);
+
+            GUI.DrawTexture(slotRect, (isHovered || isSelected) ? _activeSlotTex : _slotTex);
+
+            if (isSelected)
+            {
+                float pulse = 0.5f + Mathf.Sin(Time.time * 8f) * 0.5f;
+                DrawBorder(slotRect, 2, new Color(0.35f, 0.85f, 1.0f, pulse));
+            }
+            else if (isActiveHotbar && slotIndex < InventorySystem.HotbarSlotCount)
+            {
+                DrawBorder(slotRect, 2, new Color(1.0f, 0.85f, 0.25f));
+            }
+            else
+            {
+                DrawBorder(slotRect, 1, isHovered ? new Color(1f, 0.85f, 0.25f) : new Color(0.30f, 0.35f, 0.45f));
+            }
+
+            InventorySlot slot = inv.GetSlot(slotIndex);
+            if (slot != null && !slot.IsEmpty)
+            {
+                if (slot.isTool)
+                {
+                    ToolData td = ToolRegistry.Get(slot.toolId);
+                    if (td != null) DrawToolPreview(slotRect, td);
+                }
+                else
+                {
+                    DrawBlockPreview(slotRect, slot.type);
+                    GUI.Label(new Rect(slotRect.x + 2, slotRect.y + slotRect.height - 16, slotRect.width - 4, 14),
+                        $"{slot.count}", _slotLabelStyle);
+                }
+            }
+
+            if (slotIndex < InventorySystem.HotbarSlotCount)
+            {
+                GUI.Label(new Rect(slotRect.x + 3, slotRect.y + 2, 16, 14), $"{slotIndex + 1}", _hotbarNumStyle);
+            }
+
+            if (GUI.Button(slotRect, GUIContent.none, GUIStyle.none))
+            {
+                inv.ClickSlot(slotIndex);
+                if (slotIndex < InventorySystem.HotbarSlotCount)
+                {
+                    inv.SetActiveSlot(slotIndex);
+                    targetHotbarSlot = slotIndex;
+                }
+            }
+
+            if (isHovered && slot != null && !slot.IsEmpty)
+            {
+                if (slot.isTool)
+                {
+                    ToolData td = ToolRegistry.Get(slot.toolId);
+                    if (td != null)
+                    {
+                        tooltipTitle = td.displayName;
+                        tooltipBody = $"{td.localizedDescription}\n" +
+                            LocalizationManager.Get("<color=#55FF88>单击拿起 / 再次点击任意槽位调换位置</color>", "<color=#55FF88>Click to pick up / swap slots</color>");
+                    }
+                }
+                else
+                {
+                    BlockData bData = BlockRegistry.GetBlock(slot.type);
+                    tooltipTitle = $"{bData.displayName} × {slot.count}";
+                    tooltipBody = $"{LocalizationManager.Get("硬度", "Hardness")}: {bData.hardness:F1}\n" +
+                        LocalizationManager.Get("<color=#55FF88>单击拿起 / 再次点击任意槽位调换或合并同类物品</color>", "<color=#55FF88>Click to pick up / swap or stack</color>");
+                }
+            }
+        }
+
+        private void DrawFloatingCursorItem()
+        {
+            InventorySystem inv = InventorySystem.Instance;
+            if (inv == null || inv.SelectedSlotForMove == -1) return;
+
+            InventorySlot held = inv.GetSlot(inv.SelectedSlotForMove);
+            if (held == null || held.IsEmpty) return;
+
+            Vector2 m = Event.current.mousePosition;
+            float sz = 44f;
+            Rect floatRect = new Rect(m.x + 14, m.y + 14, sz, sz);
+
+            GUI.DrawTexture(floatRect, _activeSlotTex);
+            DrawBorder(floatRect, 2, new Color(0.35f, 0.90f, 1.0f));
+
+            if (held.isTool)
+            {
+                ToolData td = ToolRegistry.Get(held.toolId);
+                if (td != null) DrawToolPreview(floatRect, td);
+            }
+            else
+            {
+                DrawBlockPreview(floatRect, held.type);
+                GUI.Label(new Rect(floatRect.x + 2, floatRect.y + sz - 16, sz - 4, 14), $"{held.count}", _slotLabelStyle);
+            }
+        }
+
         private void DrawBottomHotbar(float startX, float startY, float totalWinWidth)
         {
             InventorySystem inv = InventorySystem.Instance;
@@ -472,9 +625,19 @@ namespace Player
             {
                 Rect slotRect = new Rect(startX + i * (slotSize + gap), startY, slotSize, slotSize);
                 bool isActive = (i == inv.ActiveSlotIndex);
+                bool isSelected = (inv.SelectedSlotForMove == i);
 
-                GUI.DrawTexture(slotRect, isActive ? _activeSlotTex : _slotTex);
-                DrawBorder(slotRect, isActive ? 2 : 1, isActive ? new Color(1f, 0.85f, 0.25f) : new Color(0.35f, 0.40f, 0.50f));
+                GUI.DrawTexture(slotRect, (isActive || isSelected) ? _activeSlotTex : _slotTex);
+
+                if (isSelected)
+                {
+                    float pulse = 0.5f + Mathf.Sin(Time.time * 8f) * 0.5f;
+                    DrawBorder(slotRect, 2, new Color(0.35f, 0.85f, 1.0f, pulse));
+                }
+                else
+                {
+                    DrawBorder(slotRect, isActive ? 2 : 1, isActive ? new Color(1f, 0.85f, 0.25f) : new Color(0.35f, 0.40f, 0.50f));
+                }
 
                 InventorySlot slot = inv.GetSlot(i);
                 if (slot != null && !slot.IsEmpty)
@@ -498,11 +661,21 @@ namespace Player
                 // Slot number badge [1-9]
                 GUI.Label(new Rect(slotRect.x + 4, slotRect.y + 2, 20, 16), $"{i + 1}", _hotbarNumStyle);
 
-                // Clicking slot selects it as the target hotbar slot
+                // Clicking slot selects it or swaps held item
                 if (GUI.Button(slotRect, GUIContent.none, GUIStyle.none))
                 {
-                    inv.SetActiveSlot(i);
-                    targetHotbarSlot = i;
+                    if (inv.SelectedSlotForMove != -1)
+                    {
+                        inv.ClickSlot(i);
+                        inv.SetActiveSlot(i);
+                        targetHotbarSlot = i;
+                    }
+                    else
+                    {
+                        inv.SetActiveSlot(i);
+                        targetHotbarSlot = i;
+                        inv.ClickSlot(i);
+                    }
                 }
             }
 

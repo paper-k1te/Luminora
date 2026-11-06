@@ -189,6 +189,14 @@ static bool        g_CraftBtnActive = false;
 // 27-slot backpack inventory storage complementing the 9 hotbar slots
 static InventorySlot g_Backpack[BACKPACK_SLOTS];
 
+typedef struct {
+    int type;
+    int count;
+    int sourceSlot; // 0..8 hotbar, 9..35 backpack, -1 none
+} CursorHeldItem;
+
+static CursorHeldItem g_CursorHeld = { 0, 0, -1 };
+
 static inline const char* getCraftCategoryName(int cat) {
     switch (cat) {
         case 0: return LOC("全部", "All");
@@ -271,7 +279,9 @@ static inline void openCraftingUI(CraftingTab tab) {
     g_CraftingCurrentTab = tab;
 }
 
+static inline void returnCursorHeldItem(void);
 static inline void closeCraftingUI(void) {
+    returnCursorHeldItem();
     g_CraftingOpen = false;
 }
 
@@ -379,6 +389,118 @@ static bool deliverCraftedItem(int type, int count) {
         }
     }
     return false;
+}
+
+static inline void returnCursorHeldItem(void) {
+    if (g_CursorHeld.type != BLOCK_AIR && g_CursorHeld.count > 0) {
+        if (g_CursorHeld.sourceSlot >= 0 && g_CursorHeld.sourceSlot < 36) {
+            InventorySlot* src = (g_CursorHeld.sourceSlot < 9) ? &g_Hotbar[g_CursorHeld.sourceSlot] : &g_Backpack[g_CursorHeld.sourceSlot - 9];
+            if (src->type == BLOCK_AIR || src->count <= 0) {
+                src->type = g_CursorHeld.type;
+                src->count = g_CursorHeld.count;
+                g_CursorHeld.type = BLOCK_AIR;
+                g_CursorHeld.count = 0;
+                g_CursorHeld.sourceSlot = -1;
+                return;
+            } else if (src->type == g_CursorHeld.type && !isToolItem(src->type)) {
+                src->count += g_CursorHeld.count;
+                g_CursorHeld.type = BLOCK_AIR;
+                g_CursorHeld.count = 0;
+                g_CursorHeld.sourceSlot = -1;
+                return;
+            }
+        }
+        deliverCraftedItem(g_CursorHeld.type, g_CursorHeld.count);
+        g_CursorHeld.type = BLOCK_AIR;
+        g_CursorHeld.count = 0;
+        g_CursorHeld.sourceSlot = -1;
+    }
+}
+
+static inline void handleSlotClick(int slotIdx, bool isRightClick) {
+    if (slotIdx < 0 || slotIdx >= 36) return;
+    InventorySlot* slot = (slotIdx < 9) ? &g_Hotbar[slotIdx] : &g_Backpack[slotIdx - 9];
+
+    if (!isRightClick) {
+        // Left-Click: Pick up, Drop, Swap, or Merge
+        if (g_CursorHeld.type == BLOCK_AIR || g_CursorHeld.count <= 0) {
+            if (slot->type != BLOCK_AIR && slot->count > 0) {
+                g_CursorHeld.type = slot->type;
+                g_CursorHeld.count = slot->count;
+                g_CursorHeld.sourceSlot = slotIdx;
+                slot->type = BLOCK_AIR;
+                slot->count = 0;
+                playSound(SFX_CLICK);
+            }
+        } else {
+            // Drop or Swap
+            if (slot->type == BLOCK_AIR || slot->count <= 0) {
+                slot->type = g_CursorHeld.type;
+                slot->count = g_CursorHeld.count;
+                g_CursorHeld.type = BLOCK_AIR;
+                g_CursorHeld.count = 0;
+                g_CursorHeld.sourceSlot = -1;
+                playSound(SFX_PLACE);
+            } else if (slot->type == g_CursorHeld.type && !isToolItem(slot->type)) {
+                int space = 999 - slot->count;
+                if (space >= g_CursorHeld.count) {
+                    slot->count += g_CursorHeld.count;
+                    g_CursorHeld.type = BLOCK_AIR;
+                    g_CursorHeld.count = 0;
+                    g_CursorHeld.sourceSlot = -1;
+                } else {
+                    slot->count = 999;
+                    g_CursorHeld.count -= space;
+                }
+                playSound(SFX_PLACE);
+            } else {
+                // Swap items
+                int oldType = slot->type;
+                int oldCount = slot->count;
+                slot->type = g_CursorHeld.type;
+                slot->count = g_CursorHeld.count;
+                g_CursorHeld.type = oldType;
+                g_CursorHeld.count = oldCount;
+                g_CursorHeld.sourceSlot = slotIdx;
+                playSound(SFX_CLICK);
+            }
+        }
+    } else {
+        // Right-Click: Split stack or place single item
+        if (g_CursorHeld.type == BLOCK_AIR || g_CursorHeld.count <= 0) {
+            if (slot->type != BLOCK_AIR && slot->count > 0) {
+                int half = (slot->count + 1) / 2;
+                g_CursorHeld.type = slot->type;
+                g_CursorHeld.count = half;
+                g_CursorHeld.sourceSlot = slotIdx;
+                slot->count -= half;
+                if (slot->count <= 0) {
+                    slot->type = BLOCK_AIR;
+                    slot->count = 0;
+                }
+                playSound(SFX_CLICK);
+            }
+        } else {
+            if (slot->type == BLOCK_AIR || slot->count <= 0) {
+                slot->type = g_CursorHeld.type;
+                slot->count = 1;
+                g_CursorHeld.count--;
+                if (g_CursorHeld.count <= 0) {
+                    g_CursorHeld.type = BLOCK_AIR;
+                    g_CursorHeld.sourceSlot = -1;
+                }
+                playSound(SFX_PLACE);
+            } else if (slot->type == g_CursorHeld.type && !isToolItem(slot->type) && slot->count < 999) {
+                slot->count++;
+                g_CursorHeld.count--;
+                if (g_CursorHeld.count <= 0) {
+                    g_CursorHeld.type = BLOCK_AIR;
+                    g_CursorHeld.sourceSlot = -1;
+                }
+                playSound(SFX_PLACE);
+            }
+        }
+    }
 }
 
 // ============================================================================
@@ -505,6 +627,7 @@ static bool handleCraftingInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             return true;
         }
 
+        case WM_RBUTTONDOWN:
         case WM_LBUTTONDOWN: {
             g_CraftingMouseX = (int)(short)LOWORD(lParam);
             g_CraftingMouseY = (int)(short)HIWORD(lParam);
@@ -607,7 +730,37 @@ static bool handleCraftingInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     return true;
                 }
             } else {
-                // Click "Switch to Crafting" in Inventory tab
+                // 1. Hotbar Slots (0..8)
+                float startX = modalX + 24.0f;
+                float startY = modalY + 70.0f;
+                float slotSize = 64.0f;
+                float slotGap = 10.0f;
+                float hy = startY + 28.0f;
+                for (int i = 0; i < HOTBAR_SLOTS; i++) {
+                    float sx = startX + i * (slotSize + slotGap);
+                    if (g_CraftingMouseX >= sx && g_CraftingMouseX <= sx + slotSize &&
+                        g_CraftingMouseY >= hy && g_CraftingMouseY <= hy + slotSize) {
+                        handleSlotClick(i, uMsg == WM_RBUTTONDOWN);
+                        return true;
+                    }
+                }
+
+                // 2. Backpack Slots (9..35)
+                float by = hy + slotSize + 26.0f + 28.0f;
+                for (int r = 0; r < 3; r++) {
+                    for (int c = 0; c < 9; c++) {
+                        int sIdx = r * 9 + c;
+                        float sx = startX + c * (slotSize + slotGap);
+                        float sy = by + r * (slotSize + slotGap);
+                        if (g_CraftingMouseX >= sx && g_CraftingMouseX <= sx + slotSize &&
+                            g_CraftingMouseY >= sy && g_CraftingMouseY <= sy + slotSize) {
+                            handleSlotClick(sIdx + 9, uMsg == WM_RBUTTONDOWN);
+                            return true;
+                        }
+                    }
+                }
+
+                // 3. Click "Switch to Crafting" in Inventory tab
                 float switchW = 260.0f;
                 float switchH = 36.0f;
                 float switchX = modalX + 24.0f;
@@ -1030,6 +1183,20 @@ static void renderCraftingUI(void) {
         menuDrawQuad(switchX, switchY, switchW, switchH, 0.38f, 0.30f, 0.12f, 1.0f);
         menuDrawBorder(switchX, switchY, switchW, switchH, 1.0f, 0.85f, 0.25f, 2.0f);
         drawText(switchX + 24, switchY + 23, LOC("返回合成工作台", "Switch to Crafting"), 1.0f, 0.92f, 0.40f, true);
+    }
+
+    // Draw floating cursor item held during slot drag/swap
+    if (g_CursorHeld.type != BLOCK_AIR && g_CursorHeld.count > 0) {
+        float cx = (float)g_CraftingMouseX;
+        float cy = (float)g_CraftingMouseY;
+        menuDrawQuad(cx - 24.0f, cy - 24.0f, 48.0f, 48.0f, 0.16f, 0.20f, 0.28f, 0.88f);
+        menuDrawBorder(cx - 24.0f, cy - 24.0f, 48.0f, 48.0f, 1.0f, 0.85f, 0.25f, 2.0f);
+        drawInventoryItemIcon(cx - 20.0f, cy - 20.0f, 40.0f, g_CursorHeld.type);
+        if (!isToolItem(g_CursorHeld.type)) {
+            char cntBuf[16];
+            snprintf(cntBuf, sizeof(cntBuf), "%d", g_CursorHeld.count);
+            drawText(cx + 6.0f, cy + 18.0f, cntBuf, 1.0f, 1.0f, 0.3f, true);
+        }
     }
 
     glDisable(GL_BLEND);

@@ -184,6 +184,88 @@ namespace Entities
 
             UpdateFacingDirection();
             UpdateHealthBarVisual();
+            CheckPlayerContactDamage();
+        }
+
+        /// <summary>
+        /// Detects contact collision with player: when mob collides with player,
+        /// if game mode is Survival and player hurtTimer <= 0, deal contact damage
+        /// (Slime: 10, Bat: 8, Zombie: 18) and knock player back.
+        /// </summary>
+        private void CheckPlayerContactDamage()
+        {
+            if (IsDead || _playerTransform == null) return;
+
+            PlayerController2D5 player = _playerTransform.GetComponent<PlayerController2D5>();
+            if (player == null || player.IsDead) return;
+
+            ApplyContactDamageToPlayer(player);
+        }
+
+        private void ApplyContactDamageToPlayer(PlayerController2D5 player)
+        {
+            if (IsDead || player == null || player.IsDead) return;
+            if (player.CurrentGameMode != GameMode.Survival || player.HurtTimer > 0f) return;
+
+            Vector3 playerCenter = player.Position + Vector3.up * 0.9f;
+            Vector3 mobCenter = transform.position;
+            float contactRadius = 0.85f;
+
+            switch (mobType)
+            {
+                case MobType.Slime:
+                    mobCenter += Vector3.up * 0.36f;
+                    contactRadius = 0.95f;
+                    break;
+                case MobType.Bat:
+                    mobCenter += Vector3.up * 0.28f;
+                    contactRadius = 0.85f;
+                    break;
+                case MobType.Zombie:
+                default:
+                    mobCenter += Vector3.up * 0.90f;
+                    contactRadius = 1.05f;
+                    break;
+            }
+
+            float dist = Vector2.Distance(new Vector2(playerCenter.x, playerCenter.y), new Vector2(mobCenter.x, mobCenter.y));
+            if (dist <= contactRadius)
+            {
+                int damage = 10;
+                switch (mobType)
+                {
+                    case MobType.Slime:
+                        damage = 10;
+                        break;
+                    case MobType.Bat:
+                        damage = 8;
+                        break;
+                    case MobType.Zombie:
+                    default:
+                        damage = 18;
+                        break;
+                }
+
+                Vector2 knockDir = (player.Position - transform.position);
+                if (Mathf.Abs(knockDir.x) < 0.1f)
+                {
+                    knockDir.x = isFacingRight ? 1f : -1f;
+                }
+                knockDir.y = 0.6f;
+                knockDir.Normalize();
+
+                player.TakeDamage(damage, knockDir);
+            }
+        }
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (IsDead || hit == null || hit.gameObject == null) return;
+            PlayerController2D5 player = hit.gameObject.GetComponent<PlayerController2D5>();
+            if (player != null)
+            {
+                ApplyContactDamageToPlayer(player);
+            }
         }
 
         private void LateUpdate()

@@ -74,6 +74,7 @@ namespace Player
 
         [Header("State")]
         [SerializeField] private int activeSlotIndex = 0;
+        [SerializeField] private int selectedSlotForMove = -1;
         [SerializeField] private InventorySlot[] slots;
 
         // Events
@@ -83,6 +84,7 @@ namespace Player
 
         public int ActiveSlotIndex => activeSlotIndex;
         public int SlotCount => slots != null ? slots.Length : 0;
+        public int SelectedSlotForMove => selectedSlotForMove;
 
         private void Awake()
         {
@@ -98,10 +100,33 @@ namespace Player
 
         private void Start()
         {
-            // Populate default starter kit if inventory is entirely empty
-            if (IsInventoryEmpty())
+            InitializeSlots();
+
+            // Check current game mode:
+            // In Survival mode (GameMode.Survival), start from 0 items (completely empty, starting from scratch).
+            // Do not pre-populate diamond pickaxes or stacks of blocks.
+            GameMode currentMode = GameMode.Survival;
+            PlayerController2D5 player = GetComponent<PlayerController2D5>() ?? FindObjectOfType<PlayerController2D5>();
+            if (player != null)
+            {
+                currentMode = player.CurrentGameMode;
+            }
+            else
+            {
+                currentMode = WorldSettings.CurrentGameMode;
+            }
+
+            if (currentMode == GameMode.Creative && IsInventoryEmpty())
             {
                 ProvisionStarterKit();
+            }
+            else if (currentMode == GameMode.Survival)
+            {
+                // Ensure inventory starts completely empty in survival mode
+                if (IsInventoryEmpty())
+                {
+                    ClearAllSlots();
+                }
             }
         }
 
@@ -331,7 +356,77 @@ namespace Player
         }
 
         /// <summary>
-        /// Swaps the contents of two slots (e.g. for inventory drag-and-drop or sorting).
+        /// Clears all slots in inventory (used for starting survival from scratch or resetting).
+        /// </summary>
+        public void ClearAllSlots()
+        {
+            InitializeSlots();
+            for (int i = 0; i < slots.Length; i++)
+            {
+                slots[i].Clear();
+            }
+            selectedSlotForMove = -1;
+            OnInventoryChanged?.Invoke();
+        }
+
+        /// <summary>
+        /// Selects a specific slot for moving / swapping.
+        /// </summary>
+        public void SelectSlotForMove(int index)
+        {
+            if (index >= 0 && index < TotalSlotCount)
+            {
+                selectedSlotForMove = index;
+            }
+        }
+
+        /// <summary>
+        /// Clears the currently selected move slot.
+        /// </summary>
+        public void ClearSelectedSlot()
+        {
+            selectedSlotForMove = -1;
+        }
+
+        /// <summary>
+        /// Handles click-to-swap logic across any slots:
+        /// 1. If nothing held, click a non-empty slot to pick it up.
+        /// 2. If clicking the same slot, drop / deselect it.
+        /// 3. If clicking another slot, call SwapSlots to swap or merge stacks.
+        /// </summary>
+        public void ClickSlot(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= TotalSlotCount) return;
+
+            InitializeSlots();
+
+            if (selectedSlotForMove == -1)
+            {
+                if (slots[slotIndex] != null && !slots[slotIndex].IsEmpty)
+                {
+                    selectedSlotForMove = slotIndex;
+                }
+            }
+            else
+            {
+                if (selectedSlotForMove == slotIndex)
+                {
+                    selectedSlotForMove = -1;
+                }
+                else
+                {
+                    SwapSlots(selectedSlotForMove, slotIndex);
+                    if (slots[selectedSlotForMove] == null || slots[selectedSlotForMove].IsEmpty)
+                    {
+                        selectedSlotForMove = -1;
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Swaps the contents of two slots (e.g. for inventory drag-and-drop, hotbar/backpack reordering, or sorting).
+        /// If both slots hold the same block type and neither is a tool, combines stacks up to MaxStackSize.
         /// </summary>
         public void SwapSlots(int indexA, int indexB)
         {
@@ -339,10 +434,35 @@ namespace Player
             {
                 return;
             }
+            if (indexA == indexB) return;
 
-            InventorySlot temp = slots[indexA];
-            slots[indexA] = slots[indexB];
-            slots[indexB] = temp;
+            InventorySlot slotA = slots[indexA];
+            InventorySlot slotB = slots[indexB];
+
+            if (slotA == null) slotA = slots[indexA] = new InventorySlot();
+            if (slotB == null) slotB = slots[indexB] = new InventorySlot();
+
+            // Try stack combination if same block type and neither is a tool
+            if (!slotA.IsEmpty && !slotB.IsEmpty && !slotA.isTool && !slotB.isTool && slotA.type == slotB.type)
+            {
+                int spaceAvailable = MaxStackSize - slotB.count;
+                if (spaceAvailable > 0)
+                {
+                    int transfer = Mathf.Min(spaceAvailable, slotA.count);
+                    slotB.count += transfer;
+                    slotA.count -= transfer;
+                    if (slotA.count <= 0)
+                    {
+                        slotA.Clear();
+                    }
+                    OnInventoryChanged?.Invoke();
+                    return;
+                }
+            }
+
+            // Otherwise perform standard swap
+            slots[indexA] = slotB;
+            slots[indexB] = slotA;
 
             OnInventoryChanged?.Invoke();
         }

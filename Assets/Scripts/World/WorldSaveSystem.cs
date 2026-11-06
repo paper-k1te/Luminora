@@ -48,14 +48,26 @@ namespace World
     }
 
     /// <summary>
-    /// Static persistence adapter linking legacy and UI calls to Core.SaveManager.Instance.
-    /// Ensures 100% architectural cohesion and backwards compatibility with all subsystems.
+    /// Static persistence adapter linking UI and game calls to Core.SaveManager.Instance.
+    /// Supports multi-save slot management (slots 0..3) with options for worldName, gameMode, and seed.
     /// </summary>
     public static class WorldSaveSystem
     {
-        public static string SaveFilePath => SaveManager.Instance.GetSaveFilePath("savegame.json");
+        public static int CurrentSlotIndex
+        {
+            get => SaveManager.Instance != null ? SaveManager.Instance.CurrentSlotIndex : 0;
+            set
+            {
+                if (SaveManager.Instance != null)
+                {
+                    SaveManager.Instance.CurrentSlotIndex = value;
+                }
+            }
+        }
 
-        public static bool HasSaveFile => SaveManager.Instance.HasSaveFile("savegame.json");
+        public static string SaveFilePath => SaveManager.Instance.GetSaveFilePath();
+
+        public static bool HasSaveFile => SaveManager.Instance.HasSaveFile();
 
         public static long CoordKey(int x, int y)
         {
@@ -77,9 +89,39 @@ namespace World
             SaveManager.Instance.ApplyModificationsToChunk(chunk);
         }
 
+        public static SaveMetadata GetSaveMetadata(int slotIndex)
+        {
+            return SaveManager.Instance.GetSaveMetadata(slotIndex);
+        }
+
+        public static List<SaveMetadata> GetAllSaveSlots()
+        {
+            return SaveManager.Instance.GetAllSaveSlots();
+        }
+
+        public static bool SaveSlot(int slotIndex)
+        {
+            return SaveManager.Instance.SaveGame(slotIndex);
+        }
+
+        public static bool LoadSlot(int slotIndex)
+        {
+            return SaveManager.Instance.LoadGame(slotIndex);
+        }
+
+        public static bool DeleteSlot(int slotIndex)
+        {
+            return SaveManager.Instance.DeleteSave(slotIndex);
+        }
+
+        public static void CreateNewSave(int slotIndex, string worldName, GameMode mode, int seed)
+        {
+            SaveManager.Instance.CreateNewSave(slotIndex, worldName, mode, seed);
+        }
+
         public static bool Save(Vector3 playerPos, InventorySystem inventory, int tutorialStep, int tutorialMinedCount = 0)
         {
-            return SaveManager.Instance.SaveGame("savegame.json");
+            return SaveManager.Instance.SaveGame(CurrentSlotIndex);
         }
 
         public static bool Load(
@@ -92,7 +134,7 @@ namespace World
             tutorialStep = 0;
             tutorialMinedCount = 0;
 
-            bool success = SaveManager.Instance.LoadGame("savegame.json");
+            bool success = SaveManager.Instance.LoadGame(CurrentSlotIndex);
             if (success)
             {
                 PlayerController2D5 player = UnityEngine.Object.FindObjectOfType<PlayerController2D5>();

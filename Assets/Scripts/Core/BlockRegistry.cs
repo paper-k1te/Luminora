@@ -106,8 +106,8 @@ namespace Core
                 chineseName: "原木",
                 englishName: "Wood Log",
                 hardness: 1.0f,
-                isSolid: true,
-                isPassable: false,
+                isSolid: false, // Tree trunk is non-solid background layer so player can pass without collision
+                isPassable: true,
                 isTransparent: false,
                 textureIndex: 4,
                 defaultColor: new Color(0.44f, 0.29f, 0.16f),

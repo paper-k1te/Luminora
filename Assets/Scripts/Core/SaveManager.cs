@@ -51,16 +51,38 @@ namespace Core
     }
 
     /// <summary>
+    /// Lightweight summary metadata describing a save slot without loading all voxel delta blocks.
+    /// </summary>
+    [Serializable]
+    public class SaveMetadata
+    {
+        public int slotIndex;
+        public string worldName = "New World";
+        public GameMode gameMode = GameMode.Survival;
+        public int seed;
+        public string lastPlayedTimestamp = "";
+        public float playerHealth = 100f;
+        public float maxHealth = 100f;
+        public int modifiedBlocksCount = 0;
+        public bool exists = false;
+    }
+
+    /// <summary>
     /// Root JSON-serializable save payload structure.
-    /// Stores minimal delta states ensuring save files remain lightweight (< 100 KB) and fast to parse.
+    /// Stores world metadata, player state, inventory, celestial time, and block deltas.
     /// </summary>
     [Serializable]
     public class SaveData
     {
+        public int slotIndex = 0;
+        public string worldName = "World 1";
+        public GameMode gameMode = GameMode.Survival;
         public int seed;
         public float gameTime;
         public float playerX;
         public float playerY;
+        public float playerHealth = 100f;
+        public float maxHealth = 100f;
         public int activeSlot;
         public InventorySlotData[] inventory;
         public List<BlockDelta> modifiedBlocks = new List<BlockDelta>();
@@ -69,9 +91,10 @@ namespace Core
     }
 
     /// <summary>
-    /// Master persistence and serialization coordinator for the 2.5D sandbox game.
-    /// Provides high-performance delta-based world saving, hotkey quick saving/loading ([F5]/[F9]),
-    /// configurable auto-saving, and full state restoration across Unity Editor and Standalone builds.
+    /// Master persistence and multi-save coordinator for the 2.5D sandbox game.
+    /// Supports multi-slot management (slots 0..3: "world_0.json" .. "world_3.json"),
+    /// metadata extraction, customizable world creation options, quick-saving/loading,
+    /// and auto-saving.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-60)]
@@ -97,8 +120,11 @@ namespace Core
             private set => _instance = value;
         }
 
-        [Header("Save Configuration")]
-        [SerializeField] private string defaultSaveFilename = "savegame.json";
+        public const int MaxSaveSlots = 4; // Slots 0, 1, 2, 3
+
+        [Header("Active Save Slot")]
+        [SerializeField] private int currentSlotIndex = 0;
+        [SerializeField] private string currentWorldName = "World 1";
 
         [Header("Auto-Save Settings")]
         [Tooltip("Automatically save the game periodically in the background.")]
@@ -125,7 +151,25 @@ namespace Core
         public event Action OnSaveCompleted;
         public event Action OnLoadCompleted;
 
+        public int CurrentSlotIndex
+        {
+            get => currentSlotIndex;
+            set => currentSlotIndex = Mathf.Clamp(value, 0, MaxSaveSlots - 1);
+        }
+
+        public string CurrentWorldName
+        {
+            get => currentWorldName;
+            set => currentWorldName = string.IsNullOrEmpty(value) ? $"World {currentSlotIndex + 1}" : value;
+        }
+
         public int ModifiedBlockCount => _deltaMap.Count;
+
+        public static string GetSlotFileName(int slotIndex)
+        {
+            int s = Mathf.Clamp(slotIndex, 0, MaxSaveSlots - 1);
+            return $"world_{s}.json";
+        }
 
         private void Awake()
         {
@@ -150,7 +194,7 @@ namespace Core
             if (autoSaveOnQuit)
             {
                 Debug.Log("[SaveManager] Application quitting -> Executing automatic exit save...");
-                SaveGame(defaultSaveFilename);
+                SaveGame(currentSlotIndex);
             }
         }
 
@@ -161,10 +205,10 @@ namespace Core
         {
             if (Input.GetKeyDown(quickSaveKey))
             {
-                bool success = SaveGame(defaultSaveFilename);
+                bool success = SaveGame(currentSlotIndex);
                 if (success)
                 {
-                    UIManager.ShowNotification("快捷存档成功 (World Saved!) [F5]");
+                    UIManager.ShowNotification($"快捷存档成功 (Slot {currentSlotIndex + 1} Saved!) [F5]");
                 }
                 else
                 {
@@ -174,12 +218,12 @@ namespace Core
 
             if (Input.GetKeyDown(quickLoadKey))
             {
-                if (HasSaveFile(defaultSaveFilename))
+                if (HasSaveFile(GetSlotFileName(currentSlotIndex)))
                 {
-                    bool success = LoadGame(defaultSaveFilename);
+                    bool success = LoadGame(currentSlotIndex);
                     if (success)
                     {
-                        UIManager.ShowNotification("存档读取成功 (World Loaded!) [F9]");
+                        UIManager.ShowNotification($"存档读取成功 (Slot {currentSlotIndex + 1} Loaded!) [F9]");
                     }
                     else
                     {
@@ -188,7 +232,7 @@ namespace Core
                 }
                 else
                 {
-                    UIManager.ShowNotification("<color=#FFCC00>暂无存档记录 (No save file found) [F9]!</color>");
+                    UIManager.ShowNotification($"<color=#FFCC00>槽位 {currentSlotIndex + 1} 暂无存档记录 (No save found) [F9]!</color>");
                 }
             }
         }
@@ -204,10 +248,10 @@ namespace Core
             if (_autoSaveTimer >= autoSaveInterval)
             {
                 _autoSaveTimer = 0f;
-                bool saved = SaveGame(defaultSaveFilename);
+                bool saved = SaveGame(currentSlotIndex);
                 if (saved)
                 {
-                    UIManager.ShowNotification("Auto-Saved World!");
+                    UIManager.ShowNotification($"Auto-Saved Slot {currentSlotIndex + 1}!");
                 }
             }
         }
@@ -225,7 +269,6 @@ namespace Core
 
         /// <summary>
         /// Records a player-initiated block modification into the active delta buffer.
-        /// Called automatically whenever WorldManager.SetBlock or SetWall modifies a block.
         /// </summary>
         public void RecordBlockModification(int worldX, int worldY, BlockType type, bool isWall)
         {
@@ -235,7 +278,6 @@ namespace Core
 
         /// <summary>
         /// Applies all recorded block modifications that fall within the boundaries of a given chunk.
-        /// Called when new chunks stream in, ensuring player modifications persist during exploration.
         /// </summary>
         public void ApplyModificationsToChunk(Chunk chunk)
         {
@@ -288,11 +330,11 @@ namespace Core
         /// <summary>
         /// Computes the absolute platform-independent file path for a save file.
         /// </summary>
-        public string GetSaveFilePath(string filename = "savegame.json")
+        public string GetSaveFilePath(string filename = null)
         {
             if (string.IsNullOrEmpty(filename))
             {
-                filename = defaultSaveFilename;
+                filename = GetSlotFileName(currentSlotIndex);
             }
 
             string basePath = Application.persistentDataPath;
@@ -305,18 +347,96 @@ namespace Core
         }
 
         /// <summary>
-        /// Checks whether a save file with the given name currently exists on disk.
+        /// Checks whether a save file exists on disk.
         /// </summary>
-        public bool HasSaveFile(string filename = "savegame.json")
+        public bool HasSaveFile(string filename = null)
         {
             string path = GetSaveFilePath(filename);
             return File.Exists(path);
         }
 
         /// <summary>
-        /// Deletes a save file from disk.
+        /// Reads lightweight metadata for a specific save slot index.
         /// </summary>
-        public bool DeleteSave(string filename = "savegame.json")
+        public SaveMetadata GetSaveMetadata(int slotIndex)
+        {
+            string filename = GetSlotFileName(slotIndex);
+            string filePath = GetSaveFilePath(filename);
+
+            SaveMetadata meta = new SaveMetadata
+            {
+                slotIndex = slotIndex,
+                worldName = $"World {slotIndex + 1}",
+                exists = false
+            };
+
+            if (!File.Exists(filePath))
+            {
+                return meta;
+            }
+
+            try
+            {
+                string json = File.ReadAllText(filePath);
+                SaveData data = JsonUtility.FromJson<SaveData>(json);
+                if (data != null)
+                {
+                    meta.worldName = string.IsNullOrEmpty(data.worldName) ? $"World {slotIndex + 1}" : data.worldName;
+                    meta.gameMode = data.gameMode;
+                    meta.seed = data.seed;
+                    meta.lastPlayedTimestamp = data.timestamp;
+                    meta.playerHealth = data.playerHealth;
+                    meta.maxHealth = data.maxHealth > 0f ? data.maxHealth : 100f;
+                    meta.modifiedBlocksCount = data.modifiedBlocks != null ? data.modifiedBlocks.Count : 0;
+                    meta.exists = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[SaveManager] Error reading metadata for slot {slotIndex}: {ex.Message}");
+            }
+
+            return meta;
+        }
+
+        /// <summary>
+        /// Retrieves metadata for all 4 save slots.
+        /// </summary>
+        public List<SaveMetadata> GetAllSaveSlots()
+        {
+            List<SaveMetadata> list = new List<SaveMetadata>(MaxSaveSlots);
+            for (int i = 0; i < MaxSaveSlots; i++)
+            {
+                list.Add(GetSaveMetadata(i));
+            }
+            return list;
+        }
+
+        /// <summary>
+        /// Deletes a save slot file from disk.
+        /// </summary>
+        public bool DeleteSave(int slotIndex)
+        {
+            try
+            {
+                string filename = GetSlotFileName(slotIndex);
+                string path = GetSaveFilePath(filename);
+                if (File.Exists(path))
+                {
+                    File.Delete(path);
+                    Debug.Log($"[SaveManager] Deleted save slot {slotIndex}: {path}");
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[SaveManager] Failed to delete save slot {slotIndex}: {ex.Message}");
+                return false;
+            }
+        }
+
+        public bool DeleteSave(string filename)
         {
             try
             {
@@ -337,19 +457,102 @@ namespace Core
         }
 
         /// <summary>
-        /// Serializes the entire world state into JSON and saves it to persistent storage.
-        /// Captures player position, inventory, game time, world seed, tutorial progress, and block deltas.
+        /// Creates a brand-new save slot with customizable options:
+        /// worldName, gameMode (Survival vs Creative), and seed.
+        /// In Survival mode, starts with 0 items (completely empty from scratch).
         /// </summary>
-        public bool SaveGame(string filename = "savegame.json")
+        public void CreateNewSave(int slotIndex, string worldName, GameMode mode, int seed)
+        {
+            currentSlotIndex = Mathf.Clamp(slotIndex, 0, MaxSaveSlots - 1);
+            currentWorldName = string.IsNullOrEmpty(worldName) ? $"World {currentSlotIndex + 1}" : worldName;
+
+            WorldSettings.CurrentGameMode = mode;
+            WorldSettings.ActiveSeed = seed;
+
+            ClearModifications();
+
+            // Setup player
+            PlayerController2D5 player = FindObjectOfType<PlayerController2D5>();
+            if (player != null)
+            {
+                player.CurrentGameMode = mode;
+                player.SetHealth(100f, 100f);
+            }
+
+            // Setup inventory
+            InventorySystem inv = InventorySystem.Instance ?? FindObjectOfType<InventorySystem>();
+            if (inv != null)
+            {
+                if (mode == GameMode.Survival)
+                {
+                    // Survival mode starts with 0 items (completely empty from scratch)
+                    inv.ClearAllSlots();
+                }
+                else
+                {
+                    inv.ProvisionStarterKit();
+                }
+            }
+
+            // Regenerate world
+            Vector3 spawnPos = new Vector3(0f, WorldSettings.BaseSurfaceLevel + 2f, 0f);
+            if (WorldManager.Instance != null)
+            {
+                WorldManager.Instance.LoadWorldState(seed, spawnPos);
+            }
+            if (player != null)
+            {
+                player.Respawn();
+            }
+
+            // Save initial state to disk
+            SaveGame(currentSlotIndex);
+        }
+
+        /// <summary>
+        /// Saves current world state to a designated slot index.
+        /// </summary>
+        public bool SaveGame(int slotIndex)
+        {
+            currentSlotIndex = Mathf.Clamp(slotIndex, 0, MaxSaveSlots - 1);
+            return SaveGame(GetSlotFileName(currentSlotIndex));
+        }
+
+        /// <summary>
+        /// Loads world state from a designated slot index.
+        /// </summary>
+        public bool LoadGame(int slotIndex)
+        {
+            currentSlotIndex = Mathf.Clamp(slotIndex, 0, MaxSaveSlots - 1);
+            return LoadGame(GetSlotFileName(currentSlotIndex));
+        }
+
+        /// <summary>
+        /// Serializes the entire world state into JSON and saves it to persistent storage.
+        /// Captures worldName, gameMode, player position, health, inventory, celestial time, seed, and block deltas.
+        /// </summary>
+        public bool SaveGame(string filename = null)
         {
             try
             {
-                // 1. Gather player transform
+                if (string.IsNullOrEmpty(filename))
+                {
+                    filename = GetSlotFileName(currentSlotIndex);
+                }
+
+                // 1. Gather player transform, health, and mode
                 Vector3 playerPos = Vector3.zero;
+                float playerHealth = 100f;
+                float maxHealth = 100f;
+                GameMode activeMode = WorldSettings.CurrentGameMode;
+
                 PlayerController2D5 player = FindObjectOfType<PlayerController2D5>();
                 if (player != null)
                 {
                     playerPos = player.Position;
+                    playerHealth = player.CurrentHealth;
+                    maxHealth = player.MaxHealth;
+                    activeMode = player.CurrentGameMode;
                 }
                 else if (WorldManager.Instance != null && WorldManager.Instance.PlayerTransform != null)
                 {
@@ -391,10 +594,15 @@ namespace Core
                 // 6. Build SaveData payload
                 SaveData saveData = new SaveData
                 {
+                    slotIndex = currentSlotIndex,
+                    worldName = currentWorldName,
+                    gameMode = activeMode,
                     seed = activeSeed,
                     gameTime = gameTime,
                     playerX = playerPos.x,
                     playerY = playerPos.y,
+                    playerHealth = playerHealth,
+                    maxHealth = maxHealth,
                     activeSlot = activeSlot,
                     inventory = inventoryData,
                     modifiedBlocks = GetModifiedBlocksList(),
@@ -415,7 +623,7 @@ namespace Core
 
                 File.WriteAllText(filePath, json);
 
-                Debug.Log($"[SaveManager] World state successfully saved to '{filePath}' ({saveData.modifiedBlocks.Count} modified blocks, seed: {activeSeed}).");
+                Debug.Log($"[SaveManager] World '{currentWorldName}' successfully saved to '{filePath}' (Slot {currentSlotIndex}, Mode: {activeMode}, Health: {playerHealth:F0}/{maxHealth:F0}, Seed: {activeSeed}).");
                 OnSaveCompleted?.Invoke();
                 return true;
             }
@@ -428,10 +636,15 @@ namespace Core
 
         /// <summary>
         /// Reads save file from persistent storage and completely restores world, player,
-        /// inventory, celestial lighting, and tutorial state.
+        /// game mode, health, inventory, celestial lighting, and tutorial state.
         /// </summary>
-        public bool LoadGame(string filename = "savegame.json")
+        public bool LoadGame(string filename = null)
         {
+            if (string.IsNullOrEmpty(filename))
+            {
+                filename = GetSlotFileName(currentSlotIndex);
+            }
+
             string filePath = GetSaveFilePath(filename);
             if (!File.Exists(filePath))
             {
@@ -450,6 +663,11 @@ namespace Core
                     return false;
                 }
 
+                currentSlotIndex = Mathf.Clamp(data.slotIndex, 0, MaxSaveSlots - 1);
+                currentWorldName = string.IsNullOrEmpty(data.worldName) ? $"World {currentSlotIndex + 1}" : data.worldName;
+                WorldSettings.CurrentGameMode = data.gameMode;
+                WorldSettings.ActiveSeed = data.seed;
+
                 // 1. Populate delta modifications in SaveManager memory
                 ClearModifications();
                 if (data.modifiedBlocks != null)
@@ -462,17 +680,21 @@ namespace Core
                     }
                 }
 
-                // 2. Restore World and regenerates chunks with modifications applied
+                // 2. Restore World and regenerate chunks with modifications applied
                 Vector3 restoredPlayerPos = new Vector3(data.playerX, data.playerY, 0f);
                 if (WorldManager.Instance != null)
                 {
                     WorldManager.Instance.LoadWorldState(data.seed, restoredPlayerPos);
                 }
 
-                // 3. Teleport player safely
+                // 3. Restore Player position, game mode, and health
                 PlayerController2D5 player = FindObjectOfType<PlayerController2D5>();
                 if (player != null)
                 {
+                    player.CurrentGameMode = data.gameMode;
+                    float hp = data.playerHealth > 0f ? data.playerHealth : 100f;
+                    float maxHp = data.maxHealth > 0f ? data.maxHealth : 100f;
+                    player.SetHealth(hp, maxHp);
                     player.Teleport(restoredPlayerPos);
                 }
 
@@ -499,7 +721,7 @@ namespace Core
                     UIManager.Instance.TutorialStep = data.tutorialStep;
                 }
 
-                Debug.Log($"[SaveManager] World state successfully loaded from '{filePath}' (Seed: {data.seed}, Modified Blocks: {_deltaMap.Count}).");
+                Debug.Log($"[SaveManager] World '{currentWorldName}' loaded successfully from '{filePath}' (Slot {currentSlotIndex}, Mode: {data.gameMode}, Health: {data.playerHealth:F0}, Seed: {data.seed}).");
                 OnLoadCompleted?.Invoke();
                 return true;
             }

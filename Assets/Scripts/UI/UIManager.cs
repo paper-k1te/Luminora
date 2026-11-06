@@ -142,6 +142,14 @@ namespace UI
         private GUIStyle _menuSubtitleStyle;
         private GUIStyle _splashStyle;
 
+        // Save Slot Management State
+        private bool _showWorldSelectModal = false;
+        private int _creatingSlotIndex = -1;
+        private string _newWorldName = "World 1";
+        private GameMode _newWorldMode = GameMode.Survival;
+        private string _newWorldSeedStr = "12345";
+        private List<SaveMetadata> _cachedSlots;
+
         // Procedural Textures
         private Texture2D _panelTex;
         private Texture2D _questPanelTex;
@@ -315,10 +323,21 @@ namespace UI
                 }
             }
 
-            // ESC toggles Pause Menu or closes Help modal
+            // ESC toggles Pause Menu or closes modals
             if (Input.GetKeyDown(KeyCode.Escape))
             {
-                if (showHelpOverlay)
+                if (_showWorldSelectModal)
+                {
+                    if (_creatingSlotIndex != -1)
+                    {
+                        _creatingSlotIndex = -1;
+                    }
+                    else
+                    {
+                        _showWorldSelectModal = false;
+                    }
+                }
+                else if (showHelpOverlay)
                 {
                     showHelpOverlay = false;
                 }
@@ -482,9 +501,10 @@ namespace UI
         {
             Vector3 playerPos = _player != null ? _player.Position : Vector3.zero;
             bool success = WorldSaveSystem.Save(playerPos, _inventory, tutorialStep, minedBlocksCount);
+            int slotDisplay = WorldSaveSystem.CurrentSlotIndex + 1;
             if (success)
             {
-                SpawnFloatingText(LocalizationManager.Get("💾 快捷存档成功! [F5]", "💾 World Saved! [F5]"), new Color(0.35f, 0.95f, 0.65f));
+                SpawnFloatingText(LocalizationManager.Get($"💾 槽位 {slotDisplay} 存档成功! [F5]", $"💾 Slot {slotDisplay} Saved! [F5]"), new Color(0.35f, 0.95f, 0.65f));
                 PlaySaveChime();
 
                 if (tutorialStep == 4)
@@ -495,13 +515,14 @@ namespace UI
             }
             else
             {
-                SpawnFloatingText(LocalizationManager.Get("❌ 存档失败", "❌ Save Failed"), new Color(1.0f, 0.35f, 0.35f));
+                SpawnFloatingText(LocalizationManager.Get($"❌ 槽位 {slotDisplay} 存档失败", $"❌ Slot {slotDisplay} Save Failed"), new Color(1.0f, 0.35f, 0.35f));
             }
         }
 
         public void QuickLoad()
         {
             bool success = WorldSaveSystem.Load(out Vector3 loadedPos, _inventory, out int loadedStep, out int loadedMined);
+            int slotDisplay = WorldSaveSystem.CurrentSlotIndex + 1;
             if (success)
             {
                 if (_player != null && loadedPos != Vector3.zero)
@@ -511,12 +532,12 @@ namespace UI
                 tutorialStep = loadedStep;
                 minedBlocksCount = loadedMined;
 
-                SpawnFloatingText(LocalizationManager.Get("📂 存档读取成功! [F9]", "📂 World Loaded! [F9]"), new Color(0.40f, 0.85f, 1.0f));
+                SpawnFloatingText(LocalizationManager.Get($"📂 槽位 {slotDisplay} 读取成功! [F9]", $"📂 Slot {slotDisplay} Loaded! [F9]"), new Color(0.40f, 0.85f, 1.0f));
                 PlayLoadChime();
             }
             else
             {
-                SpawnFloatingText(LocalizationManager.Get("⚠️ 暂无存档文件 [F5 快速存档]", "⚠️ No Save File [F5 to Save]"), new Color(1.0f, 0.70f, 0.30f));
+                SpawnFloatingText(LocalizationManager.Get($"⚠️ 槽位 {slotDisplay} 暂无存档 [F5 快速存档]", $"⚠️ Slot {slotDisplay} Empty [F5 to Save]"), new Color(1.0f, 0.70f, 0.30f));
             }
         }
 
@@ -573,7 +594,14 @@ namespace UI
             // Main Menu state renders the Minecraft-style Title Banner & Game Mode select buttons
             if (currentGameState == GameState.MainMenu)
             {
-                DrawMainMenu();
+                if (_showWorldSelectModal)
+                {
+                    DrawWorldSelectModal();
+                }
+                else
+                {
+                    DrawMainMenu();
+                }
                 DrawFloatingTextPopups();
                 return;
             }
@@ -581,6 +609,7 @@ namespace UI
             DrawTopLeftStatusPanel();
             DrawMiningProgressBar();
             DrawHotbarHUD();
+            DrawPlayerHealthHUD();
             DrawNoviceTutorialQuestBox();
             DrawBlockInspectorTooltip();
             DrawFloatingTextPopups();
@@ -594,7 +623,14 @@ namespace UI
             // Pause Menu overlay when state is Paused
             if (currentGameState == GameState.Paused)
             {
-                DrawPauseMenu();
+                if (_showWorldSelectModal)
+                {
+                    DrawWorldSelectModal();
+                }
+                else
+                {
+                    DrawPauseMenu();
+                }
             }
         }
 
@@ -976,6 +1012,126 @@ namespace UI
         }
 
         /// <summary>
+        /// Terraria-style Player Health HUD for Survival Mode:
+        /// 10 animated heart icons, smooth status bar with HP numbers, low-health danger pulse,
+        /// and death respawn banner.
+        /// </summary>
+        private void DrawPlayerHealthHUD()
+        {
+            if (_player == null || _player.CurrentGameMode != GameMode.Survival) return;
+
+            float health = _player.CurrentHealth;
+            float maxHealth = _player.MaxHealth > 0f ? _player.MaxHealth : 100f;
+            bool isDead = _player.IsDead;
+
+            // Centered above the hotbar
+            float totalHotbarWidth = InventorySystem.HotbarSlotCount * slotSize + (InventorySystem.HotbarSlotCount - 1) * slotPadding;
+            float barW = 260f;
+            float barH = 18f;
+            float startX = (Screen.width - barW) * 0.5f;
+
+            InventorySlot activeSlot = _inventory != null ? _inventory.GetActiveItem() : null;
+            float baseOffset = (activeSlot != null && !activeSlot.IsEmpty) ? 60f : 32f;
+            float startY = Screen.height - slotSize - bottomOffset - baseOffset;
+
+            // Death overlay banner
+            if (isDead)
+            {
+                float deathW = 440f;
+                float deathH = 54f;
+                float deathX = (Screen.width - deathW) * 0.5f;
+                float deathY = startY - 24f;
+                Rect deathRect = new Rect(deathX, deathY, deathW, deathH);
+
+                DrawSolidRect(deathRect, new Color(0.12f, 0.02f, 0.02f, 0.92f));
+                DrawOutline(deathRect, 2, new Color(1.0f, 0.25f, 0.25f, 0.95f));
+
+                GUIStyle dTitleStyle = new GUIStyle(_titleStyle)
+                {
+                    fontSize = 15,
+                    alignment = TextAnchor.MiddleCenter,
+                    normal = { textColor = new Color(1.0f, 0.25f, 0.25f) }
+                };
+                GUI.Label(new Rect(deathX, deathY + 6f, deathW, 20f), LocalizationManager.Get("💀 你死掉了！(YOU DIED)", "💀 YOU DIED!"), dTitleStyle);
+
+                GUIStyle dSubStyle = new GUIStyle(_bodyStyle)
+                {
+                    alignment = TextAnchor.MiddleCenter,
+                    normal = { textColor = new Color(1.0f, 0.88f, 0.40f) }
+                };
+                GUI.Label(new Rect(deathX, deathY + 28f, deathW, 18f), LocalizationManager.Get("按 [R] 键在地表安全重生并恢复生命", "Press [R] to Respawn safely on Surface"), dSubStyle);
+                return;
+            }
+
+            // Health Bar Background
+            Rect bgRect = new Rect(startX, startY, barW, barH);
+            DrawSolidRect(bgRect, new Color(0.08f, 0.09f, 0.12f, 0.88f));
+
+            // Low health pulsing red border
+            bool isLowHealth = (health <= 25f);
+            Color borderColor = isLowHealth 
+                ? new Color(1.0f, 0.2f, 0.2f, 0.6f + Mathf.Sin(Time.time * 10f) * 0.4f) 
+                : new Color(0.35f, 0.40f, 0.50f, 0.8f);
+            DrawOutline(bgRect, 1, borderColor);
+
+            // Health bar fill
+            float fillFrac = Mathf.Clamp01(health / maxHealth);
+            float fillW = (barW - 4f) * fillFrac;
+            Rect fillRect = new Rect(startX + 2f, startY + 2f, fillW, barH - 4f);
+
+            Color fillColor = (health > 50f)
+                ? new Color(0.25f, 0.85f, 0.35f, 0.95f)
+                : (health > 25f ? new Color(1.0f, 0.75f, 0.20f, 0.95f) : new Color(1.0f, 0.25f, 0.25f, 0.95f));
+            DrawSolidRect(fillRect, fillColor);
+
+            // 10 Terraria Heart Icons ❤️ directly above the bar
+            int totalHearts = Mathf.Max(1, Mathf.RoundToInt(maxHealth / 10f));
+            float heartSize = 16f;
+            float heartGap = 2f;
+            float heartsTotalW = totalHearts * (heartSize + heartGap);
+            float heartsStartX = (Screen.width - heartsTotalW) * 0.5f;
+            float heartsY = startY - 18f;
+
+            GUIStyle heartStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 12,
+                alignment = TextAnchor.MiddleCenter
+            };
+
+            for (int h = 0; h < totalHearts; h++)
+            {
+                float hHealth = (h + 1) * 10f;
+                string heartIcon;
+                if (health >= hHealth)
+                {
+                    heartIcon = "<color=#FF3344>❤️</color>";
+                }
+                else if (health >= hHealth - 5f)
+                {
+                    heartIcon = "<color=#FFAA33>💔</color>";
+                }
+                else
+                {
+                    heartIcon = "<color=#555555>🖤</color>";
+                }
+
+                Rect hRect = new Rect(heartsStartX + h * (heartSize + heartGap), heartsY, heartSize + 4f, heartSize + 4f);
+                GUI.Label(hRect, heartIcon, heartStyle);
+            }
+
+            // Numerical HP text overlay inside bar
+            GUIStyle hpTextStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 11,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleCenter,
+                normal = { textColor = Color.white }
+            };
+            string hpString = $"HP: {Mathf.CeilToInt(health)} / {Mathf.CeilToInt(maxHealth)}";
+            GUI.Label(bgRect, hpString, hpTextStyle);
+        }
+
+        /// <summary>
         /// 5. Floating Text Popups (飘字系统).
         /// </summary>
         private void DrawFloatingTextPopups()
@@ -1148,7 +1304,7 @@ namespace UI
 
         /// <summary>
         /// Minecraft-style Main Menu UI when in MainMenu state:
-        /// Title banner, [SURVIVAL MODE (生存模式)], [CREATIVE MODE (创造模式)], [CONTINUE / LOAD (读取世界)], [EXIT (退出)].
+        /// Title banner, [SURVIVAL MODE (生存模式)], [CREATIVE MODE (创造模式)], [SAVE SLOTS (存档管理)], [EXIT (退出)].
         /// </summary>
         private void DrawMainMenu()
         {
@@ -1173,49 +1329,43 @@ namespace UI
             GUI.Label(new Rect(bannerX, bannerY + 46f, bannerW, 22f), "— MINECRAFT & TERRARIA SANDBOX HYBRID —", _menuSubtitleStyle);
 
             // Floating pulsing splash text
-            string splash = LocalizationManager.Get("★ 新增创造模式双击空格飞行 & 无限方块秒破! ★", "★ Flight & Instant Mining in Creative Mode! ★");
+            string splash = LocalizationManager.Get("★ 4大独立存档槽位 & 生存0道具开荒 & 实体伤害击退! ★", "★ 4 Independent Save Slots & Survival Fresh Start & Mob Knockback! ★");
             GUI.Label(new Rect(bannerX + 40f, bannerY + 70f, bannerW - 80f, 24f), splash, _splashStyle);
 
             // Main Menu Buttons
-            float btnW = 360f;
-            float btnH = 46f;
-            float btnGap = 12f;
+            float btnW = 380f;
+            float btnH = 44f;
+            float btnGap = 10f;
             float btnX = (Screen.width - btnW) * 0.5f;
-            float btnStartY = bannerY + bannerH + 28f;
+            float btnStartY = bannerY + bannerH + 24f;
 
-            // 1. [SURVIVAL MODE (生存模式)]
+            // 1. [SURVIVAL MODE (生存模式 / 选择存档位)]
             Rect r1 = new Rect(btnX, btnStartY, btnW, btnH);
-            if (GUI.Button(r1, LocalizationManager.Get("⚔️ 生存模式", "⚔️ Survival Mode"), _mcBtnStyle))
+            if (GUI.Button(r1, LocalizationManager.Get("⚔️ 生存模式 (从零开荒)", "⚔️ Survival Mode (Fresh Start)"), _mcBtnStyle))
             {
-                if (_player != null)
-                {
-                    _player.CurrentGameMode = GameMode.Survival;
-                }
-                currentGameState = GameState.Playing;
-                SpawnFloatingText(LocalizationManager.Get("🌲 已开启: 生存模式", "🌲 Survival Mode Activated"), new Color(0.35f, 0.95f, 0.45f));
+                _newWorldMode = GameMode.Survival;
+                _showWorldSelectModal = true;
+                RefreshSaveSlots();
                 PlayPopSound();
             }
 
-            // 2. [CREATIVE MODE (创造模式)]
+            // 2. [CREATIVE MODE (创造模式 / 自由建造)]
             Rect r2 = new Rect(btnX, btnStartY + (btnH + btnGap), btnW, btnH);
-            if (GUI.Button(r2, LocalizationManager.Get("✨ 创造模式", "✨ Creative Mode"), _mcBtnStyle))
+            if (GUI.Button(r2, LocalizationManager.Get("✨ 创造模式 (飞行建造)", "✨ Creative Mode (Fly & Build)"), _mcBtnStyle))
             {
-                if (_player != null)
-                {
-                    _player.CurrentGameMode = GameMode.Creative;
-                    _player.IsFlying = false;
-                }
-                currentGameState = GameState.Playing;
-                SpawnFloatingText(LocalizationManager.Get("⚡ 已开启: 创造模式 [双击空格飞行!]", "⚡ Creative Mode Activated [2x Space to Fly!]"), new Color(0.35f, 0.90f, 1.0f));
-                PlayQuestFanfare();
+                _newWorldMode = GameMode.Creative;
+                _showWorldSelectModal = true;
+                RefreshSaveSlots();
+                PlayPopSound();
             }
 
-            // 3. [CONTINUE / LOAD (读取世界)]
+            // 3. [SAVE SLOTS / LOAD (存档位管理)]
             Rect r3 = new Rect(btnX, btnStartY + (btnH + btnGap) * 2, btnW, btnH);
-            if (GUI.Button(r3, LocalizationManager.Get("📂 读取世界", "📂 Continue / Load"), _mcBtnStyle))
+            if (GUI.Button(r3, LocalizationManager.Get("📂 世界存档管理 (4 独立槽位)", "📂 World Save Slots (4 Slots)"), _mcBtnStyle))
             {
-                QuickLoad();
-                currentGameState = GameState.Playing;
+                _showWorldSelectModal = true;
+                RefreshSaveSlots();
+                PlayPopSound();
             }
 
             // 4. [LANGUAGE TOGGLE (语言切换)]
@@ -1238,20 +1388,20 @@ namespace UI
 
             // Footer credits
             float footerY = Screen.height - 32f;
-            GUI.Label(new Rect(0, footerY, Screen.width, 24f), LocalizationManager.Get("<color=#888888>泰拉瑞亚 2.5D 沙盒 | 双重生存与创造架构 | 游戏内按 [ESC] 暂停</color>", "<color=#888888>Terraria 2.5D Sandbox | Dual Survival & Creative Architecture | Press [ESC] in game for Pause</color>"), _bodyStyle);
+            GUI.Label(new Rect(0, footerY, Screen.width, 24f), LocalizationManager.Get("<color=#888888>泰拉瑞亚 2.5D 沙盒 | 4组独立存档系统 | 游戏内按 [ESC] 暂停 | [F5] 快速存档</color>", "<color=#888888>Terraria 2.5D Sandbox | 4 Save Slots System | Press [ESC] in game for Pause | [F5] Quick Save</color>"), _bodyStyle);
         }
 
         /// <summary>
         /// Minecraft-style Pause Menu overlay:
-        /// Resumes game, toggles GameMode (Survival <-> Creative), Quick Save, Quick Load, Language Toggle, Return to Main Menu, Quit.
+        /// Resumes game, toggles GameMode, Quick Save, Quick Load, Save Slots Manager, Language Toggle, Return to Main Menu, Quit.
         /// </summary>
         private void DrawPauseMenu()
         {
             // Dim backdrop
             DrawSolidRect(new Rect(0, 0, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.68f));
 
-            float boxW = 420f;
-            float boxH = 490f;
+            float boxW = 440f;
+            float boxH = 500f;
             float boxX = (Screen.width - boxW) * 0.5f;
             float boxY = (Screen.height - boxH) * 0.5f;
 
@@ -1259,21 +1409,23 @@ namespace UI
             GUI.Box(boxRect, GUIContent.none, _helpPanelStyle);
 
             // Title
-            Rect titleRect = new Rect(boxX, boxY + 16f, boxW, 26f);
+            Rect titleRect = new Rect(boxX, boxY + 14f, boxW, 26f);
             GUI.Label(titleRect, LocalizationManager.Get("<b>游戏已暂停</b>", "<b>GAME PAUSED</b>"), _titleStyle);
 
-            // Current mode badge
+            // Current world and mode badge
+            int curSlot = SaveManager.Instance != null ? SaveManager.Instance.CurrentSlotIndex : 0;
+            string curWorld = SaveManager.Instance != null ? SaveManager.Instance.CurrentWorldName : $"World {curSlot + 1}";
             GameMode curMode = _player != null ? _player.CurrentGameMode : GameMode.Survival;
             string modeName = curMode.GetDisplayName();
-            Rect modeRect = new Rect(boxX, boxY + 44f, boxW, 22f);
-            GUI.Label(modeRect, $"{LocalizationManager.Get("当前世界模式", "Current Mode")}: <color=#55FFFF>{modeName}</color>", _bodyStyle);
+            Rect modeRect = new Rect(boxX, boxY + 40f, boxW, 22f);
+            GUI.Label(modeRect, $"{LocalizationManager.Get("当前世界", "Current World")}: <color=#FFDD55>槽位 {curSlot + 1} ({curWorld})</color> | <color=#55FFFF>{modeName}</color>", _bodyStyle);
 
             // Buttons
-            float btnW = 340f;
-            float btnH = 42f;
-            float btnGap = 10f;
+            float btnW = 360f;
+            float btnH = 38f;
+            float btnGap = 8f;
             float btnX = boxX + (boxW - btnW) * 0.5f;
-            float btnStartY = boxY + 72f;
+            float btnStartY = boxY + 68f;
 
             // 1. Resume Game
             if (GUI.Button(new Rect(btnX, btnStartY, btnW, btnH), LocalizationManager.Get("▶ 继续游戏", "▶ Resume Game"), _mcBtnStyle))
@@ -1297,39 +1449,309 @@ namespace UI
             }
 
             // 3. Save World
-            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 2, btnW, btnH), LocalizationManager.Get("💾 保存世界 [F5]", "💾 Save World [F5]"), _mcBtnStyle))
+            string saveLabel = LocalizationManager.Get($"💾 保存本世界 (槽位 {curSlot + 1}) [F5]", $"💾 Save World (Slot {curSlot + 1}) [F5]");
+            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 2, btnW, btnH), saveLabel, _mcBtnStyle))
             {
                 QuickSave();
             }
 
             // 4. Load World
-            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 3, btnW, btnH), LocalizationManager.Get("📂 读取世界 [F9]", "📂 Load World [F9]"), _mcBtnStyle))
+            string loadLabel = LocalizationManager.Get($"📂 读取本世界 (槽位 {curSlot + 1}) [F9]", $"📂 Load World (Slot {curSlot + 1}) [F9]");
+            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 3, btnW, btnH), loadLabel, _mcBtnStyle))
             {
                 QuickLoad();
                 currentGameState = GameState.Playing;
             }
 
-            // 5. Language Toggle Button
-            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 4, btnW, btnH), LocalizationManager.Get("语言: 简体中文", "Language: English"), _mcBtnStyle))
+            // 5. Save Slots Manager
+            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 4, btnW, btnH), LocalizationManager.Get("🌐 切换/管理存档位 (4 独立槽位)", "🌐 Switch / Manage Save Slots (4 Slots)"), _mcBtnStyle))
+            {
+                _showWorldSelectModal = true;
+                RefreshSaveSlots();
+                PlayPopSound();
+            }
+
+            // 6. Language Toggle Button
+            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 5, btnW, btnH), LocalizationManager.Get("语言: 简体中文", "Language: English"), _mcBtnStyle))
             {
                 LocalizationManager.ToggleLanguage();
                 PlayPopSound();
             }
 
-            // 6. Return to Main Menu
-            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 5, btnW, btnH), LocalizationManager.Get("🏠 返回主菜单", "🏠 Main Menu"), _mcBtnStyle))
+            // 7. Return to Main Menu
+            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 6, btnW, btnH), LocalizationManager.Get("🏠 返回主菜单", "🏠 Main Menu"), _mcBtnStyle))
             {
                 currentGameState = GameState.MainMenu;
                 PlayPopSound();
             }
 
-            // 7. Quit Game
-            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 6, btnW, btnH), LocalizationManager.Get("❌ 退出游戏", "❌ Quit Game"), _mcBtnStyle))
+            // 8. Quit Game
+            if (GUI.Button(new Rect(btnX, btnStartY + (btnH + btnGap) * 7, btnW, btnH), LocalizationManager.Get("❌ 退出游戏", "❌ Quit Game"), _mcBtnStyle))
             {
                 Application.Quit();
 #if UNITY_EDITOR
                 UnityEditor.EditorApplication.isPlaying = false;
 #endif
+            }
+        }
+
+        /// <summary>
+        /// Refreshes metadata cache for all 4 save slots from SaveManager.
+        /// </summary>
+        public void RefreshSaveSlots()
+        {
+            if (SaveManager.Instance != null)
+            {
+                _cachedSlots = SaveManager.Instance.GetAllSaveSlots();
+            }
+            else
+            {
+                _cachedSlots = new List<SaveMetadata>();
+                for (int i = 0; i < 4; i++)
+                {
+                    _cachedSlots.Add(new SaveMetadata { slotIndex = i, worldName = $"World {i + 1}", exists = false });
+                }
+            }
+        }
+
+        /// <summary>
+        /// Renders the multi-save slot selection window (Slots 1 to 4 / Indices 0 to 3),
+        /// showing world name, game mode, seed, health, modified blocks count, and last played timestamp.
+        /// </summary>
+        private void DrawWorldSelectModal()
+        {
+            // Dim backdrop
+            DrawSolidRect(new Rect(0, 0, Screen.width, Screen.height), new Color(0f, 0f, 0f, 0.82f));
+
+            if (_cachedSlots == null)
+            {
+                RefreshSaveSlots();
+            }
+
+            float modalW = 760f;
+            float modalH = 550f;
+            float modalX = (Screen.width - modalW) * 0.5f;
+            float modalY = (Screen.height - modalH) * 0.5f;
+            Rect modalRect = new Rect(modalX, modalY, modalW, modalH);
+
+            GUI.Box(modalRect, GUIContent.none, _helpPanelStyle);
+
+            // If creating a world for a specific slot, draw the creation dialog
+            if (_creatingSlotIndex >= 0 && _creatingSlotIndex < 4)
+            {
+                DrawNewWorldCreationDialog(modalX, modalY, modalW, modalH);
+                return;
+            }
+
+            // Header
+            GUI.Label(new Rect(modalX + 24f, modalY + 16f, modalW - 48f, 26f), 
+                LocalizationManager.Get("🌐 <b>世界存档管理 (4 个独立存档槽位)</b>", "🌐 <b>WORLD SAVE SLOTS (4 Independent Slots)</b>"), _titleStyle);
+            GUI.Label(new Rect(modalX + 24f, modalY + 42f, modalW - 48f, 20f), 
+                LocalizationManager.Get("选择一个存档位载入游玩，或创建全新的独立冒险世界", "Select a slot to load or create a brand new adventure world"), _bodyStyle);
+
+            float curY = modalY + 68f;
+            float cardW = modalW - 48f;
+            float cardH = 92f;
+            float cardGap = 10f;
+
+            for (int i = 0; i < 4; i++)
+            {
+                SaveMetadata meta = (_cachedSlots != null && i < _cachedSlots.Count) ? _cachedSlots[i] : null;
+                bool exists = meta != null && meta.exists;
+                bool isActive = (SaveManager.Instance != null && SaveManager.Instance.CurrentSlotIndex == i);
+
+                Rect cardRect = new Rect(modalX + 24f, curY, cardW, cardH);
+                GUI.Box(cardRect, GUIContent.none, _slotBoxStyle);
+
+                // Slot border: Gold if currently active loaded slot
+                if (isActive)
+                {
+                    DrawOutline(cardRect, 2, new Color(1.0f, 0.85f, 0.25f, 1.0f));
+                }
+                else
+                {
+                    DrawOutline(cardRect, 1, new Color(0.28f, 0.32f, 0.42f, 0.85f));
+                }
+
+                // Slot Badge
+                Rect badgeRect = new Rect(cardRect.x + 12f, cardRect.y + 10f, 74f, 20f);
+                DrawSolidRect(badgeRect, new Color(0.14f, 0.16f, 0.22f, 0.95f));
+                GUI.Label(badgeRect, LocalizationManager.Get($"槽位 {i + 1}", $"Slot {i + 1}"), _keyBadgeStyle);
+
+                if (isActive)
+                {
+                    Rect activeBadgeRect = new Rect(badgeRect.x + 80f, cardRect.y + 10f, 80f, 20f);
+                    DrawSolidRect(activeBadgeRect, new Color(0.35f, 0.30f, 0.10f, 0.95f));
+                    GUI.Label(activeBadgeRect, LocalizationManager.Get("<color=#FFDD55>[当前世界]</color>", "<color=#FFDD55>[Active]</color>"), _bodyStyle);
+                }
+
+                if (exists)
+                {
+                    // World Title
+                    GUI.Label(new Rect(cardRect.x + 12f, cardRect.y + 34f, 320f, 22f), $"<b>{meta.worldName}</b>", _titleStyle);
+
+                    // Mode badge + Seed + Health + Last Played
+                    string modeTag = (meta.gameMode == GameMode.Survival)
+                        ? LocalizationManager.Get("<color=#55FF88>⚔️ 生存模式</color>", "<color=#55FF88>⚔️ Survival</color>")
+                        : LocalizationManager.Get("<color=#55FFFF>✨ 创造模式</color>", "<color=#55FFFF>✨ Creative</color>");
+                    string statsLine = $"{modeTag}  |  {LocalizationManager.Get("种子", "Seed")}: <color=#FFDD55>{meta.seed}</color>  |  <color=#FF5566>❤️ HP: {meta.playerHealth:F0}/{meta.maxHealth:F0}</color>";
+                    GUI.Label(new Rect(cardRect.x + 12f, cardRect.y + 54f, 430f, 18f), statsLine, _bodyStyle);
+
+                    string timeStr = string.IsNullOrEmpty(meta.lastPlayedTimestamp) ? "" : $"{LocalizationManager.Get("存档时间", "Saved")}: {meta.lastPlayedTimestamp}  |  {LocalizationManager.Get("修改方块", "Blocks")}: {meta.modifiedBlocksCount}";
+                    GUI.Label(new Rect(cardRect.x + 12f, cardRect.y + 70f, 430f, 18f), $"<color=#888888>{timeStr}</color>", _bodyStyle);
+
+                    // Action Buttons on Right
+                    float btnAreaX = cardRect.x + cardW - 220f;
+                    float btnY = cardRect.y + (cardH - 36f) * 0.5f;
+
+                    // Play Button
+                    if (GUI.Button(new Rect(btnAreaX, btnY, 120f, 36f), LocalizationManager.Get("▶ 进入世界", "▶ Play World"), _mcBtnStyle))
+                    {
+                        if (SaveManager.Instance != null)
+                        {
+                            SaveManager.Instance.CurrentSlotIndex = i;
+                            SaveManager.Instance.LoadGame(i);
+                        }
+                        currentGameState = GameState.Playing;
+                        _showWorldSelectModal = false;
+                        SpawnFloatingText(LocalizationManager.Get($"已载入世界: {meta.worldName} (槽位 {i + 1})", $"Loaded World: {meta.worldName} (Slot {i + 1})"), new Color(0.35f, 0.95f, 0.65f));
+                        PlayLoadChime();
+                    }
+
+                    // Delete Button
+                    if (GUI.Button(new Rect(btnAreaX + 128f, btnY, 76f, 36f), LocalizationManager.Get("🗑️ 删除", "🗑️ Delete"), _mcBtnStyle))
+                    {
+                        if (SaveManager.Instance != null)
+                        {
+                            SaveManager.Instance.DeleteSave(i);
+                            RefreshSaveSlots();
+                            SpawnFloatingText(LocalizationManager.Get($"槽位 {i + 1} 存档已删除", $"Slot {i + 1} Deleted"), new Color(1.0f, 0.4f, 0.4f));
+                            PlayTone(350f, 0.1f, 0.3f);
+                        }
+                    }
+                }
+                else
+                {
+                    // Empty slot
+                    GUI.Label(new Rect(cardRect.x + 12f, cardRect.y + 40f, 340f, 22f), 
+                        LocalizationManager.Get("<color=#888888>[空存档位 - 暂无数据]</color>", "<color=#888888>[Empty Slot - No Data]</color>"), _bodyStyle);
+
+                    // Create New World Button
+                    float btnAreaX = cardRect.x + cardW - 190f;
+                    float btnY = cardRect.y + (cardH - 36f) * 0.5f;
+                    if (GUI.Button(new Rect(btnAreaX, btnY, 175f, 36f), LocalizationManager.Get("➕ 创建新世界", "➕ Create World"), _mcBtnStyle))
+                    {
+                        _creatingSlotIndex = i;
+                        _newWorldName = $"World {i + 1}";
+                        _newWorldSeedStr = UnityEngine.Random.Range(10000, 99999).ToString();
+                        _newWorldMode = GameMode.Survival;
+                        PlayPopSound();
+                    }
+                }
+
+                curY += cardH + cardGap;
+            }
+
+            // Bottom Buttons: Back
+            float footerY = modalY + modalH - 44f;
+            if (GUI.Button(new Rect(modalX + 24f, footerY, 150f, 34f), LocalizationManager.Get("◀ 返回", "◀ Back"), _mcBtnStyle))
+            {
+                _showWorldSelectModal = false;
+                PlayPopSound();
+            }
+        }
+
+        /// <summary>
+        /// Modal dialog allowing the player to customize worldName, gameMode (Survival vs Creative), and seed.
+        /// </summary>
+        private void DrawNewWorldCreationDialog(float modalX, float modalY, float modalW, float modalH)
+        {
+            float dialogW = 540f;
+            float dialogH = 410f;
+            float dx = modalX + (modalW - dialogW) * 0.5f;
+            float dy = modalY + (modalH - dialogH) * 0.5f;
+            Rect dialogRect = new Rect(dx, dy, dialogW, dialogH);
+
+            DrawSolidRect(dialogRect, new Color(0.10f, 0.11f, 0.16f, 0.98f));
+            DrawOutline(dialogRect, 2, new Color(1.0f, 0.85f, 0.25f, 1.0f));
+
+            float curY = dy + 18f;
+            GUI.Label(new Rect(dx + 24f, curY, dialogW - 48f, 26f), 
+                LocalizationManager.Get($"✨ <b>创建新世界 (槽位 {_creatingSlotIndex + 1})</b>", $"✨ <b>CREATE NEW WORLD (Slot {_creatingSlotIndex + 1})</b>"), _titleStyle);
+            curY += 32f;
+
+            // 1. World Name Field
+            GUI.Label(new Rect(dx + 24f, curY, dialogW - 48f, 20f), LocalizationManager.Get("世界名称 (World Name):", "World Name:"), _bodyStyle);
+            curY += 22f;
+            _newWorldName = GUI.TextField(new Rect(dx + 24f, curY, dialogW - 48f, 28f), _newWorldName, 32);
+            curY += 36f;
+
+            // 2. Game Mode Selection
+            GUI.Label(new Rect(dx + 24f, curY, dialogW - 48f, 20f), LocalizationManager.Get("游戏模式 (Game Mode):", "Game Mode:"), _bodyStyle);
+            curY += 22f;
+
+            float modeBtnW = (dialogW - 58f) * 0.5f;
+            bool isSurv = (_newWorldMode == GameMode.Survival);
+            GUI.color = isSurv ? new Color(0.4f, 1.0f, 0.5f) : Color.white;
+            if (GUI.Button(new Rect(dx + 24f, curY, modeBtnW, 36f), LocalizationManager.Get("⚔️ 生存模式 (0道具开荒)", "⚔️ Survival (Fresh 0 Items)"), _mcBtnStyle))
+            {
+                _newWorldMode = GameMode.Survival;
+            }
+            GUI.color = !isSurv ? new Color(0.4f, 0.85f, 1.0f) : Color.white;
+            if (GUI.Button(new Rect(dx + 24f + modeBtnW + 10f, curY, modeBtnW, 36f), LocalizationManager.Get("✨ 创造模式 (飞行/无限资源)", "✨ Creative (Fly/Infinite)"), _mcBtnStyle))
+            {
+                _newWorldMode = GameMode.Creative;
+            }
+            GUI.color = Color.white;
+            curY += 44f;
+
+            // Mode description tip
+            string modeTip = (_newWorldMode == GameMode.Survival)
+                ? LocalizationManager.Get("💡 生存模式: 从零开始！背包初始清空为 0 道具，怪兽造成真实伤害与击退。", "💡 Survival: Fresh start! Inventory starts at 0 items. Mobs deal damage & knockback.")
+                : LocalizationManager.Get("💡 创造模式: 初始配备完整工具套装，双击空格可自由飞行，秒破所有方块。", "💡 Creative: Full starter tools kit. Double-tap space to fly freely and instant-break blocks.");
+            GUI.Label(new Rect(dx + 24f, curY, dialogW - 48f, 34f), $"<color=#CCCCCC>{modeTip}</color>", _bodyStyle);
+            curY += 38f;
+
+            // 3. World Seed Field
+            GUI.Label(new Rect(dx + 24f, curY, 200f, 20f), LocalizationManager.Get("世界种子 (World Seed):", "World Seed:"), _bodyStyle);
+            curY += 22f;
+            _newWorldSeedStr = GUI.TextField(new Rect(dx + 24f, curY, 320f, 28f), _newWorldSeedStr, 16);
+            if (GUI.Button(new Rect(dx + 354f, curY, 138f, 28f), LocalizationManager.Get("🎲 随机种子", "🎲 Randomize"), _mcBtnStyle))
+            {
+                _newWorldSeedStr = UnityEngine.Random.Range(10000, 999999).ToString();
+            }
+            curY += 46f;
+
+            // Action Buttons: Confirm & Cancel
+            float actBtnW = (dialogW - 58f) * 0.5f;
+            if (GUI.Button(new Rect(dx + 24f, curY, actBtnW, 38f), LocalizationManager.Get("✔ 确认创建并开始", "✔ Create & Start"), _mcBtnStyle))
+            {
+                if (!int.TryParse(_newWorldSeedStr, out int seed))
+                {
+                    seed = Mathf.Abs(_newWorldSeedStr.GetHashCode());
+                }
+
+                if (SaveManager.Instance != null)
+                {
+                    SaveManager.Instance.CreateNewSave(_creatingSlotIndex, _newWorldName, _newWorldMode, seed);
+                }
+                else
+                {
+                    WorldSettings.CurrentGameMode = _newWorldMode;
+                    WorldSettings.ActiveSeed = seed;
+                }
+
+                currentGameState = GameState.Playing;
+                _showWorldSelectModal = false;
+                _creatingSlotIndex = -1;
+                SpawnFloatingText(LocalizationManager.Get($"新世界已生成: {_newWorldName}", $"New World Created: {_newWorldName}"), new Color(0.35f, 0.95f, 0.65f));
+                PlayQuestFanfare();
+            }
+
+            if (GUI.Button(new Rect(dx + 24f + actBtnW + 10f, curY, actBtnW, 38f), LocalizationManager.Get("✕ 取消", "✕ Cancel"), _mcBtnStyle))
+            {
+                _creatingSlotIndex = -1;
+                PlayPopSound();
             }
         }
 

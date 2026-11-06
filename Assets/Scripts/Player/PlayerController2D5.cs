@@ -46,6 +46,17 @@ namespace Player
         [SerializeField] private float moveInput;
         [SerializeField] private Vector3 velocity;
 
+        [Header("Health & Combat (Survival Mode)")]
+        [SerializeField] private float maxHealth = 100.0f;
+        [SerializeField] private float currentHealth = 100.0f;
+        [SerializeField] private float hurtTimer = 0.0f;
+        [SerializeField] private bool isDead = false;
+        private float _hurtFlashTimer = 0.0f;
+        private const float InvulnerableDuration = 0.65f;
+        private readonly System.Collections.Generic.List<Renderer> _visualRenderers = new System.Collections.Generic.List<Renderer>();
+        private readonly System.Collections.Generic.List<Color> _originalVisualColors = new System.Collections.Generic.List<Color>();
+        private AudioSource _audioSource;
+
         // Components
         private CharacterController _controller;
         private Transform _visualRoot;
@@ -79,6 +90,10 @@ namespace Player
         public float MoveInput => moveInput;
         public bool IsFacingRight => isFacingRight;
         public Vector3 Velocity => velocity;
+        public float CurrentHealth => currentHealth;
+        public float MaxHealth => maxHealth;
+        public float HurtTimer => hurtTimer;
+        public bool IsDead => isDead;
 
         public GameMode CurrentGameMode
         {
@@ -124,13 +139,25 @@ namespace Player
         {
             // Lock Z coordinate to gameplay plane
             SnapToGameplayPlane();
+            EnsureAudioSource();
+            CacheVisualRenderers();
         }
 
         private void Update()
         {
             float dt = Time.deltaTime;
 
-            ReadInputs(dt);
+            UpdateHealthAndHurtFlash(dt);
+
+            if (!isDead)
+            {
+                ReadInputs(dt);
+            }
+            else
+            {
+                moveInput = 0f;
+            }
+
             UpdateGroundState();
             HandleStepClimbing(dt);
             ComputeHorizontalVelocity(dt);
@@ -826,6 +853,162 @@ namespace Player
         }
 
         /// <summary>
+        /// Sets current and max health values.
+        /// </summary>
+        public void SetHealth(float current, float max = 100f)
+        {
+            maxHealth = Mathf.Max(1f, max);
+            currentHealth = Mathf.Clamp(current, 0f, maxHealth);
+            isDead = currentHealth <= 0f;
+        }
+
+        /// <summary>
+        /// Restores player health up to maxHealth.
+        /// </summary>
+        public void Heal(float amount)
+        {
+            if (isDead) return;
+            currentHealth = Mathf.Min(maxHealth, currentHealth + amount);
+        }
+
+        /// <summary>
+        /// Deals damage to the player in Survival mode, triggers invulnerability frames,
+        /// hurt sound, red hurt flash, and directional knockback.
+        /// </summary>
+        public void TakeDamage(float amount, Vector2 knockbackDirection)
+        {
+            if (currentGameMode != GameMode.Survival) return;
+            if (isDead || hurtTimer > 0f) return;
+
+            currentHealth = Mathf.Max(0f, currentHealth - amount);
+            hurtTimer = InvulnerableDuration;
+            _hurtFlashTimer = 0.28f;
+
+            // Apply knockback
+            if (knockbackDirection.sqrMagnitude < 0.001f)
+            {
+                knockbackDirection = isFacingRight ? Vector2.left : Vector2.right;
+            }
+            knockbackDirection.Normalize();
+
+            velocity.x = knockbackDirection.x * 9.5f;
+            velocity.y = Mathf.Max(knockbackDirection.y * 7.0f, 6.5f);
+            isGrounded = false;
+
+            // Audio feedback
+            PlayHurtAudio();
+
+            // Floating damage number popup
+            if (UI.UIManager.Instance != null)
+            {
+                UI.UIManager.Instance.SpawnFloatingText($"-{amount:F0} ❤️", new Color(1.0f, 0.25f, 0.25f));
+            }
+
+            if (currentHealth <= 0f)
+            {
+                Die();
+            }
+        }
+
+        private void Die()
+        {
+            isDead = true;
+            velocity = Vector3.zero;
+            if (UI.UIManager.Instance != null)
+            {
+                UI.UIManager.Instance.SpawnFloatingText("☠️ 你阵亡了! [R] 键重生 (You Died! Press [R] to Respawn)", Color.red);
+            }
+        }
+
+        private void PlayHurtAudio()
+        {
+            EnsureAudioSource();
+            if (_audioSource == null) return;
+
+            int sampleRate = 44100;
+            float duration = 0.14f;
+            int totalSamples = (int)(sampleRate * duration);
+            float[] data = new float[totalSamples];
+
+            for (int i = 0; i < totalSamples; i++)
+            {
+                float t = (float)i / sampleRate;
+                float env = Mathf.Exp(-t * 26f);
+                float freq = Mathf.Lerp(190f, 85f, (float)i / totalSamples);
+                data[i] = Mathf.Sin(2f * Mathf.PI * freq * t) * env * 0.45f;
+            }
+
+            AudioClip clip = AudioClip.Create("PlayerHurt", totalSamples, 1, sampleRate, false);
+            clip.SetData(data, 0);
+            _audioSource.PlayOneShot(clip);
+        }
+
+        private void EnsureAudioSource()
+        {
+            if (_audioSource == null)
+            {
+                _audioSource = GetComponent<AudioSource>() ?? gameObject.AddComponent<AudioSource>();
+                _audioSource.playOnAwake = false;
+                _audioSource.spatialBlend = 0f;
+            }
+        }
+
+        private void CacheVisualRenderers()
+        {
+            _visualRenderers.Clear();
+            _originalVisualColors.Clear();
+            if (_visualRoot == null) return;
+
+            Renderer[] rends = _visualRoot.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < rends.Length; i++)
+            {
+                Renderer r = rends[i];
+                if (r != null && r.material != null)
+                {
+                    _visualRenderers.Add(r);
+                    _originalVisualColors.Add(r.material.color);
+                }
+            }
+        }
+
+        private void UpdateHealthAndHurtFlash(float dt)
+        {
+            if (hurtTimer > 0f)
+            {
+                hurtTimer -= dt;
+            }
+
+            if (_hurtFlashTimer > 0f)
+            {
+                _hurtFlashTimer -= dt;
+                float t = Mathf.Clamp01(_hurtFlashTimer / 0.28f);
+
+                for (int i = 0; i < _visualRenderers.Count; i++)
+                {
+                    if (_visualRenderers[i] != null && _visualRenderers[i].material != null)
+                    {
+                        Color c = Color.Lerp(_originalVisualColors[i], Color.red, t * 0.85f);
+                        _visualRenderers[i].material.color = c;
+                    }
+                }
+            }
+            else if (_visualRenderers.Count > 0 && hurtTimer <= 0f)
+            {
+                // Ensure restored
+                for (int i = 0; i < _visualRenderers.Count; i++)
+                {
+                    if (_visualRenderers[i] != null && _visualRenderers[i].material != null)
+                    {
+                        if (_visualRenderers[i].material.color != _originalVisualColors[i])
+                        {
+                            _visualRenderers[i].material.color = _originalVisualColors[i];
+                        }
+                    }
+                }
+            }
+        }
+
+        /// <summary>
         /// Instantly teleports the player to the specified target position on Z = 0.
         /// </summary>
         public void Teleport(Vector3 position)
@@ -839,10 +1022,23 @@ namespace Player
         }
 
         /// <summary>
-        /// Respawns the player safely at the surface ground level.
+        /// Respawns the player safely at the surface ground level, resetting health in Survival.
         /// </summary>
         public void Respawn(Vector3? targetPosition = null)
         {
+            currentHealth = maxHealth;
+            isDead = false;
+            hurtTimer = 0f;
+            _hurtFlashTimer = 0f;
+
+            for (int i = 0; i < _visualRenderers.Count; i++)
+            {
+                if (_visualRenderers[i] != null && _visualRenderers[i].material != null)
+                {
+                    _visualRenderers[i].material.color = _originalVisualColors[i];
+                }
+            }
+
             if (targetPosition.HasValue)
             {
                 Teleport(targetPosition.Value);

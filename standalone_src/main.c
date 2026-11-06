@@ -31,8 +31,23 @@ bool checkMobAttackEx(float clickWorldX, float clickWorldY, float damage, float 
 // ============================================================================
 // Constants & World Configuration
 // ============================================================================
-#define WINDOW_WIDTH  1280
-#define WINDOW_HEIGHT 720
+#define DEFAULT_WINDOW_WIDTH  1280
+#define DEFAULT_WINDOW_HEIGHT 720
+
+static int g_WindowWidth = DEFAULT_WINDOW_WIDTH;
+static int g_WindowHeight = DEFAULT_WINDOW_HEIGHT;
+static bool g_IsFullscreen = false;
+static WINDOWPLACEMENT g_PrevPlacement;
+static HWND g_MainHwnd = NULL;
+static int g_ResPresetIndex = 0; // 0: 1280x720, 1: 1600x900, 2: 1920x1080, 3: Fullscreen
+
+static inline int getWindowWidth(void) { return g_WindowWidth; }
+static inline int getWindowHeight(void) { return g_WindowHeight; }
+static inline bool isFullscreen(void) { return g_IsFullscreen; }
+static inline int getResPresetIndex(void) { return g_ResPresetIndex; }
+
+#define WINDOW_WIDTH  (getWindowWidth())
+#define WINDOW_HEIGHT (getWindowHeight())
 #define WORLD_WIDTH   512
 #define WORLD_HEIGHT  128
 
@@ -664,6 +679,96 @@ static void drawBorder2D(float x, float y, float w, float h, float r, float g, f
     glVertex2f(x, y + h);
     glEnd();
     glLineWidth(1.0f);
+}
+
+static void toggleFullscreen(HWND hwnd) {
+    if (!hwnd) hwnd = g_MainHwnd;
+    if (!hwnd) return;
+
+    DWORD dwStyle = GetWindowLong(hwnd, GWL_STYLE);
+    if (!g_IsFullscreen) {
+        MONITORINFO mi;
+        memset(&mi, 0, sizeof(mi));
+        mi.cbSize = sizeof(mi);
+        if (GetWindowPlacement(hwnd, &g_PrevPlacement) &&
+            GetMonitorInfo(MonitorFromWindow(hwnd, MONITOR_DEFAULTTOPRIMARY), &mi)) {
+            SetWindowLong(hwnd, GWL_STYLE, dwStyle & ~WS_OVERLAPPEDWINDOW);
+            SetWindowPos(hwnd, HWND_TOP,
+                         mi.rcMonitor.left, mi.rcMonitor.top,
+                         mi.rcMonitor.right - mi.rcMonitor.left,
+                         mi.rcMonitor.bottom - mi.rcMonitor.top,
+                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+            g_IsFullscreen = true;
+            g_ResPresetIndex = 3;
+            playSound(SFX_CLICK);
+            showNotification(LOC("已开启无边框全屏模式 [按 F11 还原窗口]", "Switched to: Fullscreen [Press F11 to Restore]"), 0.35f, 0.90f, 1.0f);
+        }
+    } else {
+        SetWindowLong(hwnd, GWL_STYLE, dwStyle | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(hwnd, &g_PrevPlacement);
+        SetWindowPos(hwnd, NULL, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+        g_IsFullscreen = false;
+        g_ResPresetIndex = 0;
+        playSound(SFX_CLICK);
+        showNotification(LOC("已还原窗口模式 [按 F11 开启全屏]", "Switched to: Windowed Mode [Press F11 for Fullscreen]"), 0.35f, 0.95f, 0.45f);
+    }
+}
+
+static void cycleResolutionPreset(HWND hwnd) {
+    if (!hwnd) hwnd = g_MainHwnd;
+    if (!hwnd) return;
+
+    int nextPreset = (g_ResPresetIndex + 1) % 4;
+    int screenW = GetSystemMetrics(SM_CXSCREEN);
+    int screenH = GetSystemMetrics(SM_CYSCREEN);
+
+    if (nextPreset == 3) {
+        if (!g_IsFullscreen) {
+            toggleFullscreen(hwnd);
+        }
+        g_ResPresetIndex = 3;
+        return;
+    }
+
+    if (g_IsFullscreen) {
+        toggleFullscreen(hwnd);
+    }
+
+    int targetW = 1280;
+    int targetH = 720;
+    if (nextPreset == 1) {
+        targetW = 1600;
+        targetH = 900;
+    } else if (nextPreset == 2) {
+        targetW = 1920;
+        targetH = 1080;
+    }
+
+    if (targetW > screenW || targetH > screenH) {
+        if (!g_IsFullscreen) toggleFullscreen(hwnd);
+        g_ResPresetIndex = 3;
+        return;
+    }
+
+    RECT wr = { 0, 0, targetW, targetH };
+    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+    int winW = wr.right - wr.left;
+    int winH = wr.bottom - wr.top;
+    int winX = (screenW - winW) / 2;
+    int winY = (screenH - winY) / 2;
+    if (winX < 0) winX = 0;
+    if (winY < 0) winY = 0;
+
+    SetWindowPos(hwnd, NULL, winX, winY, winW, winH, SWP_NOZORDER | SWP_FRAMECHANGED);
+    g_ResPresetIndex = nextPreset;
+
+    char msgBuf[128];
+    snprintf(msgBuf, sizeof(msgBuf), "%s: %dx%d [F11 %s]",
+        LOC("分辨率已切换为", "Resolution set to"), targetW, targetH,
+        LOC("全屏", "Fullscreen"));
+    showNotification(msgBuf, 0.4f, 0.85f, 1.0f);
 }
 
 #include "menu_creative.h"
@@ -2347,6 +2452,29 @@ static void renderHUD(void) {
 // Window Procedure & Main Entrypoint
 // ============================================================================
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    if (uMsg == WM_KEYDOWN && (wParam == VK_F11 || (wParam == VK_RETURN && (GetKeyState(VK_MENU) & 0x8000)))) {
+        toggleFullscreen(hwnd);
+        return 0;
+    }
+
+    if (uMsg == WM_SIZE) {
+        int w = LOWORD(lParam);
+        int h = HIWORD(lParam);
+        if (w > 0 && h > 0) {
+            g_WindowWidth = w;
+            g_WindowHeight = h;
+            glViewport(0, 0, g_WindowWidth, g_WindowHeight);
+        }
+        return 0;
+    }
+
+    if (uMsg == WM_GETMINMAXINFO) {
+        LPMINMAXINFO mmi = (LPMINMAXINFO)lParam;
+        mmi->ptMinTrackSize.x = 960;
+        mmi->ptMinTrackSize.y = 540;
+        return 0;
+    }
+
     if (handleCraftingInput(uMsg, wParam, lParam)) {
         return 0;
     }
@@ -2439,6 +2567,27 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    memset(&g_PrevPlacement, 0, sizeof(g_PrevPlacement));
+    g_PrevPlacement.length = sizeof(g_PrevPlacement);
+
+    // Enable Per-Monitor V2 DPI awareness for razor-sharp rendering on high-DPI displays
+    HMODULE u32 = GetModuleHandleA("user32.dll");
+    if (u32) {
+        typedef BOOL (WINAPI *SetDpiContextProc)(HANDLE);
+        FARPROC fpCtx = GetProcAddress(u32, "SetProcessDpiAwarenessContext");
+        if (fpCtx) {
+            SetDpiContextProc pSetDpiCtx = (SetDpiContextProc)(void*)fpCtx;
+            pSetDpiCtx((HANDLE)-4);
+        } else {
+            typedef BOOL (WINAPI *SetDpiAwareProc)(VOID);
+            FARPROC fpDpi = GetProcAddress(u32, "SetProcessDPIAware");
+            if (fpDpi) {
+                SetDpiAwareProc pSetDpi = (SetDpiAwareProc)(void*)fpDpi;
+                pSetDpi();
+            }
+        }
+    }
+
     WNDCLASSEX wc = {0};
     wc.cbSize = sizeof(WNDCLASSEX);
     wc.style = CS_OWNDC | CS_HREDRAW | CS_VREDRAW;
@@ -2448,18 +2597,28 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     wc.lpszClassName = "LuminoraSandboxClass";
     RegisterClassEx(&wc);
 
-    RECT wr = { 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
+    RECT wr = { 0, 0, DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT };
     AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+
+    int winW = wr.right - wr.left;
+    int winH = wr.bottom - wr.top;
+    int screenW = GetSystemMetrics(SM_CXSCREEN);
+    int screenH = GetSystemMetrics(SM_CYSCREEN);
+    int winX = (screenW - winW) / 2;
+    int winY = (screenH - winH) / 2;
+    if (winX < 0) winX = 0;
+    if (winY < 0) winY = 0;
 
     HWND hwnd = CreateWindowEx(
         0,
         "LuminoraSandboxClass",
         "Luminora | 流明洛原",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        CW_USEDEFAULT, CW_USEDEFAULT,
-        wr.right - wr.left, wr.bottom - wr.top,
+        winX, winY,
+        winW, winH,
         NULL, NULL, hInstance, NULL
     );
+    g_MainHwnd = hwnd;
 
     HDC hdc = GetDC(hwnd);
     PIXELFORMATDESCRIPTOR pfd = {0};
@@ -2475,6 +2634,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
     HGLRC hglrc = wglCreateContext(hdc);
     wglMakeCurrent(hdc, hglrc);
+    glViewport(0, 0, g_WindowWidth, g_WindowHeight);
 
     initFontRenderer();
 

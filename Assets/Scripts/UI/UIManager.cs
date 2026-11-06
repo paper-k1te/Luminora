@@ -312,6 +312,12 @@ namespace UI
         {
             float dt = Time.deltaTime;
 
+            // F11 or Alt+Enter toggles fullscreen
+            if (Input.GetKeyDown(KeyCode.F11) || ((Input.GetKey(KeyCode.LeftAlt) || Input.GetKey(KeyCode.RightAlt)) && Input.GetKeyDown(KeyCode.Return)))
+            {
+                Screen.fullScreen = !Screen.fullScreen;
+            }
+
             // Toggle help guide with H or F1 (in-game only)
             if (currentGameState == GameState.Playing && (Input.GetKeyDown(KeyCode.H) || Input.GetKeyDown(KeyCode.F1)))
             {

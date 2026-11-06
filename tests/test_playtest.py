@@ -24,6 +24,7 @@ VK_RETURN = 0x0D
 VK_F1 = 0x70
 VK_F5 = 0x74
 VK_F9 = 0x78
+VK_F11 = 0x7A
 
 def make_lparam(x, y):
     return (int(y) << 16) | (int(x) & 0xFFFF)
@@ -184,21 +185,33 @@ def run_playtest():
     post_click(640, 348)
     time.sleep(0.3)
 
-    # Settings dialog: Language toggle button 0 (boxX=410, boxY=180, btnStartY=180+85=265, center: 640, 287)
-    print("      -> Toggling Language in Settings (640, 287) [Switch to English]...")
-    post_click(640, 287)
+    # Settings dialog: Language toggle button 0 (center: 640, 252)
+    print("      -> Toggling Language in Settings (640, 252) [Switch to English]...")
+    post_click(640, 252)
     time.sleep(0.3)
-    print("      -> Toggling Language back to Chinese (640, 287)...")
-    post_click(640, 287)
+    print("      -> Toggling Language back to Chinese (640, 252)...")
+    post_click(640, 252)
     time.sleep(0.3)
-    # Click Done & Return button 3: y=265+3*56=433, center: (640, 455)
-    print("      -> Clicking 'Done & Return' (640, 455)...")
-    post_click(640, 455)
+    # Cycle resolution preset button 2 (center: 640, 356)
+    print("      -> Cycling Resolution Preset in Settings (640, 356)...")
+    post_click(640, 356)
+    time.sleep(0.3)
+    # Click Done & Return button 4: center: (640, 460)
+    print("      -> Clicking 'Done & Return' (640, 460)...")
+    post_click(640, 460)
     time.sleep(0.3)
 
     # Back in Pause menu: Click Resume Game (button 0: 640, 210)
     print("      -> Clicking 'Resume Game' (640, 210)...")
     post_click(640, 210)
+    time.sleep(0.3)
+
+    # Test F11 Fullscreen Toggle
+    print("      -> Pressing [F11] to toggle Fullscreen...")
+    post_key(VK_F11)
+    time.sleep(0.4)
+    print("      -> Pressing [F11] again to restore Windowed...")
+    post_key(VK_F11)
     time.sleep(0.3)
 
     # Step 8: Test Quick Save [F5] & Quick Load [F9]

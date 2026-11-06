@@ -37,6 +37,11 @@ typedef enum {
 static void startNewWorld(int slotIdx, const char* name, int mode, int seed);
 static bool loadWorldSlot(int slotIdx);
 static bool saveWorldSlot(int slotIdx);
+static void cycleResolutionPreset(HWND hwnd);
+static void toggleFullscreen(HWND hwnd);
+static int getResPresetIndex(void);
+static bool isFullscreen(void);
+extern HWND g_MainHwnd;
 
 static int g_SelectedSaveSlot = 0;
 static int g_CreateWorldMode = 0; // 0: Survival, 1: Creative
@@ -106,13 +111,14 @@ static MenuButton g_PauseMenuButtons[PAUSE_MENU_BTN_COUNT] = {
     { 0, 0, 360.0f, 38.0f, "", false, false }  // 7: Exit Game
 };
 
-// Settings Modal Buttons (4 options)
-#define SETTINGS_BTN_COUNT 4
+// Settings Modal Buttons (5 options)
+#define SETTINGS_BTN_COUNT 5
 static MenuButton g_SettingsButtons[SETTINGS_BTN_COUNT] = {
-    { 0, 0, 380.0f, 44.0f, "", false, false }, // 0: Language Option
-    { 0, 0, 380.0f, 44.0f, "", false, false }, // 1: Sound Option
-    { 0, 0, 380.0f, 44.0f, "", false, false }, // 2: Mode Option
-    { 0, 0, 380.0f, 44.0f, "", false, false }  // 3: Done & Return
+    { 0, 0, 380.0f, 42.0f, "", false, false }, // 0: Language Option
+    { 0, 0, 380.0f, 42.0f, "", false, false }, // 1: Sound Option
+    { 0, 0, 380.0f, 42.0f, "", false, false }, // 2: Display / Resolution Option
+    { 0, 0, 380.0f, 42.0f, "", false, false }, // 3: Mode Option
+    { 0, 0, 380.0f, 42.0f, "", false, false }  // 4: Done & Return
 };
 
 // ============================================================================
@@ -375,7 +381,7 @@ static void renderSettingsDialog(void) {
 
     // 2. Settings Stone Panel
     float boxW = 460.0f;
-    float boxH = 360.0f;
+    float boxH = 410.0f;
     float boxX = ((float)WINDOW_WIDTH - boxW) * 0.5f;
     float boxY = ((float)WINDOW_HEIGHT - boxH) * 0.5f;
 
@@ -387,24 +393,35 @@ static void renderSettingsDialog(void) {
     // Header Title
     const char* titleText = LOC("游戏设置", "Settings");
     float tW = getTextWidthUTF8(titleText, 16, true);
-    drawText(boxX + (boxW - tW) * 0.5f, boxY + 34.0f, titleText, 1.0f, 0.85f, 0.25f, true);
+    drawText(boxX + (boxW - tW) * 0.5f, boxY + 32.0f, titleText, 1.0f, 0.85f, 0.25f, true);
 
     // Subtitle
-    const char* subText = LOC("配置语言、音效与游戏模式偏好", "Configure Language, Audio & Game Mode");
-    float sW = getTextWidthUTF8(subText, 13, false);
-    drawText(boxX + (boxW - sW) * 0.5f, boxY + 58.0f, subText, 0.75f, 0.85f, 0.95f, false);
+    const char* subText = LOC("配置语言、音效、分辨率与游戏模式偏好", "Configure Language, Audio, Display & Game Mode");
+    float sW = getTextWidthUTF8(subText, 12, false);
+    drawText(boxX + (boxW - sW) * 0.5f, boxY + 54.0f, subText, 0.75f, 0.85f, 0.95f, false);
 
     // 3. Settings Buttons
     float btnW = 380.0f;
-    float btnH = 44.0f;
-    float btnGap = 12.0f;
+    float btnH = 42.0f;
+    float btnGap = 10.0f;
     float btnX = boxX + (boxW - btnW) * 0.5f;
-    float btnStartY = boxY + 85.0f;
+    float btnStartY = boxY + 76.0f;
 
     g_SettingsButtons[0].label = LOC("语言: 简体中文 [点击切换]", "Language: English [Click to Switch]");
     g_SettingsButtons[1].label = isSoundEnabled() ? LOC("游戏音效: 开启", "Sound Effects: Enabled") : LOC("游戏音效: 静音", "Sound Effects: Muted");
-    g_SettingsButtons[2].label = (g_CurrentMode == MODE_SURVIVAL) ? LOC("当前模式: 生存模式", "Game Mode: Survival") : LOC("当前模式: 创造模式", "Game Mode: Creative");
-    g_SettingsButtons[3].label = LOC("完成并返回", "Done & Return");
+    
+    char resLabel[128];
+    if (isFullscreen()) {
+        snprintf(resLabel, sizeof(resLabel), "%s: %s [F11 %s]",
+            LOC("显示模式", "Display"), LOC("无边框全屏", "Borderless Fullscreen"), LOC("窗口", "Window"));
+    } else {
+        snprintf(resLabel, sizeof(resLabel), "%s: %dx%d [%s/F11全屏]",
+            LOC("分辨率", "Resolution"), (int)WINDOW_WIDTH, (int)WINDOW_HEIGHT, LOC("点击切换", "Click"));
+    }
+    g_SettingsButtons[2].label = resLabel;
+
+    g_SettingsButtons[3].label = (g_CurrentMode == MODE_SURVIVAL) ? LOC("当前模式: 生存模式", "Game Mode: Survival") : LOC("当前模式: 创造模式", "Game Mode: Creative");
+    g_SettingsButtons[4].label = LOC("完成并返回", "Done & Return");
 
     for (int i = 0; i < SETTINGS_BTN_COUNT; i++) {
         g_SettingsButtons[i].x = btnX;
@@ -1198,7 +1215,7 @@ static void renderMainMenu(void) {
 
     // 4. Footer credits
     float footY = (float)WINDOW_HEIGHT - 28.0f;
-    const char* footText = LOC("Luminora｜流明洛原 独立引擎 | 游戏中随时按 [ESC] 暂停或切换模式", "Luminora Standalone Engine | Press [ESC] anytime for Pause Menu & Mode Switch");
+    const char* footText = LOC("Luminora｜流明洛原 独立引擎 | [F11] 切换全屏/窗口 | [ESC] 暂停菜单", "Luminora Standalone Engine | [F11] Toggle Fullscreen | [ESC] Pause Menu");
     float footW = getTextWidthUTF8(footText, 12, false);
     drawText(((float)WINDOW_WIDTH - footW) * 0.5f, footY, footText, 0.65f, 0.70f, 0.78f, false);
 

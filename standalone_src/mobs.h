@@ -9,6 +9,7 @@
 #include <math.h>
 
 #include "sound_engine.h"
+#include "localization.h"
 
 #ifndef ITEM_GEL
 #define ITEM_GEL 118
@@ -18,8 +19,8 @@
 // Mob System Configuration & Enumerations
 // ============================================================================
 #define MAX_MOBS                32
-#define TARGET_MOB_COUNT        14
-#define MAX_HOSTILE_MOBS        7
+#define TARGET_MOB_COUNT        16
+#define MAX_HOSTILE_MOBS        9
 #define SAFE_ZONE_SPAWN_RADIUS  25.0f
 #define MOB_DESPAWN_DIST        48.0f
 #define MOB_MIN_SPAWN_DIST      16.0f
@@ -33,6 +34,10 @@ typedef enum {
     MOB_COW,
     MOB_PIG,
     MOB_RABBIT,
+    MOB_SKELETON,
+    MOB_SPIDER,
+    MOB_GHOST,
+    MOB_LAVA_SLIME,
     MOB_TYPE_COUNT
 } MobType;
 
@@ -56,6 +61,25 @@ typedef enum {
 #define ANIMAL_STATE_GRAZE  2
 #define ANIMAL_STATE_FLEE   3
 
+// Skeleton States
+#define SKELETON_STATE_WANDER 0
+#define SKELETON_STATE_CHASE  1
+#define SKELETON_STATE_ATTACK 2
+
+// Spider States
+#define SPIDER_STATE_WANDER   0
+#define SPIDER_STATE_CHASE    1
+#define SPIDER_STATE_LEAP     2
+
+// Ghost States
+#define GHOST_STATE_DRIFT     0
+#define GHOST_STATE_CHASE     1
+
+// Lava Slime States
+#define LAVA_SLIME_STATE_IDLE 0
+#define LAVA_SLIME_STATE_JUMP 1
+#define LAVA_SLIME_STATE_LAND 2
+
 // ============================================================================
 // Mob Data Structure
 // ============================================================================
@@ -70,6 +94,8 @@ typedef struct {
     float maxHealth;
     float animTimer;    // Drives squash-and-stretch, wing flap, trotting, hopping
     float stateTimer;   // State duration timer (grazing, idling, fleeing)
+    float soundTimer;   // Voice & vocalization cadence timer
+    float attackTimer;  // Weapon thrust, leap cooldown, special attack cadence
     bool facingRight;
     int state;
     float hurtTimer;    // > 0 indicates red damage-flash and invincibility frames
@@ -100,19 +126,29 @@ static float g_MobSpawnTimer = 0.0f;
 #define UNDERWORLD_LEVEL 24
 #endif
 
+#ifndef ITEM_STICK
+#define ITEM_STICK 117
+#endif
+
+#ifndef BLOCK_MAGMA
+#define BLOCK_MAGMA 22
+#endif
+
 // ============================================================================
 // Function Declarations
 // ============================================================================
 void onPlayerHurt(float damage, float sourceX);
 void initMobs(void);
 void spawnMob(float x, float y, int type);
+void spawnMobs(float playerX, float playerY, int activeCount, int activeHostileCount);
 void updateMobs(float dt, float playerX, float playerY);
 void renderMobs(float daylight, float camX, float camY);
 bool checkMobAttack(float clickWorldX, float clickWorldY, float damage, float playerX, float playerY);
 bool checkMobAttackEx(float clickWorldX, float clickWorldY, float damage, float knockbackMult, float playerX, float playerY);
 
 static inline bool isHostileMob(int type) {
-    return (type == MOB_ZOMBIE || type == MOB_BAT);
+    return (type == MOB_ZOMBIE || type == MOB_BAT || type == MOB_SKELETON ||
+            type == MOB_SPIDER || type == MOB_GHOST || type == MOB_LAVA_SLIME);
 }
 
 static inline bool isPeacefulAnimal(int type) {
@@ -148,7 +184,7 @@ void initMobs(void) {
 void spawnMob(float x, float y, int type) {
     int ix = (int)floorf(x);
     int iy = (int)floorf(y);
-    bool isFlying = (type == MOB_BAT);
+    bool isFlying = (type == MOB_BAT || type == MOB_GHOST);
     if (!isValidMobSpawnPoint(ix, iy, isFlying)) {
         return; // Anti-wall validation: never spawn inside walls or without solid floor
     }
@@ -178,6 +214,8 @@ void spawnMob(float x, float y, int type) {
             m->isGrounded = false;
             m->animTimer = ((float)rand() / RAND_MAX) * 3.14159f;
             m->stateTimer = 1.0f + ((float)rand() / RAND_MAX) * 2.5f;
+            m->soundTimer = 2.0f + ((float)rand() / RAND_MAX) * 4.0f;
+            m->attackTimer = 0.0f;
 
             switch (type) {
                 case MOB_SLIME:
@@ -232,6 +270,42 @@ void spawnMob(float x, float y, int type) {
                     m->state = ANIMAL_STATE_WANDER;
                     break;
 
+                case MOB_SKELETON:
+                    m->width = 0.72f;
+                    m->height = 1.85f;
+                    m->health = m->maxHealth = 40.0f;
+                    m->state = SKELETON_STATE_WANDER;
+                    m->animTimer = ((float)rand() / RAND_MAX) * 6.28f;
+                    m->attackTimer = 0.0f;
+                    break;
+
+                case MOB_SPIDER:
+                    m->width = 1.15f;
+                    m->height = 0.58f;
+                    m->health = m->maxHealth = 28.0f;
+                    m->state = SPIDER_STATE_WANDER;
+                    m->animTimer = ((float)rand() / RAND_MAX) * 6.28f;
+                    m->attackTimer = 0.4f + ((float)rand() / RAND_MAX) * 0.8f;
+                    break;
+
+                case MOB_GHOST:
+                    m->width = 0.80f;
+                    m->height = 1.10f;
+                    m->health = m->maxHealth = 24.0f;
+                    m->state = GHOST_STATE_DRIFT;
+                    m->animTimer = ((float)rand() / RAND_MAX) * 6.28f;
+                    m->attackTimer = 0.0f;
+                    break;
+
+                case MOB_LAVA_SLIME:
+                    m->width = 1.05f;
+                    m->height = 0.84f;
+                    m->health = m->maxHealth = 38.0f;
+                    m->state = LAVA_SLIME_STATE_IDLE;
+                    m->animTimer = 0.5f + ((float)rand() / RAND_MAX) * 0.7f;
+                    m->attackTimer = 0.0f;
+                    break;
+
                 default:
                     break;
             }
@@ -263,6 +337,9 @@ static inline float getMobSpawnLightLevel(int x, int y) {
             if (tx >= 0 && tx < WORLD_WIDTH && ty >= 0 && ty < WORLD_HEIGHT) {
                 BlockType bt = g_World[tx][ty];
                 if (bt != BLOCK_AIR && g_BlockDefs[bt].emitLight) {
+                    if ((bt == BLOCK_TORCH || bt == BLOCK_CHANDELIER) && isLightExtinguished(tx, ty)) {
+                        continue;
+                    }
                     float dist = sqrtf((float)(dx * dx + dy * dy));
                     if (dist < 7.5f) {
                         float att = (1.0f - dist / 7.5f) * 0.90f;
@@ -276,6 +353,184 @@ static inline float getMobSpawnLightLevel(int x, int y) {
     float totalLight = sunLight + torchLight;
     if (totalLight > 1.0f) totalLight = 1.0f;
     return totalLight;
+}
+
+void spawnMobs(float playerX, float playerY, int activeCount, int activeHostileCount) {
+    if (activeCount >= TARGET_MOB_COUNT) return;
+
+    float spawnOffset = (MOB_MIN_SPAWN_DIST + ((float)rand() / RAND_MAX) * (MOB_MAX_SPAWN_DIST - MOB_MIN_SPAWN_DIST));
+    if (rand() % 2 == 0) spawnOffset = -spawnOffset;
+
+    int targetX = (int)floorf(playerX + spawnOffset);
+    if (targetX < 5 || targetX >= WORLD_WIDTH - 5) return;
+
+    int initSpawnX = WORLD_WIDTH / 2;
+    int initSpawnY = (initSpawnX >= 0 && initSpawnX < WORLD_WIDTH) ? g_SurfaceHeight[initSpawnX] + 2 : 87;
+
+    float sunAngle = g_WorldTime * 6.2831853f;
+    float rawDaylight = sinf(sunAngle);
+    bool isDay = (rawDaylight > 0.12f);
+    bool isMidnight = (rawDaylight < -0.35f);
+
+    // ------------------------------------------------------------------------
+    // Zone 1: UNDERWORLD (playerY < UNDERWORLD_LEVEL) -> Lava Slimes thrive here!
+    // ------------------------------------------------------------------------
+    if (playerY < UNDERWORLD_LEVEL) {
+        if (activeHostileCount >= MAX_HOSTILE_MOBS) return;
+
+        int chosenType = MOB_LAVA_SLIME;
+        int r = rand() % 100;
+        if (r < 50) {
+            chosenType = MOB_LAVA_SLIME; // Signature underworld fiery magma cube
+        } else if (r < 75) {
+            chosenType = MOB_SKELETON;   // Underworld bone wanderer
+        } else if (r < 88) {
+            chosenType = MOB_BAT;
+        } else {
+            chosenType = MOB_GHOST;      // Lost spectral entity
+        }
+
+        int searchY = (int)floorf(playerY + ((rand() % 12) - 6));
+        if (searchY < 3) searchY = 3;
+        if (searchY >= UNDERWORLD_LEVEL + 2) searchY = UNDERWORLD_LEVEL + 1;
+
+        bool isFlying = (chosenType == MOB_BAT || chosenType == MOB_GHOST);
+
+        for (int testY = searchY; testY >= 3; testY--) {
+            if (isSolidBlock(targetX, testY) && !isSolidBlock(targetX, testY + 1) && !isSolidBlock(targetX, testY + 2)) {
+                int spawnY = testY + 1;
+                float dxSp = (float)targetX + 0.5f - (float)initSpawnX;
+                float dySp = (float)spawnY - (float)initSpawnY;
+                if (sqrtf(dxSp * dxSp + dySp * dySp) > SAFE_ZONE_SPAWN_RADIUS) {
+                    spawnMob((float)targetX + 0.5f, (float)spawnY, chosenType);
+                }
+                break;
+            } else if (isFlying && !isSolidBlock(targetX, testY) && !isSolidBlock(targetX, testY + 1)) {
+                float dxSp = (float)targetX + 0.5f - (float)initSpawnX;
+                float dySp = (float)testY - (float)initSpawnY;
+                if (sqrtf(dxSp * dxSp + dySp * dySp) > SAFE_ZONE_SPAWN_RADIUS) {
+                    spawnMob((float)targetX + 0.5f, (float)testY, chosenType);
+                }
+                break;
+            }
+        }
+    }
+    // ------------------------------------------------------------------------
+    // Zone 2: CAVERNS (UNDERWORLD_LEVEL <= playerY < CAVERN_LEVEL)
+    //         -> Spiders & Skeletons in caverns, Ghosts in deep dark caverns
+    // ------------------------------------------------------------------------
+    else if (playerY < CAVERN_LEVEL) {
+        if (activeHostileCount >= MAX_HOSTILE_MOBS) return;
+
+        int chosenType = MOB_SKELETON;
+        int r = rand() % 100;
+        bool isDeepDark = (playerY < (UNDERWORLD_LEVEL + CAVERN_LEVEL) / 2); // y < 39
+
+        if (isDeepDark && r < 25) {
+            chosenType = MOB_GHOST;    // Ghosts in deep dark caverns
+        } else if (r < 45) {
+            chosenType = MOB_SPIDER;   // Cave spider with 8 scuttling legs
+        } else if (r < 75) {
+            chosenType = MOB_SKELETON; // Skeleton warrior
+        } else if (r < 88) {
+            chosenType = MOB_BAT;
+        } else {
+            chosenType = MOB_ZOMBIE;
+        }
+
+        int searchY = (int)floorf(playerY + ((rand() % 14) - 7));
+        if (searchY < UNDERWORLD_LEVEL) searchY = UNDERWORLD_LEVEL;
+        if (searchY >= CAVERN_LEVEL) searchY = CAVERN_LEVEL - 1;
+
+        bool isFlying = (chosenType == MOB_BAT || chosenType == MOB_GHOST);
+
+        for (int testY = searchY; testY >= UNDERWORLD_LEVEL; testY--) {
+            if (isSolidBlock(targetX, testY) && !isSolidBlock(targetX, testY + 1) && !isSolidBlock(targetX, testY + 2)) {
+                int spawnY = testY + 1;
+                float lightFactor = getMobSpawnLightLevel(targetX, spawnY);
+                if (lightFactor < 0.35f) {
+                    float dxSp = (float)targetX + 0.5f - (float)initSpawnX;
+                    float dySp = (float)spawnY - (float)initSpawnY;
+                    if (sqrtf(dxSp * dxSp + dySp * dySp) > SAFE_ZONE_SPAWN_RADIUS) {
+                        spawnMob((float)targetX + 0.5f, (float)spawnY, chosenType);
+                    }
+                }
+                break;
+            } else if (isFlying && !isSolidBlock(targetX, testY) && !isSolidBlock(targetX, testY + 1)) {
+                float lightFactor = getMobSpawnLightLevel(targetX, testY);
+                if (lightFactor < 0.28f) {
+                    float dxSp = (float)targetX + 0.5f - (float)initSpawnX;
+                    float dySp = (float)testY - (float)initSpawnY;
+                    if (sqrtf(dxSp * dxSp + dySp * dySp) > SAFE_ZONE_SPAWN_RADIUS) {
+                        spawnMob((float)targetX + 0.5f, (float)testY, chosenType);
+                    }
+                }
+                break;
+            }
+        }
+    }
+    // ------------------------------------------------------------------------
+    // Zone 3: SURFACE & SUBSURFACE (playerY >= CAVERN_LEVEL)
+    //         -> Peaceful animals in daylight, Ghosts in midnight surface
+    // ------------------------------------------------------------------------
+    else {
+        int surfY = (targetX >= 0 && targetX < WORLD_WIDTH) ? g_SurfaceHeight[targetX] : getSurfaceHeight(targetX, 1337);
+
+        int groundY = -1;
+        for (int ty = surfY + 6; ty >= surfY - 6; ty--) {
+            if (ty >= 2 && ty < WORLD_HEIGHT - 3) {
+                if (isSolidBlock(targetX, ty) && !isSolidBlock(targetX, ty + 1) && !isSolidBlock(targetX, ty + 2)) {
+                    groundY = ty;
+                    break;
+                }
+            }
+        }
+
+        if (groundY > 0) {
+            int spawnY = groundY + 1;
+            float dxSp = (float)targetX + 0.5f - (float)initSpawnX;
+            float dySp = (float)spawnY - (float)initSpawnY;
+            bool inSafeZone = (sqrtf(dxSp * dxSp + dySp * dySp) <= SAFE_ZONE_SPAWN_RADIUS);
+
+            int chosenType = MOB_SLIME;
+            if (isDay) {
+                // Daytime Surface: strictly peaceful animals and rare green slime
+                int r = rand() % 100;
+                if (r < 28) chosenType = MOB_SHEEP;
+                else if (r < 54) chosenType = MOB_COW;
+                else if (r < 74) chosenType = MOB_PIG;
+                else if (r < 90) chosenType = MOB_RABBIT;
+                else chosenType = MOB_SLIME;
+            } else {
+                // Nighttime Surface:
+                if (inSafeZone || activeHostileCount >= MAX_HOSTILE_MOBS) {
+                    int r = rand() % 100;
+                    if (r < 40) chosenType = MOB_SHEEP;
+                    else if (r < 75) chosenType = MOB_COW;
+                    else chosenType = MOB_SLIME;
+                } else {
+                    int r = rand() % 100;
+                    // Midnight surface: Ghosts drift through midnight darkness!
+                    if (isMidnight && r < 30) {
+                        chosenType = MOB_GHOST;
+                    } else if (r < 55) {
+                        chosenType = MOB_ZOMBIE;
+                    } else if (r < 75) {
+                        chosenType = MOB_SKELETON;
+                    } else if (r < 90) {
+                        chosenType = MOB_SPIDER;
+                    } else {
+                        chosenType = MOB_SLIME;
+                    }
+                }
+            }
+
+            if (chosenType >= 0) {
+                float actualSpawnY = (chosenType == MOB_GHOST) ? (float)spawnY + 1.2f : (float)spawnY;
+                spawnMob((float)targetX + 0.5f, actualSpawnY, chosenType);
+            }
+        }
+    }
 }
 
 void updateMobs(float dt, float playerX, float playerY) {
@@ -306,98 +561,9 @@ void updateMobs(float dt, float playerX, float playerY) {
     }
 
     g_MobSpawnTimer += dt;
-    if (g_MobSpawnTimer >= 1.2f) {
+    if (g_MobSpawnTimer >= 1.0f) {
         g_MobSpawnTimer = 0.0f;
-
-        if (activeCount < TARGET_MOB_COUNT) {
-            float spawnOffset = (MOB_MIN_SPAWN_DIST + ((float)rand() / RAND_MAX) * (MOB_MAX_SPAWN_DIST - MOB_MIN_SPAWN_DIST));
-            if (rand() % 2 == 0) spawnOffset = -spawnOffset;
-
-            int targetX = (int)floorf(playerX + spawnOffset);
-            if (targetX >= 5 && targetX < WORLD_WIDTH - 5) {
-                float sunAngle = g_WorldTime * 6.2831853f;
-                float daylight = sinf(sunAngle);
-                bool isDay = (daylight > 0.15f);
-
-                if (playerY < CAVERN_LEVEL) {
-                    // Underground Caverns & Underworld
-                    if (activeHostileCount < MAX_HOSTILE_MOBS) {
-                        int chosenType = MOB_BAT;
-                        if (playerY < UNDERWORLD_LEVEL) {
-                            chosenType = (rand() % 10 < 6) ? MOB_ZOMBIE : MOB_BAT;
-                        } else {
-                            chosenType = (rand() % 10 < 6) ? MOB_BAT : MOB_ZOMBIE;
-                        }
-
-                        int searchY = (int)floorf(playerY + ((rand() % 14) - 7));
-                        if (searchY < 3) searchY = 3;
-                        if (searchY >= CAVERN_LEVEL) searchY = CAVERN_LEVEL - 1;
-
-                        // Search downwards for valid solid floor cavity
-                        for (int testY = searchY; testY >= 3; testY--) {
-                            if (isSolidBlock(targetX, testY) && !isSolidBlock(targetX, testY + 1) && !isSolidBlock(targetX, testY + 2)) {
-                                int spawnY = testY + 1;
-                                float lightFactor = getMobSpawnLightLevel(targetX, spawnY);
-                                if (lightFactor < 0.35f) {
-                                    float dxSp = (float)targetX + 0.5f - (float)initSpawnX;
-                                    float dySp = (float)spawnY - (float)initSpawnY;
-                                    if (sqrtf(dxSp * dxSp + dySp * dySp) > SAFE_ZONE_SPAWN_RADIUS) {
-                                        spawnMob((float)targetX + 0.5f, (float)spawnY, chosenType);
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    // Surface Ground Zone
-                    int surfY = (targetX >= 0 && targetX < WORLD_WIDTH) ? g_SurfaceHeight[targetX] : getSurfaceHeight(targetX, 1337);
-                    
-                    // Search for actual solid surface ground block with air above
-                    int groundY = -1;
-                    for (int ty = surfY + 6; ty >= surfY - 6; ty--) {
-                        if (ty >= 2 && ty < WORLD_HEIGHT - 3) {
-                            if (isSolidBlock(targetX, ty) && !isSolidBlock(targetX, ty + 1) && !isSolidBlock(targetX, ty + 2)) {
-                                groundY = ty;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (groundY > 0) {
-                        int spawnY = groundY + 1;
-                        float dxSp = (float)targetX + 0.5f - (float)initSpawnX;
-                        float dySp = (float)spawnY - (float)initSpawnY;
-                        bool inSafeZone = (sqrtf(dxSp * dxSp + dySp * dySp) <= SAFE_ZONE_SPAWN_RADIUS);
-
-                        int chosenType = MOB_SLIME;
-                        if (isDay) {
-                            // Daytime Surface: Strictly suppress hostile mobs (Zombies, Bats) and spawn peaceful animals instead!
-                            int r = rand() % 100;
-                            if (r < 28) chosenType = MOB_SHEEP;
-                            else if (r < 54) chosenType = MOB_COW;
-                            else if (r < 74) chosenType = MOB_PIG;
-                            else if (r < 90) chosenType = MOB_RABBIT;
-                            else chosenType = MOB_SLIME;
-                        } else {
-                            // Nighttime Surface: Outside safe zone, allow hostile mobs up to limit
-                            if (inSafeZone || activeHostileCount >= MAX_HOSTILE_MOBS) {
-                                int r = rand() % 100;
-                                if (r < 40) chosenType = MOB_SHEEP;
-                                else if (r < 75) chosenType = MOB_COW;
-                                else chosenType = MOB_SLIME;
-                            } else {
-                                chosenType = (rand() % 10 < 7) ? MOB_ZOMBIE : MOB_SLIME;
-                            }
-                        }
-
-                        if (chosenType >= 0) {
-                            spawnMob((float)targetX + 0.5f, (float)spawnY, chosenType);
-                        }
-                    }
-                }
-            }
-        }
+        spawnMobs(playerX, playerY, activeCount, activeHostileCount);
     }
 
     // ------------------------------------------------------------------------
@@ -479,6 +645,10 @@ void updateMobs(float dt, float playerX, float playerY) {
                     m->facingRight = (leapDir > 0.0f);
                     m->vx = leapDir * (3.8f + ((float)rand() / RAND_MAX) * 1.6f);
                     m->vy = 9.8f + ((float)rand() / RAND_MAX) * 2.2f;
+
+                    if (distToPlayer < 24.0f) {
+                        playSound(SFX_SLIME_JUMP);
+                    }
                 }
             } else if (m->state == SLIME_STATE_JUMP) {
                 m->animTimer += dt;
@@ -496,9 +666,18 @@ void updateMobs(float dt, float playerX, float playerY) {
         // --------------------------------------------------------------------
         else if (m->type == MOB_BAT) {
             m->animTimer += dt;
+            m->soundTimer -= dt;
 
             if (distToPlayer < 16.0f) {
+                bool wasSwoop = (m->state == BAT_STATE_SWOOP);
                 m->state = BAT_STATE_SWOOP;
+                if (!wasSwoop && distToPlayer < 20.0f) {
+                    playSound(SFX_BAT_CHIRP);
+                    m->soundTimer = 2.5f + ((float)rand() / RAND_MAX) * 2.5f;
+                } else if (m->soundTimer <= 0.0f && distToPlayer < 18.0f) {
+                    playSound(SFX_BAT_CHIRP);
+                    m->soundTimer = 3.0f + ((float)rand() / RAND_MAX) * 3.0f;
+                }
                 float targetVX = (dxToPlayer > 0.0f ? 1.0f : -1.0f) * 4.5f;
                 float targetVY = (dyToPlayer / (distToPlayer + 0.001f)) * 3.8f + sinf(m->animTimer * 5.0f) * 1.5f;
                 m->vx += (targetVX - m->vx) * 3.5f * dt;
@@ -506,6 +685,10 @@ void updateMobs(float dt, float playerX, float playerY) {
                 m->facingRight = (dxToPlayer > 0.0f);
             } else {
                 m->state = BAT_STATE_WANDER;
+                if (m->soundTimer <= 0.0f && distToPlayer < 20.0f) {
+                    playSound(SFX_BAT_CHIRP);
+                    m->soundTimer = 4.5f + ((float)rand() / RAND_MAX) * 4.5f;
+                }
                 float targetVX = (m->facingRight ? 2.6f : -2.6f);
                 float targetVY = sinf(m->animTimer * 2.8f) * 2.0f;
                 m->vx += (targetVX - m->vx) * 2.2f * dt;
@@ -529,6 +712,20 @@ void updateMobs(float dt, float playerX, float playerY) {
                 m->x = nextX;
                 m->y = nextY;
             }
+
+            // Player contact combat for Bat
+            float pLeft = playerX - 0.38f;
+            float pRight = playerX + 0.38f;
+            float pBottom = playerY;
+            float pTop = playerY + 1.8f;
+            float mLeft = m->x - m->width * 0.45f;
+            float mRight = m->x + m->width * 0.45f;
+            float mBottom = m->y;
+            float mTop = m->y + m->height;
+
+            if (pRight > mLeft && pLeft < mRight && pTop > mBottom && pBottom < mTop) {
+                onPlayerHurt(8.0f, m->x);
+            }
             continue; // Bats skip grounded block collision
         }
         // --------------------------------------------------------------------
@@ -537,15 +734,28 @@ void updateMobs(float dt, float playerX, float playerY) {
         else if (m->type == MOB_ZOMBIE) {
             m->vy -= 30.0f * dt; // Gravity
             m->animTimer += dt;
+            m->soundTimer -= dt;
 
             float targetVX = 0.0f;
             if (distToPlayer < 22.0f) {
+                bool wasChase = (m->state == ZOMBIE_STATE_CHASE);
                 m->state = ZOMBIE_STATE_CHASE;
+                if (!wasChase && distToPlayer < 22.0f) {
+                    playSound(SFX_ZOMBIE_GROWL);
+                    m->soundTimer = 3.5f + ((float)rand() / RAND_MAX) * 3.5f;
+                } else if (m->soundTimer <= 0.0f && distToPlayer < 20.0f) {
+                    playSound(SFX_ZOMBIE_GROWL);
+                    m->soundTimer = 4.5f + ((float)rand() / RAND_MAX) * 4.5f;
+                }
                 float dir = (dxToPlayer > 0.0f) ? 1.0f : -1.0f;
                 m->facingRight = (dir > 0.0f);
                 targetVX = dir * 2.4f;
             } else {
                 m->state = ZOMBIE_STATE_WANDER;
+                if (m->soundTimer <= 0.0f && distToPlayer < 22.0f) {
+                    playSound(SFX_ZOMBIE_GROWL);
+                    m->soundTimer = 6.0f + ((float)rand() / RAND_MAX) * 6.0f;
+                }
                 float wanderDir = (sinf(m->animTimer * 0.4f) > 0.0f) ? 1.0f : -1.0f;
                 m->facingRight = (wanderDir > 0.0f);
                 targetVX = wanderDir * 1.3f;
@@ -574,6 +784,21 @@ void updateMobs(float dt, float playerX, float playerY) {
             m->vy -= 28.0f * dt; // Gravity
             m->animTimer += dt;
             m->stateTimer -= dt;
+            m->soundTimer -= dt;
+
+            // Periodic characteristic vocalization (Baa, Moo, Oink)
+            if (m->soundTimer <= 0.0f && distToPlayer < 22.0f) {
+                if (m->type == MOB_SHEEP) {
+                    playSound(SFX_SHEEP_BAA);
+                    m->soundTimer = 6.5f + ((float)rand() / RAND_MAX) * 7.5f;
+                } else if (m->type == MOB_COW) {
+                    playSound(SFX_COW_MOO);
+                    m->soundTimer = 8.0f + ((float)rand() / RAND_MAX) * 8.5f;
+                } else if (m->type == MOB_PIG) {
+                    playSound(SFX_PIG_OINK);
+                    m->soundTimer = 5.5f + ((float)rand() / RAND_MAX) * 6.5f;
+                }
+            }
 
             float walkSpeed = 0.95f;
             if (m->type == MOB_COW) walkSpeed = 0.85f;
@@ -699,9 +924,255 @@ void updateMobs(float dt, float playerX, float playerY) {
                 }
             }
         }
+        // --------------------------------------------------------------------
+        // SKELETON: Cavern wanderer, bipedal step climber, bone weapon thrust with knockback
+        // --------------------------------------------------------------------
+        else if (m->type == MOB_SKELETON) {
+            m->vy -= 30.0f * dt; // Gravity
+            m->animTimer += dt;
+            m->soundTimer -= dt;
+            m->attackTimer += dt;
+
+            float targetVX = 0.0f;
+            if (distToPlayer < 20.0f) {
+                bool wasChase = (m->state == SKELETON_STATE_CHASE || m->state == SKELETON_STATE_ATTACK);
+                float dir = (dxToPlayer > 0.0f) ? 1.0f : -1.0f;
+                m->facingRight = (dir > 0.0f);
+
+                if (!wasChase && distToPlayer < 20.0f) {
+                    playSound(SFX_SKELETON_RATTLE);
+                    m->soundTimer = 3.5f + ((float)rand() / RAND_MAX) * 3.0f;
+                } else if (m->soundTimer <= 0.0f && distToPlayer < 18.0f) {
+                    playSound(SFX_SKELETON_RATTLE);
+                    m->soundTimer = 4.0f + ((float)rand() / RAND_MAX) * 3.5f;
+                }
+
+                if (distToPlayer <= 2.2f) {
+                    // Attack range: thrust bone weapon!
+                    m->state = SKELETON_STATE_ATTACK;
+                    targetVX = dir * 0.9f;
+                    if (m->attackTimer >= 0.85f) {
+                        m->attackTimer = 0.0f;
+                        playSound(SFX_SKELETON_RATTLE);
+                        if (distToPlayer <= 2.4f) {
+                            onPlayerHurt(16.0f, m->x);
+                        }
+                    }
+                } else {
+                    m->state = SKELETON_STATE_CHASE;
+                    targetVX = dir * 2.3f;
+                }
+            } else {
+                m->state = SKELETON_STATE_WANDER;
+                float wanderDir = (sinf(m->animTimer * 0.35f) > 0.0f) ? 1.0f : -1.0f;
+                m->facingRight = (wanderDir > 0.0f);
+                targetVX = wanderDir * 1.2f;
+
+                if (m->soundTimer <= 0.0f && distToPlayer < 22.0f) {
+                    playSound(SFX_SKELETON_RATTLE);
+                    m->soundTimer = 5.0f + ((float)rand() / RAND_MAX) * 4.0f;
+                }
+            }
+
+            float accel = m->isGrounded ? 30.0f : 15.0f;
+            m->vx += (targetVX - m->vx) * accel * dt;
+
+            // 1-Block Auto Step Climbing for Skeleton
+            if (m->isGrounded && fabsf(m->vx) > 0.15f) {
+                int checkX = (m->vx > 0.0f) ? (int)floorf(m->x + m->width * 0.5f + 0.15f)
+                                            : (int)floorf(m->x - m->width * 0.5f - 0.15f);
+                int footY = (int)floorf(m->y);
+                int headY = (int)floorf(m->y + m->height);
+
+                if (isSolidBlock(checkX, footY) && !isSolidBlock(checkX, footY + 1) && !isSolidBlock(checkX, headY + 1)) {
+                    m->y += 16.0f * dt;
+                    if (m->y > (float)(footY + 1.0f)) m->y = (float)(footY + 1.0f);
+                }
+            }
+        }
+        // --------------------------------------------------------------------
+        // SPIDER: 8 scuttling legs, fast movement, leaps at player within 4.5 blocks
+        // --------------------------------------------------------------------
+        else if (m->type == MOB_SPIDER) {
+            m->vy -= 28.0f * dt; // Gravity
+            m->animTimer += dt;
+            m->soundTimer -= dt;
+            if (m->attackTimer > 0.0f) m->attackTimer -= dt;
+
+            float targetVX = 0.0f;
+            if (distToPlayer < 20.0f) {
+                float dir = (dxToPlayer > 0.0f) ? 1.0f : -1.0f;
+                m->facingRight = (dir > 0.0f);
+
+                // Leap attack at player within 4.5 blocks!
+                if (distToPlayer <= 4.5f && m->isGrounded && m->attackTimer <= 0.0f) {
+                    m->state = SPIDER_STATE_LEAP;
+                    m->attackTimer = 1.8f + ((float)rand() / RAND_MAX) * 1.0f; // Leap cooldown
+                    m->isGrounded = false;
+                    m->vx = dir * 6.6f;
+                    m->vy = 7.6f;
+                    playSound(SFX_SPIDER_HISS);
+                } else if (m->state != SPIDER_STATE_LEAP || m->isGrounded) {
+                    m->state = SPIDER_STATE_CHASE;
+                    targetVX = dir * 3.8f; // Fast scuttling movement
+                    if (m->soundTimer <= 0.0f && distToPlayer < 16.0f) {
+                        playSound(SFX_SPIDER_HISS);
+                        m->soundTimer = 3.5f + ((float)rand() / RAND_MAX) * 3.0f;
+                    }
+                }
+            } else {
+                m->state = SPIDER_STATE_WANDER;
+                float wanderDir = (sinf(m->animTimer * 0.45f) > 0.0f) ? 1.0f : -1.0f;
+                m->facingRight = (wanderDir > 0.0f);
+                targetVX = wanderDir * 2.2f;
+            }
+
+            if (m->state != SPIDER_STATE_LEAP || m->isGrounded) {
+                float accel = m->isGrounded ? 36.0f : 16.0f;
+                m->vx += (targetVX - m->vx) * accel * dt;
+            }
+
+            // 1-Block Auto Step Climbing for Spider
+            if (m->isGrounded && fabsf(m->vx) > 0.15f) {
+                int checkX = (m->vx > 0.0f) ? (int)floorf(m->x + m->width * 0.5f + 0.15f)
+                                            : (int)floorf(m->x - m->width * 0.5f - 0.15f);
+                int footY = (int)floorf(m->y);
+                int headY = (int)floorf(m->y + m->height);
+
+                if (isSolidBlock(checkX, footY) && !isSolidBlock(checkX, footY + 1) && !isSolidBlock(checkX, headY + 1)) {
+                    m->y += 18.0f * dt;
+                    if (m->y > (float)(footY + 1.0f)) m->y = (float)(footY + 1.0f);
+                }
+            }
+        }
+        // --------------------------------------------------------------------
+        // GHOST: Translucent cyan-blue spectral entity, floating sine bobbing, aerial pursuit
+        // --------------------------------------------------------------------
+        else if (m->type == MOB_GHOST) {
+            m->animTimer += dt;
+            float sineBob = sinf(m->animTimer * 3.0f) * 1.4f;
+
+            if (distToPlayer < 24.0f) {
+                m->state = GHOST_STATE_CHASE;
+                float targetVX = (dxToPlayer > 0.0f ? 1.0f : -1.0f) * 2.8f;
+                float targetVY = (dyToPlayer / (distToPlayer + 0.001f)) * 2.4f + sineBob * 0.5f;
+                m->vx += (targetVX - m->vx) * 2.2f * dt;
+                m->vy += (targetVY - m->vy) * 2.2f * dt;
+                m->facingRight = (dxToPlayer > 0.0f);
+            } else {
+                m->state = GHOST_STATE_DRIFT;
+                float targetVX = (m->facingRight ? 1.4f : -1.4f);
+                float targetVY = sineBob;
+                m->vx += (targetVX - m->vx) * 1.6f * dt;
+                m->vy += (targetVY - m->vy) * 1.6f * dt;
+
+                int checkX = (int)floorf(m->x + (m->facingRight ? 0.9f : -0.9f));
+                int checkY = (int)floorf(m->y);
+                if (isSolidBlock(checkX, checkY)) {
+                    m->facingRight = !m->facingRight;
+                }
+            }
+
+            float nextX = m->x + m->vx * dt;
+            float nextY = m->y + m->vy * dt;
+            int testX = (int)floorf(nextX);
+            int testY = (int)floorf(nextY);
+            if (isSolidBlock(testX, testY)) {
+                m->vx = -m->vx * 0.5f;
+                m->vy += 1.2f;
+            } else {
+                m->x = nextX;
+                m->y = nextY;
+            }
+
+            // Ethereal glowing cyan trail particle
+            if ((rand() % 5) == 0) {
+                spawnParticle(
+                    m->x + ((float)rand() / RAND_MAX - 0.5f) * 0.4f,
+                    m->y + ((float)rand() / RAND_MAX) * m->height,
+                    0.30f, 0.85f, 1.0f,
+                    ((float)rand() / RAND_MAX - 0.5f) * 0.4f,
+                    0.4f + ((float)rand() / RAND_MAX) * 0.6f
+                );
+            }
+
+            // Player Contact Combat Collision for Ghost
+            float pLeft = playerX - 0.38f;
+            float pRight = playerX + 0.38f;
+            float pBottom = playerY;
+            float pTop = playerY + 1.8f;
+
+            float mLeft = m->x - m->width * 0.45f;
+            float mRight = m->x + m->width * 0.45f;
+            float mBottom = m->y;
+            float mTop = m->y + m->height;
+
+            if (pRight > mLeft && pLeft < mRight && pTop > mBottom && pBottom < mTop) {
+                onPlayerHurt(15.0f, m->x);
+            }
+            continue; // Ghost floats freely through air; skips grounded block physics
+        }
+        // --------------------------------------------------------------------
+        // LAVA SLIME: Fiery magma cube in underworld, fiery orange-red glow, high jump & ember particles
+        // --------------------------------------------------------------------
+        else if (m->type == MOB_LAVA_SLIME) {
+            m->vy -= 28.0f * dt; // Gravity
+
+            if (m->state == LAVA_SLIME_STATE_IDLE) {
+                m->animTimer -= dt;
+                m->vx *= 0.80f;
+
+                if (m->animTimer <= 0.0f && m->isGrounded) {
+                    m->state = LAVA_SLIME_STATE_JUMP;
+                    m->animTimer = 0.0f;
+                    m->isGrounded = false;
+
+                    float leapDir = (distToPlayer < 20.0f) ? ((dxToPlayer > 0.0f) ? 1.0f : -1.0f)
+                                                           : ((rand() % 2 == 0) ? 1.0f : -1.0f);
+                    m->facingRight = (leapDir > 0.0f);
+                    m->vx = leapDir * (4.5f + ((float)rand() / RAND_MAX) * 2.0f);
+                    // High jump! (13.8f vs 9.8f for regular slime)
+                    m->vy = 13.8f + ((float)rand() / RAND_MAX) * 2.4f;
+
+                    if (distToPlayer < 24.0f) {
+                        playSound(SFX_SLIME_JUMP);
+                    }
+
+                    // Fiery ember particles burst on jump
+                    for (int p = 0; p < 8; p++) {
+                        spawnParticle(
+                            m->x + ((float)rand() / RAND_MAX - 0.5f) * m->width,
+                            m->y + 0.1f,
+                            1.0f, 0.45f + ((float)rand() / RAND_MAX) * 0.35f, 0.08f,
+                            ((float)rand() / RAND_MAX - 0.5f) * 4.0f,
+                            2.0f + ((float)rand() / RAND_MAX) * 3.5f
+                        );
+                    }
+                }
+            } else if (m->state == LAVA_SLIME_STATE_JUMP) {
+                m->animTimer += dt;
+                // Trailing fiery ember particles in air
+                if ((rand() % 2) == 0) {
+                    spawnParticle(
+                        m->x + ((float)rand() / RAND_MAX - 0.5f) * m->width * 0.6f,
+                        m->y + ((float)rand() / RAND_MAX) * m->height * 0.6f,
+                        1.0f, 0.55f, 0.10f,
+                        ((float)rand() / RAND_MAX - 0.5f) * 1.2f,
+                        -0.4f + ((float)rand() / RAND_MAX) * 0.8f
+                    );
+                }
+            } else if (m->state == LAVA_SLIME_STATE_LAND) {
+                m->animTimer -= dt;
+                m->vx *= 0.72f;
+                if (m->animTimer <= 0.0f) {
+                    m->state = LAVA_SLIME_STATE_IDLE;
+                    m->animTimer = 0.6f + ((float)rand() / RAND_MAX) * 0.8f;
+                }
+            }
+        }
 
         // --------------------------------------------------------------------
-        // Grounded Collision against g_World (Slimes, Zombies, Sheep, Cow, Pig, Rabbit)
+        // Grounded Collision against g_World (Slimes, Zombies, Sheep, Cow, Pig, Rabbit, Skeletons, Spiders, Lava Slimes)
         // --------------------------------------------------------------------
         float nextX = m->x + m->vx * dt;
         int minX = (int)floorf(nextX - m->width * 0.5f);
@@ -758,9 +1229,9 @@ void updateMobs(float dt, float playerX, float playerY) {
                     m->vy = 0.0f;
                     m->isGrounded = true;
 
-                    // Slime impact squash transition
-                    if (m->type == MOB_SLIME && !wasGrounded) {
-                        m->state = SLIME_STATE_LAND;
+                    // Slime & Lava Slime impact squash transition
+                    if ((m->type == MOB_SLIME || m->type == MOB_LAVA_SLIME) && !wasGrounded) {
+                        m->state = (m->type == MOB_LAVA_SLIME) ? LAVA_SLIME_STATE_LAND : SLIME_STATE_LAND;
                         m->animTimer = 0.20f;
                     }
                     break;
@@ -790,13 +1261,40 @@ void updateMobs(float dt, float playerX, float playerY) {
 
         if (pRight > mLeft && pLeft < mRight && pTop > mBottom && pBottom < mTop) {
             // Peaceful animals NEVER attack player
-            if (m->type == MOB_SLIME || m->type == MOB_BAT || m->type == MOB_ZOMBIE) {
+            if (isHostileMob(m->type) || m->type == MOB_SLIME) {
                 float mobDmg = 12.0f;
                 if (m->type == MOB_SLIME) mobDmg = 10.0f;
                 else if (m->type == MOB_BAT) mobDmg = 8.0f;
-                else if (m->type == MOB_ZOMBIE) mobDmg = 18.0f;
+                else if (m->type == MOB_ZOMBIE) {
+                    mobDmg = 18.0f;
+                    playSound(SFX_ZOMBIE_GROWL);
+                } else if (m->type == MOB_SKELETON) {
+                    mobDmg = 16.0f;
+                    playSound(SFX_SKELETON_RATTLE);
+                } else if (m->type == MOB_SPIDER) {
+                    mobDmg = 14.0f;
+                    playSound(SFX_SPIDER_HISS);
+                } else if (m->type == MOB_GHOST) {
+                    mobDmg = 15.0f;
+                } else if (m->type == MOB_LAVA_SLIME) {
+                    mobDmg = 18.0f;
+                }
                 onPlayerHurt(mobDmg, m->x);
             }
+        }
+    }
+
+    // Deep subterranean ambient horror cues (bone rattle / spider hiss in pitch dark)
+    static float s_CavernAtmosphereTimer = 15.0f;
+    if (playerY < CAVERN_LEVEL) {
+        s_CavernAtmosphereTimer -= dt;
+        if (s_CavernAtmosphereTimer <= 0.0f) {
+            if (rand() % 2 == 0) {
+                playSound(SFX_SKELETON_RATTLE);
+            } else {
+                playSound(SFX_SPIDER_HISS);
+            }
+            s_CavernAtmosphereTimer = 16.0f + ((float)rand() / RAND_MAX) * 20.0f;
         }
     }
 }
@@ -1560,6 +2058,450 @@ void renderMobs(float daylight, float camX, float camY) {
 
             glPopMatrix();
         }
+        // ====================================================================
+        // 8. MOB_SKELETON (骷髅战士): Pale Ivory Model (Skull, Ribcage, Limbs, Bone Weapon)
+        // ====================================================================
+        else if (m->type == MOB_SKELETON) {
+            float sinWalk = sinf(m->animTimer * 6.5f);
+            float legSwingL = m->isGrounded ? sinWalk * 0.16f : 0.10f;
+            float legSwingR = m->isGrounded ? -sinWalk * 0.16f : -0.10f;
+
+            // Attack bone weapon thrust
+            float thrust = 0.0f;
+            if (m->state == SKELETON_STATE_ATTACK) {
+                thrust = sinf(m->attackTimer * 3.14159f / 0.85f) * 0.35f;
+                if (thrust < 0.0f) thrust = 0.0f;
+            }
+
+            // Central Ivory Spine Column
+            MOB_RGB(0.85f, 0.83f, 0.76f);
+            glBegin(GL_QUADS);
+            glVertex3f(-0.04f, 0.58f, 0.0f);
+            glVertex3f( 0.04f, 0.58f, 0.0f);
+            glVertex3f( 0.04f, 1.30f, 0.0f);
+            glVertex3f(-0.04f, 1.30f, 0.0f);
+            glEnd();
+
+            // Pelvic Girdle
+            MOB_RGB(0.88f, 0.86f, 0.80f);
+            glBegin(GL_QUADS);
+            glVertex3f(-0.18f, 0.48f, 0.01f);
+            glVertex3f( 0.18f, 0.48f, 0.01f);
+            glVertex3f( 0.15f, 0.60f, 0.01f);
+            glVertex3f(-0.15f, 0.60f, 0.01f);
+            glEnd();
+
+            // Ribcage: 4 distinct pairs of curved ivory ribs with open hollow interior
+            MOB_RGB(0.92f, 0.90f, 0.84f);
+            glBegin(GL_QUADS);
+            for (int r = 0; r < 4; r++) {
+                float ribY = 0.72f + (float)r * 0.14f;
+                // Left rib
+                glVertex3f(-0.25f, ribY,         0.01f);
+                glVertex3f(-0.02f, ribY + 0.03f, 0.01f);
+                glVertex3f(-0.02f, ribY + 0.08f, 0.01f);
+                glVertex3f(-0.25f, ribY + 0.06f, 0.01f);
+                // Right rib
+                glVertex3f( 0.02f, ribY + 0.03f, 0.01f);
+                glVertex3f( 0.25f, ribY,         0.01f);
+                glVertex3f( 0.25f, ribY + 0.06f, 0.01f);
+                glVertex3f( 0.02f, ribY + 0.08f, 0.01f);
+            }
+            glEnd();
+
+            // Ivory Cranium / Skull
+            MOB_RGB(0.93f, 0.91f, 0.85f);
+            glBegin(GL_POLYGON);
+            glVertex3f(-0.20f, 1.30f, 0.0f);
+            glVertex3f( 0.20f, 1.30f, 0.0f);
+            glVertex3f( 0.24f, 1.44f, 0.0f);
+            glVertex3f( 0.22f, 1.74f, 0.0f);
+            glVertex3f(-0.22f, 1.74f, 0.0f);
+            glVertex3f(-0.24f, 1.44f, 0.0f);
+            glEnd();
+
+            // Hollow Dark Eye Sockets
+            glColor3f(0.08f, 0.07f, 0.07f);
+            glBegin(GL_QUADS);
+            glVertex3f( 0.04f, 1.46f, 0.02f);
+            glVertex3f( 0.15f, 1.46f, 0.02f);
+            glVertex3f( 0.15f, 1.58f, 0.02f);
+            glVertex3f( 0.04f, 1.58f, 0.02f);
+
+            glVertex3f(-0.15f, 1.46f, 0.02f);
+            glVertex3f(-0.04f, 1.46f, 0.02f);
+            glVertex3f(-0.04f, 1.58f, 0.02f);
+            glVertex3f(-0.15f, 1.58f, 0.02f);
+            glEnd();
+
+            // Faint glowing red pinpoint in eye sockets
+            glColor3f(0.95f, 0.20f, 0.20f);
+            glBegin(GL_QUADS);
+            glVertex3f( 0.08f, 1.50f, 0.03f);
+            glVertex3f( 0.12f, 1.50f, 0.03f);
+            glVertex3f( 0.12f, 1.54f, 0.03f);
+            glVertex3f( 0.08f, 1.54f, 0.03f);
+
+            glVertex3f(-0.11f, 1.50f, 0.03f);
+            glVertex3f(-0.07f, 1.50f, 0.03f);
+            glVertex3f(-0.07f, 1.54f, 0.03f);
+            glVertex3f(-0.11f, 1.54f, 0.03f);
+            glEnd();
+
+            // Nasal Cavity
+            glColor3f(0.10f, 0.08f, 0.08f);
+            glBegin(GL_TRIANGLES);
+            glVertex3f(-0.03f, 1.40f, 0.02f);
+            glVertex3f( 0.03f, 1.40f, 0.02f);
+            glVertex3f( 0.00f, 1.45f, 0.02f);
+            glEnd();
+
+            // Skeleton Teeth / Jaw
+            glColor3f(0.12f, 0.10f, 0.10f);
+            glBegin(GL_LINES);
+            glVertex3f(-0.12f, 1.34f, 0.02f);
+            glVertex3f( 0.12f, 1.34f, 0.02f);
+            for (float tx = -0.10f; tx <= 0.10f; tx += 0.04f) {
+                glVertex3f(tx, 1.30f, 0.02f);
+                glVertex3f(tx, 1.37f, 0.02f);
+            }
+            glEnd();
+
+            // Thin Ivory Bone Legs
+            MOB_RGB(0.88f, 0.86f, 0.80f);
+            glBegin(GL_QUADS);
+            // Left leg
+            glVertex3f(-0.15f + legSwingL, 0.0f,  0.0f);
+            glVertex3f(-0.08f + legSwingL, 0.0f,  0.0f);
+            glVertex3f(-0.08f,             0.48f, 0.0f);
+            glVertex3f(-0.15f,             0.48f, 0.0f);
+            // Right leg
+            glVertex3f( 0.08f + legSwingR, 0.0f,  0.0f);
+            glVertex3f( 0.15f + legSwingR, 0.0f,  0.0f);
+            glVertex3f( 0.15f,             0.48f, 0.0f);
+            glVertex3f( 0.08f,             0.48f, 0.0f);
+            glEnd();
+
+            // Left Arm (background)
+            MOB_RGB(0.82f, 0.80f, 0.74f);
+            glBegin(GL_QUADS);
+            glVertex3f(-0.25f - legSwingL * 0.8f, 0.65f, -0.01f);
+            glVertex3f(-0.18f - legSwingL * 0.8f, 0.65f, -0.01f);
+            glVertex3f(-0.20f,                    1.22f, -0.01f);
+            glVertex3f(-0.27f,                    1.22f, -0.01f);
+            glEnd();
+
+            // Right Arm (foreground) with Bone Weapon
+            MOB_RGB(0.90f, 0.88f, 0.82f);
+            float armAngle = (m->state == SKELETON_STATE_ATTACK) ? 0.35f : 0.08f;
+            glBegin(GL_QUADS);
+            glVertex3f(0.18f + thrust, 1.15f, 0.02f);
+            glVertex3f(0.24f + thrust, 1.15f, 0.02f);
+            glVertex3f(0.42f + thrust, 0.95f + armAngle, 0.02f);
+            glVertex3f(0.36f + thrust, 0.95f + armAngle, 0.02f);
+            glEnd();
+
+            // Bone Weapon (Carved sharp ivory bone blade / spear)
+            MOB_RGB(0.96f, 0.95f, 0.90f);
+            glBegin(GL_POLYGON);
+            glVertex3f(0.36f + thrust, 0.92f + armAngle, 0.03f);
+            glVertex3f(0.78f + thrust, 1.12f + armAngle, 0.03f);
+            glVertex3f(0.92f + thrust, 1.16f + armAngle, 0.03f); // sharp point
+            glVertex3f(0.76f + thrust, 1.24f + armAngle, 0.03f);
+            glVertex3f(0.40f + thrust, 1.04f + armAngle, 0.03f);
+            glEnd();
+        }
+        // ====================================================================
+        // 9. MOB_SPIDER (洞穴蜘蛛): 8 Animated Scuttling Legs, Dark Body, Glowing Red Eyes
+        // ====================================================================
+        else if (m->type == MOB_SPIDER) {
+            float scuttleSpeed = (m->state == SPIDER_STATE_CHASE) ? 24.0f : 14.0f;
+            float legPhases[4] = { 0.0f, 1.57f, 3.14f, 4.71f };
+
+            // 8 Animated Scuttling Legs (4 background legs, 4 foreground legs)
+            MOB_RGB(0.12f, 0.10f, 0.10f);
+            for (int k = 0; k < 4; k++) {
+                float legCycle = sinf(m->animTimer * scuttleSpeed + legPhases[k]);
+                float hipX = -0.18f + (float)k * 0.14f;
+                float kneeX = hipX - 0.22f + legCycle * 0.08f;
+                float kneeY = 0.38f + fabsf(legCycle) * 0.10f;
+                float footX = hipX - 0.44f + legCycle * 0.14f;
+                float footY = 0.0f;
+
+                glBegin(GL_LINES);
+                glVertex3f(hipX,  0.22f, -0.01f);
+                glVertex3f(kneeX, kneeY, -0.01f);
+                glVertex3f(kneeX, kneeY, -0.01f);
+                glVertex3f(footX, footY, -0.01f);
+                glEnd();
+            }
+
+            // Bulbous Dark Abdomen (Rear)
+            MOB_RGB(0.10f, 0.08f, 0.09f);
+            glBegin(GL_POLYGON);
+            glVertex3f(-0.54f, 0.14f, 0.0f);
+            glVertex3f(-0.12f, 0.14f, 0.0f);
+            glVertex3f( 0.02f, 0.28f, 0.0f);
+            glVertex3f(-0.06f, 0.52f, 0.0f);
+            glVertex3f(-0.38f, 0.56f, 0.0f);
+            glVertex3f(-0.58f, 0.36f, 0.0f);
+            glEnd();
+
+            // Dark Chitin Abdomen Markings
+            MOB_RGB(0.24f, 0.12f, 0.14f);
+            glBegin(GL_QUADS);
+            glVertex3f(-0.42f, 0.28f, 0.01f);
+            glVertex3f(-0.20f, 0.28f, 0.01f);
+            glVertex3f(-0.24f, 0.44f, 0.01f);
+            glVertex3f(-0.38f, 0.44f, 0.01f);
+            glEnd();
+
+            // Cephalothorax (Head & Thorax)
+            MOB_RGB(0.14f, 0.11f, 0.12f);
+            glBegin(GL_POLYGON);
+            glVertex3f(-0.05f, 0.12f, 0.0f);
+            glVertex3f( 0.32f, 0.12f, 0.0f);
+            glVertex3f( 0.42f, 0.26f, 0.0f);
+            glVertex3f( 0.32f, 0.42f, 0.0f);
+            glVertex3f(-0.02f, 0.38f, 0.0f);
+            glEnd();
+
+            // Spider Chelicerae / Fangs
+            MOB_RGB(0.20f, 0.06f, 0.08f);
+            glBegin(GL_TRIANGLES);
+            glVertex3f(0.36f, 0.16f, 0.02f);
+            glVertex3f(0.44f, 0.16f, 0.02f);
+            glVertex3f(0.42f, 0.04f, 0.02f);
+
+            glVertex3f(0.28f, 0.16f, 0.02f);
+            glVertex3f(0.36f, 0.16f, 0.02f);
+            glVertex3f(0.34f, 0.04f, 0.02f);
+            glEnd();
+
+            // Glowing Ruby Red Eyes (Multiple arachnid eye cluster!)
+            glColor3f(1.0f, 0.10f, 0.10f);
+            glBegin(GL_QUADS);
+            glVertex3f(0.32f, 0.28f, 0.03f);
+            glVertex3f(0.40f, 0.28f, 0.03f);
+            glVertex3f(0.40f, 0.36f, 0.03f);
+            glVertex3f(0.32f, 0.36f, 0.03f);
+
+            glVertex3f(0.22f, 0.32f, 0.03f);
+            glVertex3f(0.28f, 0.32f, 0.03f);
+            glVertex3f(0.28f, 0.37f, 0.03f);
+            glVertex3f(0.22f, 0.37f, 0.03f);
+
+            glVertex3f(0.34f, 0.21f, 0.03f);
+            glVertex3f(0.39f, 0.21f, 0.03f);
+            glVertex3f(0.39f, 0.25f, 0.03f);
+            glVertex3f(0.34f, 0.25f, 0.03f);
+            glEnd();
+
+            // Eye specular glint
+            glColor3f(1.0f, 0.85f, 0.85f);
+            glBegin(GL_QUADS);
+            glVertex3f(0.34f, 0.31f, 0.04f);
+            glVertex3f(0.37f, 0.31f, 0.04f);
+            glVertex3f(0.37f, 0.34f, 0.04f);
+            glVertex3f(0.34f, 0.34f, 0.04f);
+            glEnd();
+
+            // 4 Foreground Legs (z = +0.02f)
+            MOB_RGB(0.16f, 0.12f, 0.14f);
+            for (int k = 0; k < 4; k++) {
+                float legCycle = sinf(m->animTimer * scuttleSpeed + legPhases[k] + 3.14f);
+                float hipX = -0.12f + (float)k * 0.14f;
+                float kneeX = hipX + 0.22f + legCycle * 0.08f;
+                float kneeY = 0.40f + fabsf(legCycle) * 0.12f;
+                float footX = hipX + 0.46f + legCycle * 0.15f;
+                float footY = 0.0f;
+
+                glBegin(GL_LINES);
+                glVertex3f(hipX,  0.22f, 0.02f);
+                glVertex3f(kneeX, kneeY, 0.02f);
+                glVertex3f(kneeX, kneeY, 0.02f);
+                glVertex3f(footX, footY, 0.02f);
+                glEnd();
+            }
+        }
+        // ====================================================================
+        // 10. MOB_GHOST (夜影幽灵): Translucent Cyan-Blue Spectral Entity (Sine Bobbing)
+        // ====================================================================
+        else if (m->type == MOB_GHOST) {
+            float bobY = sinf(m->animTimer * 3.2f) * 0.09f;
+            glPushMatrix();
+            glTranslatef(0.0f, bobY, 0.0f);
+
+            // Wavy trailing spectral tail points
+            float w0 = sinf(m->animTimer * 5.0f) * 0.08f;
+            float w1 = sinf(m->animTimer * 5.0f + 1.6f) * 0.08f;
+            float w2 = sinf(m->animTimer * 5.0f + 3.2f) * 0.08f;
+
+            // Translucent Outer Cyan Spectral Shroud
+            MOB_RGBA(0.24f, 0.78f, 0.98f, 0.65f);
+            glBegin(GL_POLYGON);
+            glVertex3f(-0.35f, 0.25f + w0, 0.0f);
+            glVertex3f(-0.15f, 0.10f + w1, 0.0f);
+            glVertex3f( 0.08f, 0.22f + w2, 0.0f);
+            glVertex3f( 0.32f, 0.12f + w0, 0.0f);
+            glVertex3f( 0.40f, 0.45f,      0.0f);
+            glVertex3f( 0.36f, 0.88f,      0.0f);
+            glVertex3f( 0.18f, 1.14f,      0.0f);
+            glVertex3f(-0.18f, 1.14f,      0.0f);
+            glVertex3f(-0.36f, 0.88f,      0.0f);
+            glVertex3f(-0.40f, 0.45f,      0.0f);
+            glEnd();
+
+            // Inner Floating Ethereal Bright Core
+            MOB_RGBA(0.68f, 0.94f, 1.0f, 0.78f);
+            glBegin(GL_POLYGON);
+            glVertex3f(-0.20f, 0.38f, 0.01f);
+            glVertex3f( 0.18f, 0.38f, 0.01f);
+            glVertex3f( 0.24f, 0.75f, 0.01f);
+            glVertex3f( 0.12f, 0.98f, 0.01f);
+            glVertex3f(-0.12f, 0.98f, 0.01f);
+            glVertex3f(-0.24f, 0.75f, 0.01f);
+            glEnd();
+
+            // Wispy Ethereal Claws / Tendrils reaching forward
+            MOB_RGBA(0.40f, 0.88f, 1.0f, 0.70f);
+            glBegin(GL_TRIANGLES);
+            glVertex3f(0.25f, 0.58f, 0.02f);
+            glVertex3f(0.55f, 0.52f, 0.02f);
+            glVertex3f(0.35f, 0.42f, 0.02f);
+
+            glVertex3f(-0.10f, 0.52f, 0.02f);
+            glVertex3f( 0.15f, 0.46f, 0.02f);
+            glVertex3f( 0.02f, 0.36f, 0.02f);
+            glEnd();
+
+            // Piercing Pale Spectral Eyes
+            glColor4f(0.92f, 1.0f, 1.0f, 0.95f);
+            glBegin(GL_QUADS);
+            glVertex3f(0.06f, 0.74f, 0.03f);
+            glVertex3f(0.18f, 0.74f, 0.03f);
+            glVertex3f(0.18f, 0.85f, 0.03f);
+            glVertex3f(0.06f, 0.85f, 0.03f);
+
+            glVertex3f(-0.15f, 0.74f, 0.03f);
+            glVertex3f(-0.03f, 0.74f, 0.03f);
+            glVertex3f(-0.03f, 0.85f, 0.03f);
+            glVertex3f(-0.15f, 0.85f, 0.03f);
+            glEnd();
+
+            // Deep Spectral Pupils
+            glColor4f(0.12f, 0.32f, 0.55f, 0.95f);
+            glBegin(GL_QUADS);
+            glVertex3f(0.10f, 0.76f, 0.04f);
+            glVertex3f(0.15f, 0.76f, 0.04f);
+            glVertex3f(0.15f, 0.82f, 0.04f);
+            glVertex3f(0.10f, 0.82f, 0.04f);
+            glEnd();
+
+            glPopMatrix();
+        }
+        // ====================================================================
+        // 11. MOB_LAVA_SLIME (熔岩史莱姆): Fiery Magma Cube in Underworld (Orange-Red Glow)
+        // ====================================================================
+        else if (m->type == MOB_LAVA_SLIME) {
+            float sx = 1.0f, sy = 1.0f;
+            if (m->state == LAVA_SLIME_STATE_IDLE) {
+                if (m->animTimer < 0.22f) {
+                    float t = 1.0f - (m->animTimer / 0.22f);
+                    sx = 1.0f + 0.32f * t;
+                    sy = 1.0f - 0.26f * t;
+                } else {
+                    float b = sinf(m->animTimer * 5.0f);
+                    sx = 1.0f + b * 0.05f;
+                    sy = 1.0f - b * 0.05f;
+                }
+            } else if (m->state == LAVA_SLIME_STATE_JUMP) {
+                sx = 0.80f;
+                sy = 1.30f;
+            } else if (m->state == LAVA_SLIME_STATE_LAND) {
+                float t = m->animTimer / 0.20f;
+                sx = 1.0f + 0.40f * t;
+                sy = 1.0f - 0.32f * t;
+            }
+
+            glScalef(sx, sy, 1.0f);
+
+            float w2 = m->width * 0.5f;
+            float h = m->height;
+
+            // Outer Dark Obsidian/Basalt Magma Crust Cube
+            MOB_RGB(0.18f, 0.11f, 0.10f);
+            glBegin(GL_POLYGON);
+            glVertex3f(-w2 * 0.90f, 0.0f,      0.0f);
+            glVertex3f( w2 * 0.90f, 0.0f,      0.0f);
+            glVertex3f( w2,         h * 0.25f, 0.0f);
+            glVertex3f( w2,         h * 0.85f, 0.0f);
+            glVertex3f( w2 * 0.85f, h,         0.0f);
+            glVertex3f(-w2 * 0.85f, h,         0.0f);
+            glVertex3f(-w2,         h * 0.85f, 0.0f);
+            glVertex3f(-w2,         h * 0.25f, 0.0f);
+            glEnd();
+
+            // Pulsating Fiery Magma Veins & Glowing Fissures
+            float pulse = 0.80f + 0.20f * sinf(m->animTimer * 7.0f);
+            glColor3f(1.0f * pulse, 0.42f * pulse, 0.06f * pulse);
+            glBegin(GL_QUADS);
+            // Horizontal fiery fissure
+            glVertex3f(-w2 * 0.85f, h * 0.45f, 0.01f);
+            glVertex3f( w2 * 0.85f, h * 0.45f, 0.01f);
+            glVertex3f( w2 * 0.85f, h * 0.55f, 0.01f);
+            glVertex3f(-w2 * 0.85f, h * 0.55f, 0.01f);
+
+            // Diagonal glowing cracks
+            glVertex3f(-w2 * 0.40f, h * 0.15f, 0.01f);
+            glVertex3f(-w2 * 0.30f, h * 0.15f, 0.01f);
+            glVertex3f(-w2 * 0.10f, h * 0.45f, 0.01f);
+            glVertex3f(-w2 * 0.20f, h * 0.45f, 0.01f);
+
+            glVertex3f( w2 * 0.15f, h * 0.55f, 0.01f);
+            glVertex3f( w2 * 0.25f, h * 0.55f, 0.01f);
+            glVertex3f( w2 * 0.45f, h * 0.85f, 0.01f);
+            glVertex3f( w2 * 0.35f, h * 0.85f, 0.01f);
+            glEnd();
+
+            // Inner Molten Incandescent Magma Core
+            glColor4f(1.0f, 0.78f, 0.18f, 0.95f);
+            float coreBob = sinf(m->animTimer * 6.0f) * 0.03f;
+            glBegin(GL_QUADS);
+            glVertex3f(-0.20f, h * 0.28f + coreBob, 0.02f);
+            glVertex3f( 0.20f, h * 0.28f + coreBob, 0.02f);
+            glVertex3f( 0.20f, h * 0.65f + coreBob, 0.02f);
+            glVertex3f(-0.20f, h * 0.65f + coreBob, 0.02f);
+            glEnd();
+
+            // Fiery Glowing Eyes (Bright molten yellow with burning red centers)
+            glColor3f(1.0f, 0.92f, 0.25f);
+            glBegin(GL_QUADS);
+            glVertex3f(0.08f, h * 0.52f, 0.03f);
+            glVertex3f(0.20f, h * 0.52f, 0.03f);
+            glVertex3f(0.20f, h * 0.70f, 0.03f);
+            glVertex3f(0.08f, h * 0.70f, 0.03f);
+
+            glVertex3f(0.26f, h * 0.52f, 0.03f);
+            glVertex3f(0.38f, h * 0.52f, 0.03f);
+            glVertex3f(0.38f, h * 0.70f, 0.03f);
+            glVertex3f(0.26f, h * 0.70f, 0.03f);
+            glEnd();
+
+            // Molten Burning Pupils
+            glColor3f(0.95f, 0.15f, 0.05f);
+            glBegin(GL_QUADS);
+            glVertex3f(0.12f, h * 0.56f, 0.04f);
+            glVertex3f(0.18f, h * 0.56f, 0.04f);
+            glVertex3f(0.18f, h * 0.66f, 0.04f);
+            glVertex3f(0.12f, h * 0.66f, 0.04f);
+
+            glVertex3f(0.30f, h * 0.56f, 0.04f);
+            glVertex3f(0.36f, h * 0.56f, 0.04f);
+            glVertex3f(0.36f, h * 0.66f, 0.04f);
+            glVertex3f(0.30f, h * 0.66f, 0.04f);
+            glEnd();
+        }
 
         // ====================================================================
         // Floating Health Bar (Rendered when mob is injured)
@@ -1671,6 +2613,14 @@ bool checkMobAttackEx(float clickWorldX, float clickWorldY, float damage, float 
             pr = 0.98f; pg = 0.68f; pb = 0.72f;
         } else if (hitMob->type == MOB_RABBIT) {
             pr = 0.85f; pg = 0.75f; pb = 0.64f;
+        } else if (hitMob->type == MOB_SKELETON) {
+            pr = 0.92f; pg = 0.90f; pb = 0.82f;
+        } else if (hitMob->type == MOB_SPIDER) {
+            pr = 0.22f; pg = 0.12f; pb = 0.16f;
+        } else if (hitMob->type == MOB_GHOST) {
+            pr = 0.35f; pg = 0.88f; pb = 1.0f;
+        } else if (hitMob->type == MOB_LAVA_SLIME) {
+            pr = 1.0f; pg = 0.50f; pb = 0.10f;
         }
 
         for (int p = 0; p < 8; p++) {
@@ -1733,9 +2683,47 @@ bool checkMobAttackEx(float clickWorldX, float clickWorldY, float damage, float 
                 spawnFloatingText("+1 Raw Porkchop", hitMob->x, hitMob->y + 1.2f, 0.98f, 0.68f, 0.72f);
             } else if (hitMob->type == MOB_RABBIT) {
                 spawnFloatingText("+1 Raw Rabbit", hitMob->x, hitMob->y + 1.2f, 0.92f, 0.80f, 0.70f);
+            } else if (hitMob->type == MOB_SKELETON) {
+                // Skeleton drops bones and sticks
+                spawnDroppedItem(hitMob->x, hitMob->y + 0.4f, ITEM_STICK, 2);
+                spawnFloatingText((getLanguage() == LANG_ZH) ? "+骨头与木棍" : "+Bones & Sticks!",
+                                  hitMob->x, hitMob->y + 1.2f, 0.92f, 0.90f, 0.82f);
+            } else if (hitMob->type == MOB_SPIDER) {
+                // Spider drops string/silk
+                spawnFloatingText((getLanguage() == LANG_ZH) ? "+蜘蛛丝" : "+Spider Silk!",
+                                  hitMob->x, hitMob->y + 1.2f, 0.95f, 0.95f, 0.95f);
+            } else if (hitMob->type == MOB_GHOST) {
+                // Ghost drops ghostly ectoplasm essence
+                spawnFloatingText((getLanguage() == LANG_ZH) ? "+幽灵精魄" : "+Spectral Essence!",
+                                  hitMob->x, hitMob->y + 1.2f, 0.35f, 0.88f, 1.0f);
+            } else if (hitMob->type == MOB_LAVA_SLIME) {
+                // Lava Slime drops magma block and slime gel
+                spawnDroppedItem(hitMob->x, hitMob->y + 0.4f, BLOCK_MAGMA, 1);
+                spawnDroppedItem(hitMob->x + 0.2f, hitMob->y + 0.4f, ITEM_GEL, 2);
+                spawnFloatingText((getLanguage() == LANG_ZH) ? "+熔岩块与凝胶" : "+Magma Block & Gel!",
+                                  hitMob->x, hitMob->y + 1.2f, 1.0f, 0.55f, 0.12f);
             }
         } else {
             playSound(SFX_HIT);
+            if (hitMob->type == MOB_SHEEP) {
+                playSound(SFX_SHEEP_BAA);
+            } else if (hitMob->type == MOB_COW) {
+                playSound(SFX_COW_MOO);
+            } else if (hitMob->type == MOB_PIG) {
+                playSound(SFX_PIG_OINK);
+            } else if (hitMob->type == MOB_ZOMBIE) {
+                playSound(SFX_ZOMBIE_GROWL);
+            } else if (hitMob->type == MOB_SLIME) {
+                playSound(SFX_SLIME_JUMP);
+            } else if (hitMob->type == MOB_BAT) {
+                playSound(SFX_BAT_CHIRP);
+            } else if (hitMob->type == MOB_SKELETON) {
+                playSound(SFX_SKELETON_RATTLE);
+            } else if (hitMob->type == MOB_SPIDER) {
+                playSound(SFX_SPIDER_HISS);
+            } else if (hitMob->type == MOB_LAVA_SLIME) {
+                playSound(SFX_SLIME_JUMP);
+            }
         }
 
         return true;

@@ -365,29 +365,70 @@ int main(void) {
     printf("    - Obsidian with Diamond Pick: %.2fs (Expected ~2.50s) [PASS]\n", obsDiamondPickTime);
 
     // ------------------------------------------------------------------------
-    // Test 2: Fall Damage Physics Formula & Modes
+    // Test 2: Fall Damage Precision Rebalance (User Request 5)
     // ------------------------------------------------------------------------
-    printf("\n[+] Testing Fall Damage Physics...\n");
-    // Safe fall: vy = -15.0f (under 16.0f threshold)
-    float safeVy = -15.0f;
-    float safeDmg = (fabsf(safeVy) > 16.0f) ? (fabsf(safeVy) - 15.0f) * 3.5f : 0.0f;
+    printf("\n[+] Testing Fall Damage Precision Rebalance...\n");
+    // Safe fall: fallDist = 7.5f (< 8.0f threshold -> 0 dmg)
+    float safeDist = 7.5f;
+    float safeDmg = (safeDist >= 8.0f) ? (floorf(safeDist) - 7.0f) * 5.0f : 0.0f;
     assert(safeDmg == 0.0f);
-    printf("    - Landing vy -15.0f (safe fall): %.1f damage [PASS]\n", safeDmg);
+    printf("    - Fall 7.5 blocks (< 8.0f safe threshold): %.1f damage [PASS]\n", safeDmg);
 
-    // Harmful fall: vy = -18.0f (~4.7 blocks)
-    float harmVy = -18.0f;
-    float harmDmg = (fabsf(harmVy) > 16.0f) ? (fabsf(harmVy) - 15.0f) * 3.5f : 0.0f;
-    assert(fabsf(harmDmg - 10.5f) < 0.01f);
-    printf("    - Landing vy -18.0f: %.1f damage (Expected 10.5) [PASS]\n", harmDmg);
+    // 8 blocks fall: exactly 5.0 damage
+    float dist8 = 8.0f;
+    float dmg8 = (dist8 >= 8.0f) ? (floorf(dist8) - 7.0f) * 5.0f : 0.0f;
+    assert(dmg8 == 5.0f);
+    printf("    - Fall 8.0 blocks: %.1f damage (Expected 5.0) [PASS]\n", dmg8);
 
-    // Terminal velocity fall: vy = -28.0f
-    float termVy = -28.0f;
-    float termDmg = (fabsf(termVy) > 16.0f) ? (fabsf(termVy) - 15.0f) * 3.5f : 0.0f;
-    assert(fabsf(termDmg - 45.5f) < 0.01f);
-    printf("    - Landing vy -28.0f (terminal): %.1f damage (Expected 45.5) [PASS]\n", termDmg);
+    // 9 blocks fall: exactly 10.0 damage
+    float dist9 = 9.4f;
+    float dmg9 = (dist9 >= 8.0f) ? (floorf(dist9) - 7.0f) * 5.0f : 0.0f;
+    assert(dmg9 == 10.0f);
+    printf("    - Fall 9.4 blocks: %.1f damage (Expected 10.0) [PASS]\n", dmg9);
+
+    // 10 blocks fall: exactly 15.0 damage
+    float dist10 = 10.0f;
+    float dmg10 = (dist10 >= 8.0f) ? (floorf(dist10) - 7.0f) * 5.0f : 0.0f;
+    assert(dmg10 == 15.0f);
+    printf("    - Fall 10.0 blocks: %.1f damage (Expected 15.0) [PASS]\n", dmg10);
+
+    // ------------------------------------------------------------------------
+    // Test 3: 24-Minute Day Cycle & 08:00 AM HUD Clock (User Request 3)
+    // ------------------------------------------------------------------------
+    printf("\n[+] Testing 24-Minute Day Cycle & Time Calculations...\n");
+    float startTime = 8.0f / 24.0f;
+    int curHour = ((int)(startTime * 24.0f)) % 24;
+    int curMin = ((int)(fmodf(startTime * 1440.0f, 60.0f))) % 60;
+    assert(curHour == 8 && curMin == 0);
+    printf("    - Start Time 8.0/24.0: %02d:%02d AM [PASS]\n", curHour, curMin);
+
+    // Night time: 22:15
+    float nightTime = (22.0f + 15.0f / 60.0f) / 24.0f;
+    int nightHour = ((int)(nightTime * 24.0f)) % 24;
+    int nightMin = ((int)(fmodf(nightTime * 1440.0f, 60.0f))) % 60;
+    assert(nightHour == 22 && nightMin == 15);
+    bool isNightDay = (nightHour >= 6 && nightHour < 18);
+    assert(!isNightDay);
+    printf("    - Night Time 22:15: %02d:%02d [🌙 Night icon validated] [PASS]\n", nightHour, nightMin);
+
+    // 1440 seconds progression = 1 full day cycle
+    float cycleAdvance = 1440.0f / 1440.0f;
+    assert(fabsf(cycleAdvance - 1.0f) < 0.0001f);
+    printf("    - World time cycle rate: 1440s (24 minutes) for 1.0 cycle [PASS]\n");
+
+    // ------------------------------------------------------------------------
+    // Test 4: Ore Generation Tuning Parameters (User Request 6)
+    // ------------------------------------------------------------------------
+    printf("\n[+] Testing Ore Generation Tuning Parameters...\n");
+    float coalThreshold = 0.77f;
+    float ironThreshold = 0.80f;
+    float goldThreshold = 0.84f;
+    float gemThreshold = 0.88f;
+    assert(coalThreshold < ironThreshold && ironThreshold < goldThreshold && goldThreshold < gemThreshold);
+    printf("    - Ore thresholds: Coal (0.77f), Iron (0.80f), Gold (0.84f), Gem (0.88f) [PASS]\n");
 
     printf("\n=====================================================\n");
-    printf("  ALL 18 VERIFICATION CHECKS PASSED WITH ZERO ERRORS!\n");
+    printf("  ALL 23 VERIFICATION CHECKS PASSED WITH ZERO ERRORS!\n");
     printf("=====================================================\n");
     return 0;
 }

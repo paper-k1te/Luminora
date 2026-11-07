@@ -142,8 +142,8 @@ static BlockDef g_BlockDefs[BLOCK_TYPE_COUNT] = {
     { "Coal Ore",       "煤矿石",     "煤炭",       0.25f, 0.25f, 0.27f, 6.0f,  true,  false, false, 0,0,0 },
     { "Iron Ore",       "铁矿石",     "铁矿",       0.72f, 0.58f, 0.50f, 6.0f,  true,  false, false, 0,0,0 },
     { "Gold Ore",       "金矿石",     "金矿",       0.95f, 0.82f, 0.22f, 6.0f,  true,  false, false, 0,0,0 },
-    { "Diamond Ore",    "钻石矿石",   "璀璨钻石",   0.28f, 0.88f, 0.95f, 6.0f,  true,  false, true,  0.2f, 0.6f, 0.8f },
-    { "Ruby Ore",       "红宝石矿",   "红宝石",     0.92f, 0.18f, 0.28f, 6.0f,  true,  false, true,  0.8f, 0.1f, 0.2f },
+    { "Diamond Ore",    "钻石矿石",   "璀璨钻石",   0.28f, 0.88f, 0.95f, 6.0f,  true,  false, false, 0,0,0 },
+    { "Ruby Ore",       "红宝石矿",   "红宝石",     0.92f, 0.18f, 0.28f, 6.0f,  true,  false, false, 0,0,0 },
     { "Stone Brick",    "石砖",       "石砖",       0.72f, 0.38f, 0.30f, 4.5f,  true,  false, false, 0,0,0 },
     { "Wood Plank",     "木板",       "木板",       0.68f, 0.48f, 0.28f, 2.0f,  true,  false, false, 0,0,0 },
     { "Glass Block",    "透明玻璃",   "玻璃",       0.75f, 0.90f, 0.98f, 0.35f, true,  true,  false, 0,0,0 },
@@ -353,6 +353,7 @@ typedef struct {
     bool isDead;
     float deathTimer;
     float fallVelocity;
+    float fallStartY;
 } Player;
 
 static Player g_Player;
@@ -365,11 +366,93 @@ static int g_ActiveSlot = 0;
 static int g_EquippedArmor[4] = { 0, 0, 0, 0 };
 static int g_ArmorDurability[4] = { 0, 0, 0, 0 };
 
+// ============================================================================
+// World Chest Storage Container System
+// ============================================================================
+#define MAX_WORLD_CHESTS 128
+#define CHEST_SLOTS 20
+
+typedef struct {
+    int x, y;
+    InventorySlot slots[CHEST_SLOTS];
+    bool active;
+} WorldChest;
+
+static WorldChest g_WorldChests[MAX_WORLD_CHESTS];
+static bool g_ChestOpen = false;
+static int g_ActiveChestX = -1;
+static int g_ActiveChestY = -1;
+
+// Extinguished Lights State (Torches, Chandeliers)
+static bool g_LightExtinguished[WORLD_WIDTH][WORLD_HEIGHT];
+
+static inline bool isLightExtinguished(int x, int y) {
+    if (x < 0 || x >= WORLD_WIDTH || y < 0 || y >= WORLD_HEIGHT) return false;
+    return g_LightExtinguished[x][y];
+}
+
+static inline void setLightExtinguished(int x, int y, bool ext) {
+    if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
+        g_LightExtinguished[x][y] = ext;
+    }
+}
+
+static WorldChest* getOrCreateChest(int x, int y) {
+    if (x < 0 || x >= WORLD_WIDTH || y < 0 || y >= WORLD_HEIGHT) return NULL;
+    for (int i = 0; i < MAX_WORLD_CHESTS; i++) {
+        if (g_WorldChests[i].active && g_WorldChests[i].x == x && g_WorldChests[i].y == y) {
+            return &g_WorldChests[i];
+        }
+    }
+    for (int i = 0; i < MAX_WORLD_CHESTS; i++) {
+        if (!g_WorldChests[i].active) {
+            g_WorldChests[i].active = true;
+            g_WorldChests[i].x = x;
+            g_WorldChests[i].y = y;
+            for (int s = 0; s < CHEST_SLOTS; s++) {
+                g_WorldChests[i].slots[s].type = BLOCK_AIR;
+                g_WorldChests[i].slots[s].count = 0;
+                g_WorldChests[i].slots[s].durability = 0;
+                g_WorldChests[i].slots[s].maxDurability = 0;
+            }
+            return &g_WorldChests[i];
+        }
+    }
+    return NULL;
+}
+
+static WorldChest* findChest(int x, int y) {
+    if (x < 0 || x >= WORLD_WIDTH || y < 0 || y >= WORLD_HEIGHT) return NULL;
+    for (int i = 0; i < MAX_WORLD_CHESTS; i++) {
+        if (g_WorldChests[i].active && g_WorldChests[i].x == x && g_WorldChests[i].y == y) {
+            return &g_WorldChests[i];
+        }
+    }
+    return NULL;
+}
+
+static void removeChest(int x, int y) {
+    for (int i = 0; i < MAX_WORLD_CHESTS; i++) {
+        if (g_WorldChests[i].active && g_WorldChests[i].x == x && g_WorldChests[i].y == y) {
+            g_WorldChests[i].active = false;
+            g_WorldChests[i].x = 0;
+            g_WorldChests[i].y = 0;
+            for (int s = 0; s < CHEST_SLOTS; s++) {
+                g_WorldChests[i].slots[s].type = BLOCK_AIR;
+                g_WorldChests[i].slots[s].count = 0;
+                g_WorldChests[i].slots[s].durability = 0;
+                g_WorldChests[i].slots[s].maxDurability = 0;
+            }
+            return;
+        }
+    }
+}
+
 // Camera & World Time
 static float g_CamX = 0.0f;
 static float g_CamY = 85.0f;
 static float g_CamDist = 16.0f;
-static float g_WorldTime = 0.22f;
+static float g_WorldTime = 8.0f / 24.0f;
 static bool  g_ShowHelp = false;
 
 // Mining State
@@ -553,6 +636,11 @@ static void spawnOreVein(int startX, int startY, BlockType oreType, int count) {
 static void generateWorld(int seed) {
     memset(g_World, BLOCK_AIR, sizeof(g_World));
     memset(g_WallWorld, BLOCK_AIR, sizeof(g_WallWorld));
+    memset(g_WorldChests, 0, sizeof(g_WorldChests));
+    memset(g_LightExtinguished, 0, sizeof(g_LightExtinguished));
+    g_ChestOpen = false;
+    g_ActiveChestX = -1;
+    g_ActiveChestY = -1;
     g_ModifiedBlockCount = 0;
 
     g_Seed = seed;
@@ -601,42 +689,42 @@ static void generateWorld(int seed) {
     for (int x = 2; x < WORLD_WIDTH - 2; x += 2) {
         int surfaceY = g_SurfaceHeight[x];
         for (int y = BEDROCK_LEVEL + 3; y < surfaceY - 2; y += 2) {
-            // 1. Diamond & Ruby Ores: In caverns and underworld, rich clusters (noise threshold 0.82f)
+            // 1. Diamond & Ruby Ores: In caverns and underworld, balanced rare clusters (noise threshold 0.88f)
             if (y < CAVERN_LEVEL) {
                 float gemN = fbm2D((float)x, (float)y, seed + 440, 2, 0.16f);
-                if (gemN > 0.82f) {
-                    BlockType gemType = (gemN > 0.91f) ? BLOCK_RUBY_ORE : BLOCK_DIAMOND_ORE;
-                    int clusterSize = 2 + (rand() % 3); // 2-4 blocks
+                if (gemN > 0.88f) {
+                    BlockType gemType = (gemN > 0.94f) ? BLOCK_RUBY_ORE : BLOCK_DIAMOND_ORE;
+                    int clusterSize = 1 + (rand() % 2); // 1-2 blocks
                     spawnOreVein(x, y, gemType, clusterSize);
                     continue;
                 }
             }
 
-            // 2. Gold Ore: Starts from surfaceY - 12, veins (noise threshold 0.78f)
+            // 2. Gold Ore: Starts from surfaceY - 12, veins (noise threshold 0.84f)
             if (y < surfaceY - 12) {
                 float goldN = fbm2D((float)x, (float)y, seed + 430, 2, 0.16f);
-                if (goldN > 0.78f) {
-                    int clusterSize = 2 + (rand() % 3); // 2-4 blocks
+                if (goldN > 0.84f) {
+                    int clusterSize = 1 + (rand() % 2); // 1-2 blocks
                     spawnOreVein(x, y, BLOCK_GOLD_ORE, clusterSize);
                     continue;
                 }
             }
 
-            // 3. Iron Ore: Starts from surfaceY - 5, frequent veins (noise threshold 0.74f)
+            // 3. Iron Ore: Starts from surfaceY - 5, veins (noise threshold 0.80f)
             if (y < surfaceY - 5) {
                 float ironN = fbm2D((float)x, (float)y, seed + 420, 2, 0.16f);
-                if (ironN > 0.74f) {
-                    int clusterSize = 3 + (rand() % 3); // 3-5 blocks
+                if (ironN > 0.80f) {
+                    int clusterSize = 2 + (rand() % 2); // 2-3 blocks
                     spawnOreVein(x, y, BLOCK_IRON_ORE, clusterSize);
                     continue;
                 }
             }
 
-            // 4. Coal Ore: Starts from surfaceY - 2, generous clusters (noise threshold 0.72f)
+            // 4. Coal Ore: Starts from surfaceY - 2, clusters (noise threshold 0.77f)
             if (y < surfaceY - 2) {
                 float coalN = fbm2D((float)x, (float)y, seed + 410, 2, 0.16f);
-                if (coalN > 0.72f) {
-                    int clusterSize = 3 + (rand() % 3); // 3-5 blocks
+                if (coalN > 0.77f) {
+                    int clusterSize = 2 + (rand() % 2); // 2-3 blocks
                     spawnOreVein(x, y, BLOCK_COAL_ORE, clusterSize);
                     continue;
                 }
@@ -722,6 +810,11 @@ static bool addToInventory(int type, int count) {
         itemR = 0.25f;
         itemG = 0.88f;
         itemB = 0.45f;
+    } else if (type == 117) { // ITEM_STICK
+        itemName = (getLanguage() == LANG_ZH) ? "木棍" : "Stick";
+        itemR = 0.72f;
+        itemG = 0.52f;
+        itemB = 0.30f;
     }
     snprintf(buf, sizeof(buf), "+%d %s", count, itemName);
     spawnFloatingText(buf, g_Player.x, g_Player.y + 1.8f, itemR, itemG, itemB);
@@ -943,6 +1036,35 @@ static bool saveWorldSlot(int slotIdx) {
     if (g_ModifiedBlockCount > 0) {
         fwrite(g_ModifiedBlocks, sizeof(BlockDelta), g_ModifiedBlockCount, f);
     }
+
+    // Persist World Chests
+    int activeChests = 0;
+    for (int i = 0; i < MAX_WORLD_CHESTS; i++) {
+        if (g_WorldChests[i].active) activeChests++;
+    }
+    fwrite(&activeChests, sizeof(int), 1, f);
+    for (int i = 0; i < MAX_WORLD_CHESTS; i++) {
+        if (g_WorldChests[i].active) {
+            fwrite(&g_WorldChests[i], sizeof(WorldChest), 1, f);
+        }
+    }
+
+    // Persist Extinguished Lights
+    int extCount = 0;
+    for (int x = 0; x < WORLD_WIDTH; x++) {
+        for (int y = 0; y < WORLD_HEIGHT; y++) {
+            if (g_LightExtinguished[x][y]) extCount++;
+        }
+    }
+    fwrite(&extCount, sizeof(int), 1, f);
+    for (int x = 0; x < WORLD_WIDTH; x++) {
+        for (int y = 0; y < WORLD_HEIGHT; y++) {
+            if (g_LightExtinguished[x][y]) {
+                short pt[2] = { (short)x, (short)y };
+                fwrite(pt, sizeof(short), 2, f);
+            }
+        }
+    }
     fclose(f);
 
     if (slotIdx == 0) {
@@ -967,6 +1089,34 @@ static bool saveWorldSlot(int slotIdx) {
             if (g_ModifiedBlockCount > 0) fwrite(g_ModifiedBlocks, sizeof(BlockDelta), g_ModifiedBlockCount, lf);
             int currentLang = (int)getLanguage();
             fwrite(&currentLang, sizeof(int), 1, lf);
+
+            int activeChestsLegacy = 0;
+            for (int i = 0; i < MAX_WORLD_CHESTS; i++) {
+                if (g_WorldChests[i].active) activeChestsLegacy++;
+            }
+            fwrite(&activeChestsLegacy, sizeof(int), 1, lf);
+            for (int i = 0; i < MAX_WORLD_CHESTS; i++) {
+                if (g_WorldChests[i].active) {
+                    fwrite(&g_WorldChests[i], sizeof(WorldChest), 1, lf);
+                }
+            }
+
+            int extCountLegacy = 0;
+            for (int x = 0; x < WORLD_WIDTH; x++) {
+                for (int y = 0; y < WORLD_HEIGHT; y++) {
+                    if (g_LightExtinguished[x][y]) extCountLegacy++;
+                }
+            }
+            fwrite(&extCountLegacy, sizeof(int), 1, lf);
+            for (int x = 0; x < WORLD_WIDTH; x++) {
+                for (int y = 0; y < WORLD_HEIGHT; y++) {
+                    if (g_LightExtinguished[x][y]) {
+                        short pt[2] = { (short)x, (short)y };
+                        fwrite(pt, sizeof(short), 2, lf);
+                    }
+                }
+            }
+
             fclose(lf);
         }
     }
@@ -1014,8 +1164,41 @@ static bool loadWorldSlot(int slotIdx) {
                         }
                     }
                 }
+
+                // Load World Chests
+                memset(g_WorldChests, 0, sizeof(g_WorldChests));
+                g_ChestOpen = false;
+                int legacyChestCount = 0;
+                if (fread(&legacyChestCount, sizeof(int), 1, f2) == 1 && legacyChestCount >= 0 && legacyChestCount <= MAX_WORLD_CHESTS) {
+                    for (int i = 0; i < legacyChestCount; i++) {
+                        WorldChest chest;
+                        if (fread(&chest, sizeof(WorldChest), 1, f2) == 1) {
+                            WorldChest* dst = getOrCreateChest(chest.x, chest.y);
+                            if (dst) {
+                                memcpy(dst->slots, chest.slots, sizeof(chest.slots));
+                                dst->active = true;
+                            }
+                        }
+                    }
+                }
+
+                // Load Extinguished Lights
+                memset(g_LightExtinguished, 0, sizeof(g_LightExtinguished));
+                int legacyExtCount = 0;
+                if (fread(&legacyExtCount, sizeof(int), 1, f2) == 1 && legacyExtCount >= 0 && legacyExtCount <= WORLD_WIDTH * WORLD_HEIGHT) {
+                    for (int i = 0; i < legacyExtCount; i++) {
+                        short pt[2];
+                        if (fread(pt, sizeof(short), 2, f2) == 2) {
+                            if (pt[0] >= 0 && pt[0] < WORLD_WIDTH && pt[1] >= 0 && pt[1] < WORLD_HEIGHT) {
+                                g_LightExtinguished[pt[0]][pt[1]] = true;
+                            }
+                        }
+                    }
+                }
+
                 fclose(f2);
                 g_Player.health = 100.0f; g_Player.maxHealth = 100.0f; g_Player.isDead = false;
+                g_Player.fallStartY = g_Player.y;
                 showNotification(LOC("已读取旧版世界存档！", "Loaded legacy save!"), 0.35f, 0.95f, 0.45f);
                 return true;
             }
@@ -1049,6 +1232,7 @@ static bool loadWorldSlot(int slotIdx) {
     g_Player.hurtTimer = 0.0f;
     g_Player.isDead = false;
     g_Player.deathTimer = 0.0f;
+    g_Player.fallStartY = g_Player.y;
 
     g_WorldTime = hdr.worldTime;
     g_TutorialStep = (TutorialStep)hdr.tutorialStep;
@@ -1091,6 +1275,37 @@ static bool loadWorldSlot(int slotIdx) {
             }
         }
     }
+
+    // Load World Chests
+    memset(g_WorldChests, 0, sizeof(g_WorldChests));
+    g_ChestOpen = false;
+    int chestCount = 0;
+    if (fread(&chestCount, sizeof(int), 1, f) == 1 && chestCount >= 0 && chestCount <= MAX_WORLD_CHESTS) {
+        for (int i = 0; i < chestCount; i++) {
+            WorldChest chest;
+            if (fread(&chest, sizeof(WorldChest), 1, f) == 1) {
+                WorldChest* dst = getOrCreateChest(chest.x, chest.y);
+                if (dst) {
+                    memcpy(dst->slots, chest.slots, sizeof(chest.slots));
+                    dst->active = true;
+                }
+            }
+        }
+    }
+
+    // Load Extinguished Lights
+    memset(g_LightExtinguished, 0, sizeof(g_LightExtinguished));
+    int extCount = 0;
+    if (fread(&extCount, sizeof(int), 1, f) == 1 && extCount >= 0 && extCount <= WORLD_WIDTH * WORLD_HEIGHT) {
+        for (int i = 0; i < extCount; i++) {
+            short pt[2];
+            if (fread(pt, sizeof(short), 2, f) == 2) {
+                if (pt[0] >= 0 && pt[0] < WORLD_WIDTH && pt[1] >= 0 && pt[1] < WORLD_HEIGHT) {
+                    g_LightExtinguished[pt[0]][pt[1]] = true;
+                }
+            }
+        }
+    }
     fclose(f);
 
     char msg[128];
@@ -1123,6 +1338,9 @@ static void startNewWorld(int slotIdx, const char* name, int mode, int seed) {
     g_Player.y = (float)spawnY;
     g_Player.vx = 0.0f;
     g_Player.vy = 0.0f;
+    g_Player.fallVelocity = 0.0f;
+    g_Player.fallStartY = (float)spawnY;
+    g_WorldTime = 8.0f / 24.0f;
     g_Player.health = 100.0f;
     g_Player.maxHealth = 100.0f;
     g_Player.hurtTimer = 0.0f;
@@ -1227,6 +1445,7 @@ static void respawnPlayer(void) {
     g_Player.vx = 0.0f;
     g_Player.vy = 0.0f;
     g_Player.fallVelocity = 0.0f;
+    g_Player.fallStartY = (float)spawnY;
     g_Player.health = g_Player.maxHealth;
     g_Player.hurtTimer = 1.0f;
     g_Player.timeSinceCombat = 25.0f;
@@ -1248,6 +1467,8 @@ static void initGame(void) {
     g_Player.maxHealth = 100.0f;
     g_Player.hurtTimer = 0.0f;
     g_Player.fallVelocity = 0.0f;
+    g_Player.fallStartY = 0.0f;
+    g_WorldTime = 8.0f / 24.0f;
     g_Player.isDead = false;
     g_Player.deathTimer = 0.0f;
 
@@ -1265,6 +1486,7 @@ static void initGame(void) {
     int spawnY = getSurfaceHeight(spawnX, 1337) + 2;
     g_Player.x = (float)spawnX;
     g_Player.y = (float)spawnY;
+    g_Player.fallStartY = (float)spawnY;
     g_Player.vx = 0.0f;
     g_Player.vy = 0.0f;
     g_Player.width = 0.76f;
@@ -1393,7 +1615,6 @@ static void updatePhysics(float dt) {
     minY = (int)floorf(nextY);
     maxY = (int)floorf(nextY + g_Player.height);
 
-    float landingVy = g_Player.vy;
     g_Player.isGrounded = false;
     if (g_Player.vy <= 0.0f) {
         for (int x = minX; x <= maxX; x++) {
@@ -1405,9 +1626,13 @@ static void updatePhysics(float dt) {
             }
         }
         if (g_Player.isGrounded) {
-            // Fall damage physics: landing velocity > 16.0f (falling > ~3.5 blocks)
-            if (fabsf(landingVy) > 16.0f && getGameMode() != MODE_CREATIVE && !isCreativeFlying()) {
-                float dmg = (fabsf(landingVy) - 15.0f) * 3.5f;
+            // Fall damage precision rebalance (User Request 5)
+            float fallDist = g_Player.fallStartY - nextY;
+            g_Player.fallStartY = nextY;
+            if (fallDist < 8.0f) {
+                // Falls under 8 blocks are completely safe (0 damage)
+            } else if (getGameMode() != MODE_CREATIVE && !isCreativeFlying()) {
+                float dmg = (floorf(fallDist) - 7.0f) * 5.0f;
                 if (dmg > 0.0f && !g_Player.isDead) {
                     g_Player.health -= dmg;
                     g_Player.hurtTimer = 0.4f;
@@ -1415,7 +1640,7 @@ static void updatePhysics(float dt) {
                     playSound(SFX_HIT);
                     char dmgStr[16];
                     snprintf(dmgStr, sizeof(dmgStr), "-%d", (int)(dmg + 0.5f));
-                    spawnFloatingText(dmgStr, g_Player.x, g_Player.y + 1.8f, 1.0f, 0.2f, 0.2f);
+                    spawnFloatingText(dmgStr, g_Player.x, nextY + 1.8f, 1.0f, 0.2f, 0.2f);
                     if (g_Player.health <= 0.0f) {
                         g_Player.health = 0.0f;
                         g_Player.isDead = true;
@@ -1437,6 +1662,13 @@ static void updatePhysics(float dt) {
     }
     g_Player.y = nextY;
 
+    // Track highest apex while airborne
+    if (!g_Player.isGrounded) {
+        if (g_Player.y > g_Player.fallStartY) {
+            g_Player.fallStartY = g_Player.y;
+        }
+    }
+
     static float s_StepSfxTimer = 0.0f;
     if (g_Player.isGrounded && fabsf(g_Player.vx) > 0.4f) {
         g_Player.walkCycle += fabsf(g_Player.vx) * 2.2f * dt;
@@ -1449,13 +1681,14 @@ static void updatePhysics(float dt) {
         s_StepSfxTimer = 0.28f;
     }
 
-    float lookahead = g_Player.isFacingRight ? 2.5f : -2.5f;
-    g_CamX += (g_Player.x + lookahead - g_CamX) * 5.0f * dt;
+    // Smooth camera tracking without abrupt lookahead flip (User Request 4)
+    g_CamX += (g_Player.x - g_CamX) * 5.0f * dt;
     g_CamY += (g_Player.y + 1.2f - g_CamY) * 5.0f * dt;
     if (g_CamY < 8.0f) g_CamY = 8.0f;
 
-    g_WorldTime += dt / 240.0f;
-    if (g_WorldTime > 1.0f) g_WorldTime -= 1.0f;
+    // 24-minute full day cycle (User Request 3)
+    g_WorldTime += dt / 1440.0f;
+    if (g_WorldTime >= 1.0f) g_WorldTime -= 1.0f;
 
     if (g_NotificationTimer > 0.0f) {
         g_NotificationTimer -= dt;
@@ -1621,7 +1854,14 @@ static void screenToWorld(int screenX, int screenY, float* outWorldX, float* out
 }
 
 static void updateInteraction(float dt) {
-    if (isCraftingOpen() || isCreativeInventoryOpen()) {
+    if (g_ChestOpen) {
+        float cdx = (float)g_ActiveChestX + 0.5f - g_Player.x;
+        float cdy = (float)g_ActiveChestY + 0.5f - g_Player.y;
+        if (cdx * cdx + cdy * cdy > 64.0f || g_World[g_ActiveChestX][g_ActiveChestY] != BLOCK_CHEST) {
+            g_ChestOpen = false;
+        }
+    }
+    if (g_ChestOpen || isCraftingOpen() || isCreativeInventoryOpen()) {
         g_MiningProgress = 0.0f;
         return;
     }
@@ -1806,6 +2046,23 @@ static void updateInteraction(float dt) {
                     g_World[g_TargetX][g_TargetY] = BLOCK_AIR;
                     recordBlockDelta(g_TargetX, g_TargetY, false, BLOCK_AIR);
                 } else {
+                    if (bt == BLOCK_CHEST) {
+                        WorldChest* chest = findChest(g_TargetX, g_TargetY);
+                        if (chest) {
+                            for (int s = 0; s < CHEST_SLOTS; s++) {
+                                if (chest->slots[s].type != BLOCK_AIR && chest->slots[s].count > 0) {
+                                    spawnDroppedItem((float)g_TargetX + 0.5f, (float)g_TargetY + 0.5f,
+                                                     chest->slots[s].type, chest->slots[s].count);
+                                }
+                            }
+                            removeChest(g_TargetX, g_TargetY);
+                        }
+                        if (g_ChestOpen && g_ActiveChestX == g_TargetX && g_ActiveChestY == g_TargetY) {
+                            g_ChestOpen = false;
+                        }
+                    } else if (bt == BLOCK_TORCH || bt == BLOCK_CHANDELIER) {
+                        setLightExtinguished(g_TargetX, g_TargetY, false);
+                    }
                     spawnDroppedItem((float)g_TargetX + 0.5f, (float)g_TargetY + 0.5f, bt, 1);
                     g_World[g_TargetX][g_TargetY] = BLOCK_AIR;
                     recordBlockDelta(g_TargetX, g_TargetY, false, BLOCK_AIR);
@@ -1852,6 +2109,63 @@ static void updateInteraction(float dt) {
             } else if (clickedBlock == BLOCK_FURNACE) {
                 openCraftingUI(CRAFT_TAB_CRAFTING);
                 playSound(SFX_CLICK);
+                g_MouseRight = false;
+            } else if (clickedBlock == BLOCK_CHEST) {
+                if (isCraftingOpen()) closeCraftingUI();
+                if (isCreativeInventoryOpen()) toggleCreativeInventory();
+                g_ActiveChestX = g_TargetX;
+                g_ActiveChestY = g_TargetY;
+                getOrCreateChest(g_TargetX, g_TargetY);
+                g_ChestOpen = true;
+                playSound(SFX_CLICK);
+                g_MouseRight = false;
+            } else if (clickedBlock == BLOCK_BED) {
+                float sunAngle = g_WorldTime * (float)M_PI * 2.0f;
+                bool isDay = (sinf(sunAngle) > 0.0f);
+                if (!isDay) {
+                    g_WorldTime = 8.0f / 24.0f;
+                    g_Player.health = g_Player.maxHealth;
+                    g_Player.hurtTimer = 0.0f;
+                    playSound(SFX_CRAFT);
+                    showNotification(LOC("[已安稳入睡至清晨 08:00，生命值已恢复！]", "[You slept until 08:00 morning. Health fully restored!]"), 0.3f, 0.95f, 0.4f);
+                } else {
+                    playSound(SFX_CLICK);
+                    showNotification(LOC("[只能在夜间入睡！]", "[You can only sleep at night!]"), 0.95f, 0.7f, 0.2f);
+                }
+                g_MouseRight = false;
+            } else if (clickedBlock == BLOCK_CLOCK) {
+                float totalHours = g_WorldTime * 24.0f;
+                int hour = (int)totalHours % 24;
+                int minute = (int)((totalHours - (float)(int)totalHours) * 60.0f) % 60;
+                float sunAngle = g_WorldTime * (float)M_PI * 2.0f;
+                bool isDay = (sinf(sunAngle) > 0.0f);
+                const char* period = isDay ? LOC("白昼", "Day") : LOC("夜晚", "Night");
+                char timeMsg[128];
+                snprintf(timeMsg, sizeof(timeMsg),
+                         LOC("[摆钟报时: 当前时间为 %02d:%02d (%s)]", "[Clock Chime: Current time is %02d:%02d (%s)]"),
+                         hour, minute, period);
+                showNotification(timeMsg, 1.0f, 0.88f, 0.35f);
+                playSound(SFX_CLICK);
+                g_MouseRight = false;
+            } else if (clickedBlock == BLOCK_TORCH) {
+                bool ext = !isLightExtinguished(g_TargetX, g_TargetY);
+                setLightExtinguished(g_TargetX, g_TargetY, ext);
+                playSound(SFX_CLICK);
+                if (ext) {
+                    showNotification(LOC("[火把已熄灭]", "[Torch Extinguished]"), 0.75f, 0.75f, 0.75f);
+                } else {
+                    showNotification(LOC("[火把已点燃]", "[Torch Reignited]"), 1.0f, 0.85f, 0.3f);
+                }
+                g_MouseRight = false;
+            } else if (clickedBlock == BLOCK_CHANDELIER) {
+                bool ext = !isLightExtinguished(g_TargetX, g_TargetY);
+                setLightExtinguished(g_TargetX, g_TargetY, ext);
+                playSound(SFX_CLICK);
+                if (ext) {
+                    showNotification(LOC("[铁艺吊灯已熄灭]", "[Chandelier Extinguished]"), 0.75f, 0.75f, 0.75f);
+                } else {
+                    showNotification(LOC("[铁艺吊灯已点燃]", "[Chandelier Reignited]"), 1.0f, 0.85f, 0.3f);
+                }
                 g_MouseRight = false;
             } else if (isDoorBlock(clickedBlock)) {
                 // Right-clicking on either half of a door toggles it between CLOSED and OPEN
@@ -1964,6 +2278,12 @@ static void updateInteraction(float dt) {
                         recordBlockDelta(g_TargetX, g_TargetY, false, placedType);
                         playSound(SFX_PLACE);
 
+                        if (placedType == BLOCK_CHEST) {
+                            getOrCreateChest(g_TargetX, g_TargetY);
+                        } else if (placedType == BLOCK_TORCH || placedType == BLOCK_CHANDELIER) {
+                            setLightExtinguished(g_TargetX, g_TargetY, false);
+                        }
+
                         if (g_WallWorld[g_TargetX][g_TargetY] == BLOCK_AIR) {
                             BlockType matchWall = getMatchingWallType(placedType);
                             if (matchWall != BLOCK_AIR) {
@@ -2047,6 +2367,20 @@ static void renderTorch25D(float x, float y, int orientation, float lightFactor)
     glTexCoord2f(u1, v0); glVertex3f(sx1, sy1, sz);
     glTexCoord2f(u0, v0); glVertex3f(sx0, sy1, sz);
     glEnd();
+
+    // If extinguished, don't draw flame!
+    if (isLightExtinguished((int)x, (int)y)) {
+        glDisable(GL_TEXTURE_2D);
+        glColor3f(0.18f * lightFactor, 0.18f * lightFactor, 0.18f * lightFactor);
+        glBegin(GL_QUADS);
+        glVertex3f(sx0 + 0.01f, sy1 - 0.04f, sz + 0.01f);
+        glVertex3f(sx1 - 0.01f, sy1 - 0.04f, sz + 0.01f);
+        glVertex3f(sx1 - 0.01f, sy1 + 0.02f, sz + 0.01f);
+        glVertex3f(sx0 + 0.01f, sy1 + 0.02f, sz + 0.01f);
+        glEnd();
+        glEnable(GL_TEXTURE_2D);
+        return;
+    }
 
     // Animated Flame
     float fx = (sx0 + sx1) * 0.5f;
@@ -2282,7 +2616,7 @@ static void renderWorld25D(void) {
 
     float sunAngle = g_WorldTime * (float)M_PI * 2.0f;
     float daylight = sinf(sunAngle);
-    if (daylight < 0.05f) daylight = 0.05f;
+    if (daylight < 0.005f) daylight = 0.005f;
 
     typedef struct {
         float x, y;
@@ -2294,8 +2628,11 @@ static void renderWorld25D(void) {
     PointLight localLights[64];
     int numLocalLights = 0;
 
-    // Player personal sight: faint radius (~2.5 blocks) in pitch darkness
-    // Holding torch or glow shroom in hotbar acts as dynamic portable light with radius 8.5 blocks
+    // Player personal sight:
+    // Only if actively holding a light source (BLOCK_TORCH, BLOCK_GLOW_SHROOM, BLOCK_CHANDELIER),
+    // add a player dynamic light source (radius 8.5f).
+    // If empty-handed or holding non-torch, do not add a bright player light bubble
+    // (only radius 0.6f intensity 0.04f so you can barely see your hands).
     int heldItem = g_Hotbar[g_ActiveSlot].type;
     if (heldItem == BLOCK_TORCH || heldItem == BLOCK_CHANDELIER) {
         localLights[numLocalLights++] = (PointLight){
@@ -2314,9 +2651,9 @@ static void renderWorld25D(void) {
     } else {
         localLights[numLocalLights++] = (PointLight){
             g_Player.x, g_Player.y + 1.0f,
-            2.5f,
+            0.6f,
             0.80f, 0.80f, 0.85f,
-            0.45f
+            0.04f
         };
     }
 
@@ -2329,6 +2666,9 @@ static void renderWorld25D(void) {
         for (int ly = lStartY; ly <= lEndY && numLocalLights < 60; ly++) {
             BlockType bt = g_World[lx][ly];
             if (bt != BLOCK_AIR && g_BlockDefs[bt].emitLight) {
+                if ((bt == BLOCK_TORCH || bt == BLOCK_CHANDELIER) && isLightExtinguished(lx, ly)) {
+                    continue;
+                }
                 float lr = 1.0f, lg = 0.90f, lb = 0.60f;
                 float rad = 8.5f;
                 if (bt == BLOCK_MAGMA) { lr = 1.0f; lg = 0.35f; lb = 0.10f; rad = 6.0f; }
@@ -2360,7 +2700,7 @@ static void renderWorld25D(void) {
                 if (y < sY) {
                     float depth = (float)(sY - y);
                     float sunPen = daylight * expf(-depth * 0.25f);
-                    float caveAmbient = 0.05f;
+                    float caveAmbient = 0.0f;
                     baseL = (sunPen > caveAmbient) ? sunPen : caveAmbient;
                 }
                 float rAcc = baseL, gAcc = baseL, bAcc = baseL;
@@ -2414,14 +2754,14 @@ static void renderWorld25D(void) {
             bool rightCull = (x + 1 < WORLD_WIDTH)  && isSolidBlock(x + 1, y) && !g_BlockDefs[g_World[x + 1][y]].isTransparent;
 
             float lightFactor;
-            if (def->emitLight) {
+            if (def->emitLight && !((bt == BLOCK_TORCH || bt == BLOCK_CHANDELIER) && isLightExtinguished(x, y))) {
                 lightFactor = 1.15f;
             } else {
                 float baseL = daylight;
                 if (y < sY) {
                     float depth = (float)(sY - y);
                     float sunPen = daylight * expf(-depth * 0.25f);
-                    float caveAmbient = 0.05f;
+                    float caveAmbient = 0.0f;
                     baseL = (sunPen > caveAmbient) ? sunPen : caveAmbient;
                 }
                 float rAcc = baseL, gAcc = baseL, bAcc = baseL;
@@ -2440,7 +2780,7 @@ static void renderWorld25D(void) {
                 }
                 lightFactor = (rAcc + gAcc + bAcc) * 0.3333f;
                 if (lightFactor > 1.0f) lightFactor = 1.0f;
-                if (lightFactor < 0.05f) lightFactor = 0.05f;
+                if (lightFactor < 0.005f) lightFactor = 0.005f;
             }
 
             renderCube25D((float)x, (float)y, bt, topCull, btmCull, leftCull, rightCull, lightFactor);
@@ -3144,6 +3484,591 @@ static void renderTutorialQuestBox(void) {
     }
 }
 
+// ============================================================================
+// Chest Storage Container UI & Interaction
+// ============================================================================
+static bool transferChestToPlayerEx(WorldChest* chest, int slotIdx, int maxTake) {
+    if (!chest || slotIdx < 0 || slotIdx >= CHEST_SLOTS) return false;
+    InventorySlot* src = &chest->slots[slotIdx];
+    if (src->type == BLOCK_AIR || src->count <= 0) return false;
+
+    int type = src->type;
+    int count = (maxTake > 0 && maxTake < src->count) ? maxTake : src->count;
+    int dur = src->durability;
+    int maxDur = src->maxDurability;
+
+    if (isToolItem(type) || isArmorItem(type)) {
+        for (int i = 0; i < HOTBAR_SLOTS; i++) {
+            if (g_Hotbar[i].type == BLOCK_AIR || g_Hotbar[i].count <= 0) {
+                g_Hotbar[i].type = type;
+                g_Hotbar[i].count = 1;
+                g_Hotbar[i].durability = dur;
+                g_Hotbar[i].maxDurability = maxDur;
+                src->type = BLOCK_AIR;
+                src->count = 0;
+                src->durability = 0;
+                src->maxDurability = 0;
+                playSound(SFX_CLICK);
+                return true;
+            }
+        }
+        for (int i = 0; i < BACKPACK_SLOTS; i++) {
+            if (g_Backpack[i].type == BLOCK_AIR || g_Backpack[i].count <= 0) {
+                g_Backpack[i].type = type;
+                g_Backpack[i].count = 1;
+                g_Backpack[i].durability = dur;
+                g_Backpack[i].maxDurability = maxDur;
+                src->type = BLOCK_AIR;
+                src->count = 0;
+                src->durability = 0;
+                src->maxDurability = 0;
+                playSound(SFX_CLICK);
+                return true;
+            }
+        }
+        showNotification(LOC("[背包已满！]", "[Inventory Full!]"), 0.95f, 0.35f, 0.35f);
+        return false;
+    }
+
+    int remaining = count;
+    // 1. Stacking in hotbar
+    for (int i = 0; i < HOTBAR_SLOTS && remaining > 0; i++) {
+        if (g_Hotbar[i].type == type && g_Hotbar[i].count < 999) {
+            int space = 999 - g_Hotbar[i].count;
+            int take = (remaining < space) ? remaining : space;
+            g_Hotbar[i].count += take;
+            remaining -= take;
+        }
+    }
+    // 2. Stacking in backpack
+    for (int i = 0; i < BACKPACK_SLOTS && remaining > 0; i++) {
+        if (g_Backpack[i].type == type && g_Backpack[i].count < 999) {
+            int space = 999 - g_Backpack[i].count;
+            int take = (remaining < space) ? remaining : space;
+            g_Backpack[i].count += take;
+            remaining -= take;
+        }
+    }
+    // 3. Empty hotbar slot
+    for (int i = 0; i < HOTBAR_SLOTS && remaining > 0; i++) {
+        if (g_Hotbar[i].type == BLOCK_AIR || g_Hotbar[i].count <= 0) {
+            int take = (remaining < 999) ? remaining : 999;
+            g_Hotbar[i].type = type;
+            g_Hotbar[i].count = take;
+            g_Hotbar[i].durability = 0;
+            g_Hotbar[i].maxDurability = 0;
+            remaining -= take;
+        }
+    }
+    // 4. Empty backpack slot
+    for (int i = 0; i < BACKPACK_SLOTS && remaining > 0; i++) {
+        if (g_Backpack[i].type == BLOCK_AIR || g_Backpack[i].count <= 0) {
+            int take = (remaining < 999) ? remaining : 999;
+            g_Backpack[i].type = type;
+            g_Backpack[i].count = take;
+            g_Backpack[i].durability = 0;
+            g_Backpack[i].maxDurability = 0;
+            remaining -= take;
+        }
+    }
+
+    int taken = count - remaining;
+    if (taken > 0) {
+        playSound(SFX_CLICK);
+        src->count -= taken;
+        if (src->count <= 0) {
+            src->type = BLOCK_AIR;
+            src->count = 0;
+            src->durability = 0;
+            src->maxDurability = 0;
+        }
+        return true;
+    } else {
+        showNotification(LOC("[背包已满！]", "[Inventory Full!]"), 0.95f, 0.35f, 0.35f);
+        return false;
+    }
+}
+
+static inline bool transferChestToPlayer(WorldChest* chest, int slotIdx) {
+    return transferChestToPlayerEx(chest, slotIdx, 0);
+}
+
+static bool transferPlayerToChestEx(WorldChest* chest, InventorySlot* pSlot, int maxTake) {
+    if (!chest || !pSlot || pSlot->type == BLOCK_AIR || pSlot->count <= 0) return false;
+
+    int type = pSlot->type;
+    int count = (maxTake > 0 && maxTake < pSlot->count) ? maxTake : pSlot->count;
+    int dur = pSlot->durability;
+    int maxDur = pSlot->maxDurability;
+
+    if (isToolItem(type) || isArmorItem(type)) {
+        for (int i = 0; i < CHEST_SLOTS; i++) {
+            if (chest->slots[i].type == BLOCK_AIR || chest->slots[i].count <= 0) {
+                chest->slots[i].type = type;
+                chest->slots[i].count = 1;
+                chest->slots[i].durability = dur;
+                chest->slots[i].maxDurability = maxDur;
+                pSlot->type = BLOCK_AIR;
+                pSlot->count = 0;
+                pSlot->durability = 0;
+                pSlot->maxDurability = 0;
+                playSound(SFX_CLICK);
+                return true;
+            }
+        }
+        showNotification(LOC("[宝箱已满！]", "[Chest Full!]"), 0.95f, 0.35f, 0.35f);
+        return false;
+    }
+
+    int remaining = count;
+    // 1. Stack in existing chest slots
+    for (int i = 0; i < CHEST_SLOTS && remaining > 0; i++) {
+        if (chest->slots[i].type == type && chest->slots[i].count < 999) {
+            int space = 999 - chest->slots[i].count;
+            int take = (remaining < space) ? remaining : space;
+            chest->slots[i].count += take;
+            remaining -= take;
+        }
+    }
+    // 2. Empty slot in chest
+    for (int i = 0; i < CHEST_SLOTS && remaining > 0; i++) {
+        if (chest->slots[i].type == BLOCK_AIR || chest->slots[i].count <= 0) {
+            int take = (remaining < 999) ? remaining : 999;
+            chest->slots[i].type = type;
+            chest->slots[i].count = take;
+            chest->slots[i].durability = 0;
+            chest->slots[i].maxDurability = 0;
+            remaining -= take;
+        }
+    }
+
+    int taken = count - remaining;
+    if (taken > 0) {
+        playSound(SFX_CLICK);
+        pSlot->count -= taken;
+        if (pSlot->count <= 0) {
+            pSlot->type = BLOCK_AIR;
+            pSlot->count = 0;
+            pSlot->durability = 0;
+            pSlot->maxDurability = 0;
+        }
+        return true;
+    } else {
+        showNotification(LOC("[宝箱已满！]", "[Chest Full!]"), 0.95f, 0.35f, 0.35f);
+        return false;
+    }
+}
+
+static inline bool transferPlayerToChest(WorldChest* chest, InventorySlot* pSlot) {
+    return transferPlayerToChestEx(chest, pSlot, 0);
+}
+
+static void renderChestUI(void) {
+    if (!g_ChestOpen) return;
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0.0, (double)WINDOW_WIDTH, (double)WINDOW_HEIGHT, 0.0, -1.0, 1.0);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    glDisable(GL_DEPTH_TEST);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    // 1. Fullscreen dark backdrop
+    menuDrawQuad(0.0f, 0.0f, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 0.0f, 0.0f, 0.0f, 0.65f);
+
+    float modalW = 580.0f;
+    float modalH = 480.0f;
+    float modalX = ((float)WINDOW_WIDTH - modalW) * 0.5f;
+    float modalY = ((float)WINDOW_HEIGHT - modalH) * 0.5f;
+
+    // 2. Main ornate modal window
+    menuDrawQuad(modalX, modalY, modalW, modalH, 0.08f, 0.10f, 0.14f, 0.96f);
+    menuDrawBorder(modalX, modalY, modalW, modalH, 0.28f, 0.36f, 0.48f, 2.0f);
+    menuDrawBorder(modalX - 2.0f, modalY - 2.0f, modalW + 4.0f, modalH + 4.0f, 0.85f, 0.70f, 0.25f, 1.0f);
+
+    // 3. Header title & subtitle
+    const char* title = LOC("大藏宝箱 / Storage Chest", "Storage Chest / 大藏宝箱");
+    drawText(modalX + 22.0f, modalY + 28.0f, title, 1.0f, 0.88f, 0.35f, true);
+    drawText(modalX + 22.0f, modalY + 46.0f,
+             LOC("安全存储世界道具 | 点击物品自由存取", "Secure Item Storage | Click slots to deposit/withdraw"),
+             0.55f, 0.75f, 0.90f, false);
+
+    // Close button [X]
+    float closeX = modalX + modalW - 36.0f;
+    float closeY = modalY + 16.0f;
+    bool closeHov = (g_MouseScreenX >= closeX && g_MouseScreenX <= closeX + 22.0f &&
+                     g_MouseScreenY >= closeY && g_MouseScreenY <= closeY + 22.0f);
+    menuDrawQuad(closeX, closeY, 22.0f, 22.0f, closeHov ? 0.90f : 0.75f, 0.20f, 0.20f, 1.0f);
+    menuDrawBorder(closeX, closeY, 22.0f, 22.0f, 1.0f, 0.8f, 0.8f, 1.0f);
+    drawText(closeX + 6.0f, closeY + 16.0f, "X", 1.0f, 1.0f, 1.0f, true);
+
+    // Divider line
+    menuDrawQuad(modalX + 16.0f, modalY + 54.0f, modalW - 32.0f, 2.0f, 0.25f, 0.32f, 0.42f, 0.8f);
+
+    // Quick Action buttons on top right:
+    // [全部取出 / Take All] and [全部存入 / Quick Stash]
+    float actionBtnW = 100.0f;
+    float actionBtnH = 22.0f;
+    float takeAllX = modalX + modalW - 22.0f - actionBtnW * 2.0f - 8.0f;
+    float depositX = modalX + modalW - 22.0f - actionBtnW;
+    float btnY = modalY + 62.0f;
+
+    bool takeAllHov = (g_MouseScreenX >= takeAllX && g_MouseScreenX <= takeAllX + actionBtnW &&
+                       g_MouseScreenY >= btnY && g_MouseScreenY <= btnY + actionBtnH);
+    menuDrawQuad(takeAllX, btnY, actionBtnW, actionBtnH,
+                 takeAllHov ? 0.28f : 0.18f, takeAllHov ? 0.32f : 0.22f, takeAllHov ? 0.42f : 0.30f, 1.0f);
+    menuDrawBorder(takeAllX, btnY, actionBtnW, actionBtnH,
+                   takeAllHov ? 1.0f : 0.40f, takeAllHov ? 0.85f : 0.48f, takeAllHov ? 0.35f : 0.60f, 1.0f);
+    drawText(takeAllX + 8.0f, btnY + 16.0f, LOC("全部取出", "Take All"), 0.90f, 0.90f, 0.95f, false);
+
+    bool depHov = (g_MouseScreenX >= depositX && g_MouseScreenX <= depositX + actionBtnW &&
+                   g_MouseScreenY >= btnY && g_MouseScreenY <= btnY + actionBtnH);
+    menuDrawQuad(depositX, btnY, actionBtnW, actionBtnH,
+                 depHov ? 0.28f : 0.18f, depHov ? 0.32f : 0.22f, depHov ? 0.42f : 0.30f, 1.0f);
+    menuDrawBorder(depositX, btnY, actionBtnW, actionBtnH,
+                   depHov ? 1.0f : 0.40f, depHov ? 0.85f : 0.48f, depHov ? 0.35f : 0.60f, 1.0f);
+    drawText(depositX + 8.0f, btnY + 16.0f, LOC("全部存入", "Quick Stash"), 0.90f, 0.90f, 0.95f, false);
+
+    // Section 1: Chest Storage (20 slots, 4 rows x 5 columns)
+    drawText(modalX + 22.0f, modalY + 76.0f, LOC("宝箱存储空间 (20格):", "Chest Storage (20 Slots):"), 0.95f, 0.85f, 0.40f, true);
+
+    WorldChest* chest = getOrCreateChest(g_ActiveChestX, g_ActiveChestY);
+
+    float cSlotSize = 56.0f;
+    float cSlotGap = 10.0f;
+    float chestStartX = modalX + (modalW - (5.0f * cSlotSize + 4.0f * cSlotGap)) * 0.5f;
+    float chestStartY = modalY + 88.0f;
+
+    int hoveredItem = -1;
+    int hoveredCount = 0;
+    int hoveredDur = 0, hoveredMaxDur = 0;
+
+    for (int r = 0; r < 4; r++) {
+        for (int c = 0; c < 5; c++) {
+            int slotIdx = r * 5 + c;
+            float sx = chestStartX + (float)c * (cSlotSize + cSlotGap);
+            float sy = chestStartY + (float)r * (cSlotSize + cSlotGap);
+
+            bool hovered = (g_MouseScreenX >= sx && g_MouseScreenX <= sx + cSlotSize &&
+                            g_MouseScreenY >= sy && g_MouseScreenY <= sy + cSlotSize);
+
+            // Slot Background
+            menuDrawQuad(sx, sy, cSlotSize, cSlotSize, 0.12f, 0.15f, 0.22f, 1.0f);
+
+            if (hovered) {
+                menuDrawBorder(sx - 1.0f, sy - 1.0f, cSlotSize + 2.0f, cSlotSize + 2.0f, 1.0f, 0.85f, 0.25f, 2.0f);
+            } else {
+                menuDrawBorder(sx, sy, cSlotSize, cSlotSize, 0.32f, 0.40f, 0.52f, 1.0f);
+            }
+
+            if (chest && chest->slots[slotIdx].type != BLOCK_AIR && chest->slots[slotIdx].count > 0) {
+                InventorySlot* s = &chest->slots[slotIdx];
+                drawInventoryItemIcon(sx + 8.0f, sy + 6.0f, cSlotSize - 16.0f, s->type);
+
+                if (!isToolItem(s->type) && !isArmorItem(s->type)) {
+                    char countBuf[16];
+                    snprintf(countBuf, sizeof(countBuf), "%d", s->count);
+                    drawText(sx + cSlotSize - 22.0f, sy + cSlotSize - 4.0f, countBuf, 1.0f, 1.0f, 1.0f, false);
+                } else if (s->durability > 0 && s->durability < s->maxDurability && s->maxDurability > 0) {
+                    float pct = (float)s->durability / (float)s->maxDurability;
+                    if (pct > 1.0f) pct = 1.0f;
+                    float barW = cSlotSize - 12.0f;
+                    float barH = 3.0f;
+                    float barX = sx + 6.0f;
+                    float barY = sy + cSlotSize - 6.0f;
+                    menuDrawQuad(barX, barY - 1.0f, barW, barH + 2.0f, 0.0f, 0.0f, 0.0f, 0.8f);
+                    float cr = (pct <= 0.20f) ? 0.95f : ((pct <= 0.50f) ? 0.95f : 0.20f);
+                    float cg = (pct <= 0.20f) ? 0.20f : ((pct <= 0.50f) ? 0.85f : 0.90f);
+                    float cb = (pct <= 0.20f) ? 0.20f : ((pct <= 0.50f) ? 0.15f : 0.20f);
+                    menuDrawQuad(barX, barY, barW * pct, barH, cr, cg, cb, 1.0f);
+                }
+
+                if (hovered) {
+                    hoveredItem = s->type;
+                    hoveredCount = s->count;
+                    hoveredDur = s->durability;
+                    hoveredMaxDur = s->maxDurability;
+                }
+            }
+        }
+    }
+
+    // Divider line between Chest and Hotbar
+    float divY = chestStartY + 4.0f * (cSlotSize + cSlotGap) + 4.0f;
+    menuDrawQuad(modalX + 16.0f, divY, modalW - 32.0f, 2.0f, 0.25f, 0.32f, 0.42f, 0.8f);
+
+    // Section 2: Player Hotbar (9 slots)
+    float hotbarTitleY = divY + 16.0f;
+    drawText(modalX + 22.0f, hotbarTitleY, LOC("玩家快捷栏 (点击存入宝箱):", "Player Hotbar (Click to Deposit):"), 1.0f, 0.85f, 0.35f, true);
+
+    float hSlotSize = 52.0f;
+    float hSlotGap = 8.0f;
+    float hotbarStartX = modalX + (modalW - ((float)HOTBAR_SLOTS * hSlotSize + (float)(HOTBAR_SLOTS - 1) * hSlotGap)) * 0.5f;
+    float hotbarStartY = hotbarTitleY + 10.0f;
+
+    for (int i = 0; i < HOTBAR_SLOTS; i++) {
+        float sx = hotbarStartX + (float)i * (hSlotSize + hSlotGap);
+        float sy = hotbarStartY;
+
+        bool hovered = (g_MouseScreenX >= sx && g_MouseScreenX <= sx + hSlotSize &&
+                        g_MouseScreenY >= sy && g_MouseScreenY <= sy + hSlotSize);
+
+        menuDrawQuad(sx, sy, hSlotSize, hSlotSize, 0.14f, 0.17f, 0.24f, 1.0f);
+
+        if (i == g_ActiveSlot) {
+            menuDrawBorder(sx - 2.0f, sy - 2.0f, hSlotSize + 4.0f, hSlotSize + 4.0f, 1.0f, 0.85f, 0.20f, 2.0f);
+        } else if (hovered) {
+            menuDrawBorder(sx - 1.0f, sy - 1.0f, hSlotSize + 2.0f, hSlotSize + 2.0f, 0.40f, 0.85f, 1.0f, 1.5f);
+        } else {
+            menuDrawBorder(sx, sy, hSlotSize, hSlotSize, 0.30f, 0.38f, 0.48f, 1.0f);
+        }
+
+        char numBuf[8];
+        snprintf(numBuf, sizeof(numBuf), "%d", i + 1);
+        drawText(sx + 4.0f, sy + 14.0f, numBuf, 0.65f, 0.65f, 0.65f, false);
+
+        if (g_Hotbar[i].type != BLOCK_AIR && g_Hotbar[i].count > 0) {
+            InventorySlot* s = &g_Hotbar[i];
+            drawInventoryItemIcon(sx + 8.0f, sy + 6.0f, hSlotSize - 16.0f, s->type);
+
+            if (!isToolItem(s->type) && !isArmorItem(s->type)) {
+                char countBuf[16];
+                snprintf(countBuf, sizeof(countBuf), "%d", s->count);
+                drawText(sx + hSlotSize - 22.0f, sy + hSlotSize - 4.0f, countBuf, 1.0f, 1.0f, 1.0f, false);
+            } else if (s->durability > 0 && s->durability < s->maxDurability && s->maxDurability > 0) {
+                float pct = (float)s->durability / (float)s->maxDurability;
+                if (pct > 1.0f) pct = 1.0f;
+                float barW = hSlotSize - 12.0f;
+                float barH = 3.0f;
+                float barX = sx + 6.0f;
+                float barY = sy + hSlotSize - 6.0f;
+                menuDrawQuad(barX, barY - 1.0f, barW, barH + 2.0f, 0.0f, 0.0f, 0.0f, 0.8f);
+                float cr = (pct <= 0.20f) ? 0.95f : ((pct <= 0.50f) ? 0.95f : 0.20f);
+                float cg = (pct <= 0.20f) ? 0.20f : ((pct <= 0.50f) ? 0.85f : 0.90f);
+                float cb = (pct <= 0.20f) ? 0.20f : ((pct <= 0.50f) ? 0.15f : 0.20f);
+                menuDrawQuad(barX, barY, barW * pct, barH, cr, cg, cb, 1.0f);
+            }
+
+            if (hovered) {
+                hoveredItem = s->type;
+                hoveredCount = s->count;
+                hoveredDur = s->durability;
+                hoveredMaxDur = s->maxDurability;
+            }
+        }
+    }
+
+    // Footer helper text
+    drawText(modalX + 22.0f, modalY + modalH - 12.0f,
+             LOC("[左键] 全部转移 | [右键] 单个转移 | [E / ESC] 关闭宝箱",
+                 "[L-Click] Transfer All | [R-Click] Transfer 1 | [E / ESC] Close Chest"),
+             0.60f, 0.70f, 0.85f, false);
+
+    // Floating Tooltip on Hovered Item
+    if (hoveredItem > 0) {
+        float tipW = 280.0f;
+        float tipH = 68.0f;
+        float tipX = (float)g_MouseScreenX + 16.0f;
+        float tipY = (float)g_MouseScreenY + 16.0f;
+        if (tipX + tipW > (float)WINDOW_WIDTH - 20.0f) tipX = (float)WINDOW_WIDTH - tipW - 20.0f;
+        if (tipY + tipH > (float)WINDOW_HEIGHT - 20.0f) tipY = (float)WINDOW_HEIGHT - tipH - 20.0f;
+
+        menuDrawQuad(tipX, tipY, tipW, tipH, 0.06f, 0.08f, 0.12f, 0.96f);
+        menuDrawBorder(tipX, tipY, tipW, tipH, 0.95f, 0.82f, 0.22f, 1.5f);
+
+        char nameBuf[128];
+        snprintf(nameBuf, sizeof(nameBuf), "%s x%d", getItemLocalizedName(hoveredItem), hoveredCount);
+        drawText(tipX + 10.0f, tipY + 20.0f, nameBuf, 1.0f, 0.90f, 0.30f, true);
+
+        if (isToolItem(hoveredItem)) {
+            const ToolDef* td = getToolDef(hoveredItem);
+            if (td) {
+                char statBuf[128];
+                snprintf(statBuf, sizeof(statBuf), "%s%.0f | %s%d/%d",
+                         LOC("攻击: ", "ATK: "), td->damage,
+                         LOC("耐久: ", "DUR: "), hoveredDur, hoveredMaxDur);
+                drawText(tipX + 10.0f, tipY + 38.0f, statBuf, 0.85f, 0.90f, 0.95f, false);
+            }
+        } else if (isArmorItem(hoveredItem)) {
+            const ArmorDef* ad = getArmorDef(hoveredItem);
+            if (ad) {
+                char statBuf[128];
+                snprintf(statBuf, sizeof(statBuf), "%s+%.0f%% | %s%d/%d",
+                         LOC("减伤: ", "DEF: "), ad->reduction * 100.0f,
+                         LOC("耐久: ", "DUR: "), hoveredDur, hoveredMaxDur);
+                drawText(tipX + 10.0f, tipY + 38.0f, statBuf, 0.85f, 0.90f, 0.95f, false);
+            }
+        } else if (hoveredItem < BLOCK_TYPE_COUNT) {
+            char statBuf[128];
+            snprintf(statBuf, sizeof(statBuf), "%s%.1f | %s",
+                     LOC("硬度: ", "Hardness: "), g_BlockDefs[hoveredItem].hardness,
+                     g_BlockDefs[hoveredItem].isSolid ? LOC("实体方块", "Solid Block") : LOC("装饰物", "Decor"));
+            drawText(tipX + 10.0f, tipY + 38.0f, statBuf, 0.75f, 0.85f, 0.95f, false);
+        }
+
+        drawText(tipX + 10.0f, tipY + 54.0f,
+                 LOC("点击在宝箱与背包快捷栏间存取", "Click to transfer between chest and hotbar"),
+                 0.40f, 0.90f, 0.50f, false);
+    }
+
+    glDisable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+}
+
+static bool handleChestInput(UINT uMsg, WPARAM wParam, LPARAM lParam) {
+    if (!g_ChestOpen) return false;
+
+    float modalW = 580.0f;
+    float modalH = 480.0f;
+    float modalX = ((float)WINDOW_WIDTH - modalW) * 0.5f;
+    float modalY = ((float)WINDOW_HEIGHT - modalH) * 0.5f;
+
+    switch (uMsg) {
+        case WM_KEYDOWN: {
+            if (wParam == VK_ESCAPE || wParam == 'E') {
+                g_ChestOpen = false;
+                playSound(SFX_CLICK);
+                return true;
+            }
+            if (wParam >= '1' && wParam <= '9') {
+                g_ActiveSlot = (int)(wParam - '1');
+                playSound(SFX_CLICK);
+                return true;
+            }
+            return true; // Consume other keyboard keys while chest is open
+        }
+
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN: {
+            bool isRight = (uMsg == WM_RBUTTONDOWN);
+            int mx = (int)(short)LOWORD(lParam);
+            int my = (int)(short)HIWORD(lParam);
+
+            // 1. Close button [X]
+            float closeX = modalX + modalW - 36.0f;
+            float closeY = modalY + 16.0f;
+            if (mx >= closeX && mx <= closeX + 22.0f &&
+                my >= closeY && my <= closeY + 22.0f) {
+                g_ChestOpen = false;
+                playSound(SFX_CLICK);
+                return true;
+            }
+
+            // Quick Action buttons
+            float actionBtnW = 100.0f;
+            float actionBtnH = 22.0f;
+            float takeAllX = modalX + modalW - 22.0f - actionBtnW * 2.0f - 8.0f;
+            float depositX = modalX + modalW - 22.0f - actionBtnW;
+            float btnY = modalY + 62.0f;
+
+            WorldChest* chest = getOrCreateChest(g_ActiveChestX, g_ActiveChestY);
+
+            // Take All
+            if (mx >= takeAllX && mx <= takeAllX + actionBtnW &&
+                my >= btnY && my <= btnY + actionBtnH) {
+                if (chest) {
+                    bool movedAny = false;
+                    for (int s = 0; s < CHEST_SLOTS; s++) {
+                        if (chest->slots[s].type != BLOCK_AIR && chest->slots[s].count > 0) {
+                            if (transferChestToPlayer(chest, s)) movedAny = true;
+                        }
+                    }
+                    if (movedAny) playSound(SFX_CLICK);
+                }
+                return true;
+            }
+
+            // Quick Stash (Hotbar to Chest)
+            if (mx >= depositX && mx <= depositX + actionBtnW &&
+                my >= btnY && my <= btnY + actionBtnH) {
+                if (chest) {
+                    bool movedAny = false;
+                    for (int h = 0; h < HOTBAR_SLOTS; h++) {
+                        if (g_Hotbar[h].type != BLOCK_AIR && g_Hotbar[h].count > 0) {
+                            if (transferPlayerToChest(chest, &g_Hotbar[h])) movedAny = true;
+                        }
+                    }
+                    if (movedAny) playSound(SFX_CLICK);
+                }
+                return true;
+            }
+
+            // 2. Chest slots (4 rows x 5 columns)
+            float cSlotSize = 56.0f;
+            float cSlotGap = 10.0f;
+            float chestStartX = modalX + (modalW - (5.0f * cSlotSize + 4.0f * cSlotGap)) * 0.5f;
+            float chestStartY = modalY + 88.0f;
+
+            for (int r = 0; r < 4; r++) {
+                for (int c = 0; c < 5; c++) {
+                    int slotIdx = r * 5 + c;
+                    float sx = chestStartX + (float)c * (cSlotSize + cSlotGap);
+                    float sy = chestStartY + (float)r * (cSlotSize + cSlotGap);
+
+                    if (mx >= sx && mx <= sx + cSlotSize &&
+                        my >= sy && my <= sy + cSlotSize) {
+                        if (chest) {
+                            if (isRight) {
+                                transferChestToPlayerEx(chest, slotIdx, 1);
+                            } else {
+                                transferChestToPlayer(chest, slotIdx);
+                            }
+                        }
+                        return true;
+                    }
+                }
+            }
+
+            // 3. Player Hotbar slots (9 slots)
+            float divY = chestStartY + 4.0f * (cSlotSize + cSlotGap) + 4.0f;
+            float hotbarTitleY = divY + 16.0f;
+            float hSlotSize = 52.0f;
+            float hSlotGap = 8.0f;
+            float hotbarStartX = modalX + (modalW - ((float)HOTBAR_SLOTS * hSlotSize + (float)(HOTBAR_SLOTS - 1) * hSlotGap)) * 0.5f;
+            float hotbarStartY = hotbarTitleY + 10.0f;
+
+            for (int i = 0; i < HOTBAR_SLOTS; i++) {
+                float sx = hotbarStartX + (float)i * (hSlotSize + hSlotGap);
+                float sy = hotbarStartY;
+
+                if (mx >= sx && mx <= sx + hSlotSize &&
+                    my >= sy && my <= sy + hSlotSize) {
+                    if (chest) {
+                        if (isRight) {
+                            transferPlayerToChestEx(chest, &g_Hotbar[i], 1);
+                        } else {
+                            transferPlayerToChest(chest, &g_Hotbar[i]);
+                        }
+                    }
+                    return true;
+                }
+            }
+
+            // Clicked inside modal or outside modal: consume event
+            return true;
+        }
+
+        case WM_MOUSEMOVE:
+        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
+        case WM_MOUSEWHEEL:
+            return true;
+    }
+
+    return false;
+}
+
 static void renderHUD(void) {
     glMatrixMode(GL_PROJECTION);
     glPushMatrix();
@@ -3504,6 +4429,28 @@ static void renderHUD(void) {
         drawText(barX + 10.0f, barY + 19.0f, hpBuf, 1.0f, 1.0f, 1.0f, true);
     }
 
+    // HUD Time of Day Clock Widget (User Request 3)
+    {
+        float normTime = g_WorldTime - floorf(g_WorldTime);
+        if (normTime < 0.0f) normTime += 1.0f;
+        int curHour = ((int)(normTime * 24.0f)) % 24;
+        int curMin = ((int)(fmodf(normTime * 1440.0f, 60.0f))) % 60;
+        bool isDay = (curHour >= 6 && curHour < 18);
+
+        char clockBuf[32];
+        snprintf(clockBuf, sizeof(clockBuf), "%s %02d:%02d", isDay ? "☀️" : "🌙", curHour, curMin);
+
+        float clockX = 15.0f;
+        float clockY = (getGameMode() == MODE_SURVIVAL) ? 172.0f : 138.0f;
+        float clockW = 126.0f;
+        float clockH = 30.0f;
+
+        // Clean semi-transparent background and gold border
+        drawQuad2D(clockX, clockY, clockW, clockH, 0.08f, 0.10f, 0.14f, 0.88f);
+        drawBorder2D(clockX, clockY, clockW, clockH, 0.95f, 0.80f, 0.22f, 1.5f);
+        drawText(clockX + 14.0f, clockY + 20.0f, clockBuf, isDay ? 1.0f : 0.82f, isDay ? 0.92f : 0.88f, isDay ? 0.35f : 1.0f, true);
+    }
+
     // Game Over Overlay
     if (g_Player.isDead) {
         drawQuad2D(0, 0, (float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, 0.45f, 0.05f, 0.05f, 0.65f);
@@ -3619,6 +4566,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
         return 0;
     }
 
+    if (handleChestInput(uMsg, wParam, lParam)) {
+        return 0;
+    }
     if (handleCraftingInput(uMsg, wParam, lParam)) {
         return 0;
     }
@@ -3865,7 +4815,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 
         if (getGameState() == STATE_PLAYING) {
             renderHUD();
-            if (isCraftingOpen()) {
+            if (g_ChestOpen) {
+                renderChestUI();
+            } else if (isCraftingOpen()) {
                 renderCraftingUI();
             } else if (isCreativeInventoryOpen()) {
                 renderCreativeInventory(WINDOW_WIDTH, WINDOW_HEIGHT, g_MouseScreenX, g_MouseScreenY);

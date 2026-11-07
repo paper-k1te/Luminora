@@ -100,6 +100,9 @@ def run_resolution_checks(WINDOW_W, WINDOW_H):
     hudHealth = (15, 138, 320, 28)
     check_bounds("HUD Health Bar", *hudHealth)
 
+    hudClock = (15, 172, 126, 30)
+    check_bounds("HUD Clock Widget", *hudClock)
+
     hudGuide = (WINDOW_W - 350 - 15, 15, 350, 105)
     check_bounds("HUD Guide Box", *hudGuide)
 
@@ -111,6 +114,9 @@ def run_resolution_checks(WINDOW_W, WINDOW_H):
     check_aabb_overlap("HUD Status Box", hudStatus, "HUD Health Bar", hudHealth)
     check_aabb_overlap("HUD Status Box", hudStatus, "HUD Guide Box", hudGuide)
     check_aabb_overlap("HUD Health Bar", hudHealth, "HUD Hotbar Box", hudHotbar)
+    check_aabb_overlap("HUD Health Bar", hudHealth, "HUD Clock Widget", hudClock)
+    check_aabb_overlap("HUD Clock Widget", hudClock, "HUD Hotbar Box", hudHotbar)
+    check_aabb_overlap("HUD Clock Widget", hudClock, "HUD Guide Box", hudGuide)
     check_aabb_overlap("HUD Guide Box", hudGuide, "HUD Hotbar Box", hudHotbar)
 
 for w, h in [(1280, 720), (1600, 900), (1920, 1080)]:

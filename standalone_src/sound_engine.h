@@ -18,7 +18,7 @@
 #endif
 
 // ============================================================================
-// Sound Effect Enumeration (11 Procedural Retro 2.5D Sound Effects)
+// Sound Effect Enumeration (19 Procedural Retro 2.5D Sound Effects)
 // ============================================================================
 typedef enum {
     SFX_CLICK = 0,      // 1.  UI button click (short square click)
@@ -32,8 +32,18 @@ typedef enum {
     SFX_KILL,           // 9.  Mob death (8-bit explosion noise)
     SFX_PICKUP,         // 10. Item pickup (two-tone coin chime)
     SFX_CRAFT,          // 11. Crafting success fanfare (bright tri-tone chime)
+    SFX_SLIME_JUMP,     // 12. Slime jump (squishy bouncy rubber sweep)
+    SFX_ZOMBIE_GROWL,   // 13. Zombie growl (guttural vocal tract formant groan)
+    SFX_BAT_CHIRP,      // 14. Bat chirp (high-frequency echolocation flutter)
+    SFX_SKELETON_RATTLE,// 15. Skeleton rattle (staggered dry hollow bone clacks)
+    SFX_SPIDER_HISS,    // 16. Spider hiss (resonant bandpass chittering hiss)
+    SFX_SHEEP_BAA,      // 17. Sheep baa (vowel formant [æ] with wide bleat vibrato)
+    SFX_COW_MOO,        // 18. Cow moo (resonant lowing chest formant [u])
+    SFX_PIG_OINK,       // 19. Pig oink (nasal snort with palate flutter)
     SFX_COUNT
 } SoundEffectId;
+
+typedef SoundEffectId SoundEffect;
 
 // ============================================================================
 // Audio Format & Internal Structures
@@ -110,283 +120,511 @@ static inline float sfxRandomFloat(void) {
 }
 
 // ============================================================================
-// Procedural Synthesis of All 11 Sound Effects
+// Procedural Synthesis of All 19 Sound Effects
 // ============================================================================
+static void generateSoundBuffer(int sfxId) {
+    switch (sfxId) {
+        // 1. SFX_CLICK: UI button click (softened responsive click)
+        case SFX_CLICK: {
+            float duration = 0.035f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq = (t < 0.008f) ? 1200.0f : 750.0f;
+                float phase = 2.0f * (float)M_PI * freq * t;
+                float wave = sinf(phase) * 0.75f + sinf(phase * 2.0f) * 0.20f + sinf(phase * 3.0f) * 0.05f;
+                float attack = (t < 0.002f) ? (t / 0.002f) : 1.0f;
+                float env = attack * expf(-85.0f * t);
+                float sample = wave * env * 12000.0f;
+                pcm[i] = (int16_t)sample;
+            }
+            g_SfxTable[SFX_CLICK].sampleCount = count;
+            g_SfxTable[SFX_CLICK].pcmSamples = pcm;
+        } break;
+
+        // 2. SFX_MINE: Block dig chip sound (satisfying solid dig + soft low-pass envelope)
+        case SFX_MINE: {
+            float duration = 0.095f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phase = 0.0f;
+            float noiseLp = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq = 160.0f * expf(-30.0f * t) + 42.0f;
+                phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
+                float impact = (sinf(phase) * 0.80f + sinf(phase * 0.5f) * 0.20f) * expf(-24.0f * t);
+                float rawNoise = sfxRandomFloat();
+                noiseLp += 0.22f * (rawNoise - noiseLp);
+                float noiseEnv = expf(-38.0f * t);
+                float attack = (t < 0.003f) ? (t / 0.003f) : 1.0f;
+                float mix = (impact * 0.78f + noiseLp * 0.22f * noiseEnv) * attack;
+                pcm[i] = (int16_t)(mix * 22000.0f);
+            }
+            g_SfxTable[SFX_MINE].sampleCount = count;
+            g_SfxTable[SFX_MINE].pcmSamples = pcm;
+        } break;
+
+        // 3. SFX_BREAK: Block destroyed (crumbling collapse with rounded sines/triangles)
+        case SFX_BREAK: {
+            float duration = 0.185f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phase = 0.0f;
+            float crackleLp = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq = 220.0f * expf(-14.0f * t) + 40.0f;
+                phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
+                float rumble = sinf(phase) * 0.70f + sinf(phase * 0.5f) * 0.30f;
+                float rawCrackle = sfxRandomFloat();
+                crackleLp += 0.26f * (rawCrackle - crackleLp);
+                float env = (t < 0.006f) ? (t / 0.006f) : expf(-11.5f * (t - 0.006f));
+                float mix = (rumble * 0.62f + crackleLp * 0.38f) * env;
+                pcm[i] = (int16_t)(mix * 23000.0f);
+            }
+            g_SfxTable[SFX_BREAK].sampleCount = count;
+            g_SfxTable[SFX_BREAK].pcmSamples = pcm;
+        } break;
+
+        // 4. SFX_PLACE: Block placed (solid thud)
+        case SFX_PLACE: {
+            float duration = 0.075f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phase = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq = 210.0f * expf(-45.0f * t) + 42.0f;
+                phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
+                float click = (t < 0.008f) ? (sfxRandomFloat() * 0.3f) : 0.0f;
+                float wave = sinf(phase) + click;
+                float env = expf(-36.0f * t);
+                pcm[i] = (int16_t)(wave * env * 22000.0f);
+            }
+            g_SfxTable[SFX_PLACE].sampleCount = count;
+            g_SfxTable[SFX_PLACE].pcmSamples = pcm;
+        } break;
+
+        // 5. SFX_STEP: Footstep (soft rustle/thud)
+        case SFX_STEP: {
+            float duration = 0.055f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phase = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq = 90.0f * expf(-30.0f * t) + 40.0f;
+                phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
+                float thump = sinf(phase) * 0.6f;
+                float rustle = sfxRandomFloat() * 0.4f;
+                float env = expf(-55.0f * t);
+                pcm[i] = (int16_t)((thump + rustle) * env * 13500.0f);
+            }
+            g_SfxTable[SFX_STEP].sampleCount = count;
+            g_SfxTable[SFX_STEP].pcmSamples = pcm;
+        } break;
+
+        // 6. SFX_JUMP: Jump spring (sine upward sweep)
+        case SFX_JUMP: {
+            float duration = 0.160f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phase = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float progress = t / duration;
+                float freq = 150.0f + 320.0f * powf(progress, 1.35f);
+                phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
+                float wave = sinf(phase) * 0.8f + sinf(phase * 2.0f) * 0.2f;
+                float env = (t < 0.015f) ? (t / 0.015f) : expf(-9.0f * (t - 0.015f));
+                pcm[i] = (int16_t)(wave * env * 22000.0f);
+            }
+            g_SfxTable[SFX_JUMP].sampleCount = count;
+            g_SfxTable[SFX_JUMP].pcmSamples = pcm;
+        } break;
+
+        // 7. SFX_FLY: Creative flight whoosh (harmonic synth tone)
+        case SFX_FLY: {
+            float duration = 0.260f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float vibrato = 1.0f + 0.025f * sinf(24.0f * (float)M_PI * t);
+                float f1 = 330.0f * vibrato; // E4
+                float f2 = 495.0f * vibrato; // B4
+                float f3 = 660.0f * vibrato; // E5
+                float tone = sinf(2.0f * (float)M_PI * f1 * t) * 0.45f +
+                             sinf(2.0f * (float)M_PI * f2 * t) * 0.30f +
+                             sinf(2.0f * (float)M_PI * f3 * t) * 0.25f;
+                float air = sfxRandomFloat() * 0.15f;
+                float env = (t < 0.035f) ? (t / 0.035f) : expf(-7.5f * (t - 0.035f));
+                pcm[i] = (int16_t)((tone + air) * env * 21000.0f);
+            }
+            g_SfxTable[SFX_FLY].sampleCount = count;
+            g_SfxTable[SFX_FLY].pcmSamples = pcm;
+        } break;
+
+        // 8. SFX_HIT: Mob hit (warm mid-frequency punch thud)
+        case SFX_HIT: {
+            float duration = 0.125f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phase = 0.0f;
+            float punchLp = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq = 240.0f * expf(-32.0f * t) + 55.0f;
+                phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
+                float body = sinf(phase) * 0.70f + sinf(phase * 0.5f) * 0.30f;
+                float thud = tanhf(body * 1.4f);
+                float rawNoise = (t < 0.035f) ? sfxRandomFloat() : 0.0f;
+                punchLp += 0.30f * (rawNoise - punchLp);
+                float env = expf(-22.0f * t);
+                float mix = (thud * 0.75f + punchLp * 0.25f) * env;
+                pcm[i] = (int16_t)(mix * 23500.0f);
+            }
+            g_SfxTable[SFX_HIT].sampleCount = count;
+            g_SfxTable[SFX_HIT].pcmSamples = pcm;
+        } break;
+
+        // 9. SFX_KILL: Mob death (cinematic deep explosion with low-frequency roll-off)
+        case SFX_KILL: {
+            float duration = 0.360f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phase = 0.0f;
+            float holdNoise = 0.0f;
+            float noiseLp = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq = 135.0f * expf(-7.5f * t) + 28.0f;
+                phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
+                float subBass = sinf(phase) * 0.65f + sinf(phase * 0.5f) * 0.35f;
+                if ((i % 5) == 0) {
+                    holdNoise = sfxRandomFloat();
+                }
+                float rollOffAlpha = 0.22f * expf(-3.5f * t) + 0.04f;
+                noiseLp += rollOffAlpha * (holdNoise - noiseLp);
+                float attack = (t < 0.015f) ? (t / 0.015f) : 1.0f;
+                float env = attack * expf(-5.8f * t);
+                float mix = (subBass * 0.65f + noiseLp * 0.35f) * env;
+                pcm[i] = (int16_t)(mix * 24000.0f);
+            }
+            g_SfxTable[SFX_KILL].sampleCount = count;
+            g_SfxTable[SFX_KILL].pcmSamples = pcm;
+        } break;
+
+        // 10. SFX_PICKUP: Item pickup (two-tone coin chime)
+        case SFX_PICKUP: {
+            float duration = 0.150f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float tSplit = 0.055f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq, relT, env;
+                if (t < tSplit) {
+                    freq = 987.77f; // B5
+                    relT = t;
+                    env = expf(-18.0f * relT);
+                } else {
+                    freq = 1318.51f; // E6
+                    relT = t - tSplit;
+                    env = expf(-14.0f * relT);
+                }
+                float phase = 2.0f * (float)M_PI * freq * t;
+                float tone = sinf(phase) * 0.85f + sinf(phase * 2.0f) * 0.15f;
+                pcm[i] = (int16_t)(tone * env * 22000.0f);
+            }
+            g_SfxTable[SFX_PICKUP].sampleCount = count;
+            g_SfxTable[SFX_PICKUP].pcmSamples = pcm;
+        } break;
+
+        // 11. SFX_CRAFT: Crafting success fanfare (bright tri-tone chime)
+        case SFX_CRAFT: {
+            float duration = 0.380f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float t1 = 0.080f;
+            float t2 = 0.160f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq, env;
+                if (t < t1) {
+                    freq = 1046.50f; // C6
+                    env = expf(-14.0f * t);
+                } else if (t < t2) {
+                    freq = 1318.51f; // E6
+                    env = expf(-14.0f * (t - t1));
+                } else {
+                    freq = 1567.98f; // G6
+                    env = expf(-6.2f * (t - t2));
+                }
+                float phase = 2.0f * (float)M_PI * freq * t;
+                float tone = sinf(phase) * 0.80f + sinf(phase * 3.0f) * 0.15f + sinf(phase * 4.0f) * 0.05f;
+                pcm[i] = (int16_t)(tone * env * 23000.0f);
+            }
+            g_SfxTable[SFX_CRAFT].sampleCount = count;
+            g_SfxTable[SFX_CRAFT].pcmSamples = pcm;
+        } break;
+
+        // 12. SFX_SLIME_JUMP: Slime jump & squish (FM rubbery bounce sweep + wet splash)
+        case SFX_SLIME_JUMP: {
+            float duration = 0.170f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phase = 0.0f;
+            float noiseLp = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq = 75.0f + 165.0f * expf(-24.0f * t);
+                phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
+                float squishMod = 0.45f * sinf(phase * 2.8f) * expf(-28.0f * t);
+                float body = sinf(phase + squishMod) * 0.75f + sinf(phase * 2.0f) * 0.25f;
+
+                float rawNoise = (t < 0.040f) ? sfxRandomFloat() : 0.0f;
+                noiseLp += 0.25f * (rawNoise - noiseLp);
+                float splashEnv = expf(-45.0f * t);
+
+                float attack = (t < 0.006f) ? (t / 0.006f) : 1.0f;
+                float env = attack * expf(-14.0f * t);
+                float mix = (body * 0.75f + noiseLp * 0.25f * splashEnv) * env;
+                pcm[i] = (int16_t)(mix * 22500.0f);
+            }
+            g_SfxTable[SFX_SLIME_JUMP].sampleCount = count;
+            g_SfxTable[SFX_SLIME_JUMP].pcmSamples = pcm;
+        } break;
+
+        // 13. SFX_ZOMBIE_GROWL: Zombie growl & groan (deep formant vocal resonance + throat rasp)
+        case SFX_ZOMBIE_GROWL: {
+            float duration = 0.620f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phaseF0 = 0.0f;
+            float breathLp = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float throatVib = 1.0f + 0.065f * sinf(2.0f * (float)M_PI * 10.5f * t)
+                                       + 0.035f * sinf(2.0f * (float)M_PI * 23.0f * t);
+                float f0 = (85.0f - 18.0f * (t / duration)) * throatVib;
+                phaseF0 += 2.0f * (float)M_PI * f0 / (float)AUDIO_SAMPLE_RATE;
+
+                float vfold = sinf(phaseF0) * 0.50f
+                            + sinf(phaseF0 * 2.0f) * 0.35f
+                            + sinf(phaseF0 * 3.0f) * 0.25f
+                            + sinf(phaseF0 * 4.0f) * 0.18f
+                            + sinf(phaseF0 * 5.0f) * 0.12f;
+                float throat = tanhf(vfold * 1.6f);
+
+                float f1 = sinf(phaseF0 * 6.0f) * 0.45f;
+                float f2 = sinf(phaseF0 * 11.0f) * 0.30f;
+                float f3 = sinf(phaseF0 * 22.0f) * 0.15f;
+                float voice = throat * 0.55f + (f1 + f2 + f3) * 0.45f;
+
+                float rawNoise = sfxRandomFloat();
+                breathLp += 0.15f * (rawNoise - breathLp);
+
+                float attack = (t < 0.080f) ? (t / 0.080f) : 1.0f;
+                float env = attack * expf(-3.5f * t);
+                float mix = (voice * 0.72f + breathLp * 0.28f) * env;
+                pcm[i] = (int16_t)(mix * 22000.0f);
+            }
+            g_SfxTable[SFX_ZOMBIE_GROWL].sampleCount = count;
+            g_SfxTable[SFX_ZOMBIE_GROWL].pcmSamples = pcm;
+        } break;
+
+        // 14. SFX_BAT_CHIRP: Bat chirp (high-frequency echolocation FM chirp + flutter)
+        case SFX_BAT_CHIRP: {
+            float duration = 0.135f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phase = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float freq = 1550.0f + 1750.0f * expf(-32.0f * t);
+                phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
+
+                float tremolo = 0.65f + 0.35f * sinf(2.0f * (float)M_PI * 42.0f * t);
+                float tone = (sinf(phase) * 0.82f + sinf(phase * 2.0f) * 0.18f) * tremolo;
+                float air = sfxRandomFloat() * 0.12f;
+
+                float attack = (t < 0.008f) ? (t / 0.008f) : 1.0f;
+                float env = attack * expf(-18.0f * t);
+                pcm[i] = (int16_t)((tone + air) * env * 19000.0f);
+            }
+            g_SfxTable[SFX_BAT_CHIRP].sampleCount = count;
+            g_SfxTable[SFX_BAT_CHIRP].pcmSamples = pcm;
+        } break;
+
+        // 15. SFX_SKELETON_RATTLE: Skeleton rattle (staggered dry hollow bone clacks)
+        case SFX_SKELETON_RATTLE: {
+            float duration = 0.220f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float clackTimes[4] = { 0.000f, 0.045f, 0.098f, 0.150f };
+            float clackPitches[4] = { 490.0f, 550.0f, 430.0f, 470.0f };
+            float clackAmps[4] = { 1.00f, 0.78f, 0.88f, 0.65f };
+
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float mix = 0.0f;
+                for (int k = 0; k < 4; k++) {
+                    if (t >= clackTimes[k]) {
+                        float dt_clack = t - clackTimes[k];
+                        float phase = 2.0f * (float)M_PI * clackPitches[k] * dt_clack;
+                        float body = sinf(phase) * 0.65f + sinf(phase * 2.15f) * 0.35f;
+                        float click = (dt_clack < 0.004f) ? sfxRandomFloat() * 0.8f : 0.0f;
+                        float env = expf(-62.0f * dt_clack);
+                        mix += (body + click) * env * clackAmps[k];
+                    }
+                }
+                if (mix > 1.0f) mix = 1.0f;
+                if (mix < -1.0f) mix = -1.0f;
+                pcm[i] = (int16_t)(mix * 22000.0f);
+            }
+            g_SfxTable[SFX_SKELETON_RATTLE].sampleCount = count;
+            g_SfxTable[SFX_SKELETON_RATTLE].pcmSamples = pcm;
+        } break;
+
+        // 16. SFX_SPIDER_HISS: Spider hiss (resonant bandpass filtered chittering hiss)
+        case SFX_SPIDER_HISS: {
+            float duration = 0.320f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float lp1 = 0.0f, lp2 = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float rawNoise = sfxRandomFloat();
+                lp1 += 0.38f * (rawNoise - lp1);
+                lp2 += 0.38f * (lp1 - lp2);
+                float bpNoise = (lp1 - lp2);
+
+                float chitter = 0.68f + 0.32f * sinf(2.0f * (float)M_PI * 26.0f * t);
+
+                float attack = (t < 0.012f) ? (t / 0.012f) : 1.0f;
+                float env = attack * expf(-5.5f * t);
+                float mix = bpNoise * chitter * env;
+                pcm[i] = (int16_t)(mix * 24000.0f);
+            }
+            g_SfxTable[SFX_SPIDER_HISS].sampleCount = count;
+            g_SfxTable[SFX_SPIDER_HISS].pcmSamples = pcm;
+        } break;
+
+        // 17. SFX_SHEEP_BAA: Sheep baa (vowel formant [æ] with wide bleat vibrato)
+        case SFX_SHEEP_BAA: {
+            float duration = 0.560f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phaseF0 = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float vibDepth = (t < 0.12f) ? (t / 0.12f * 0.065f) : 0.065f;
+                float vib = 1.0f + vibDepth * sinf(2.0f * (float)M_PI * 13.5f * t);
+                float f0 = (208.0f - 24.0f * (t / duration)) * vib;
+                phaseF0 += 2.0f * (float)M_PI * f0 / (float)AUDIO_SAMPLE_RATE;
+
+                float tone = sinf(phaseF0) * 0.40f
+                           + sinf(phaseF0 * 2.0f) * 0.30f
+                           + sinf(phaseF0 * 3.0f) * 0.60f
+                           + sinf(phaseF0 * 4.0f) * 0.45f
+                           + sinf(phaseF0 * 8.0f) * 0.25f
+                           + sinf(phaseF0 * 9.0f) * 0.18f;
+                tone = tanhf(tone * 1.35f);
+
+                float plosive = (t < 0.035f) ? sinf(2.0f * (float)M_PI * 110.0f * t) * (1.0f - t / 0.035f) * 0.4f : 0.0f;
+                float tremolo = 0.75f + 0.25f * sinf(2.0f * (float)M_PI * 13.5f * t);
+
+                float attack = (t < 0.030f) ? (t / 0.030f) : 1.0f;
+                float env = attack * expf(-3.2f * t);
+                float mix = (tone * tremolo + plosive) * env;
+                pcm[i] = (int16_t)(mix * 22000.0f);
+            }
+            g_SfxTable[SFX_SHEEP_BAA].sampleCount = count;
+            g_SfxTable[SFX_SHEEP_BAA].pcmSamples = pcm;
+        } break;
+
+        // 18. SFX_COW_MOO: Cow moo (deep chest resonance [u] formant with pitch slide)
+        case SFX_COW_MOO: {
+            float duration = 0.780f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phaseF0 = 0.0f;
+            float chestLp = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float f0;
+                if (t < 0.22f) {
+                    f0 = 92.0f + 14.0f * (t / 0.22f);
+                } else {
+                    f0 = 106.0f - 26.0f * ((t - 0.22f) / (duration - 0.22f));
+                }
+                phaseF0 += 2.0f * (float)M_PI * f0 / (float)AUDIO_SAMPLE_RATE;
+
+                float body = sinf(phaseF0) * 0.65f
+                           + sinf(phaseF0 * 2.0f) * 0.48f
+                           + sinf(phaseF0 * 3.0f) * 0.28f
+                           + sinf(phaseF0 * 4.0f) * 0.12f;
+                body = tanhf(body * 1.5f);
+
+                float rawNoise = sfxRandomFloat();
+                chestLp += 0.06f * (rawNoise - chestLp);
+
+                float attack = (t < 0.090f) ? (t / 0.090f) : 1.0f;
+                float env = attack * expf(-2.4f * t);
+                float mix = (body * 0.85f + chestLp * 0.15f) * env;
+                pcm[i] = (int16_t)(mix * 23000.0f);
+            }
+            g_SfxTable[SFX_COW_MOO].sampleCount = count;
+            g_SfxTable[SFX_COW_MOO].pcmSamples = pcm;
+        } break;
+
+        // 19. SFX_PIG_OINK: Pig oink (guttural nasal snort with 42 Hz palate flutter)
+        case SFX_PIG_OINK: {
+            float duration = 0.230f;
+            int count = (int)(duration * AUDIO_SAMPLE_RATE);
+            int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
+            float phaseF0 = 0.0f;
+            float snortLp = 0.0f;
+            for (int i = 0; i < count; i++) {
+                float t = (float)i / (float)AUDIO_SAMPLE_RATE;
+                float f0 = 105.0f + 68.0f * expf(-18.0f * t);
+                phaseF0 += 2.0f * (float)M_PI * f0 / (float)AUDIO_SAMPLE_RATE;
+
+                float nasal = sinf(phaseF0) * 0.45f
+                            + sinf(phaseF0 * 4.0f) * 0.40f
+                            + sinf(phaseF0 * 6.0f) * 0.25f;
+                nasal = tanhf(nasal * 1.8f);
+
+                float flutter = 0.58f + 0.42f * sinf(2.0f * (float)M_PI * 42.0f * t);
+                float rawNoise = sfxRandomFloat();
+                snortLp += 0.22f * (rawNoise - snortLp);
+
+                float attack = (t < 0.012f) ? (t / 0.012f) : 1.0f;
+                float env = attack * expf(-13.0f * t);
+                float mix = (nasal * 0.65f + snortLp * 0.35f) * flutter * env;
+                pcm[i] = (int16_t)(mix * 22500.0f);
+            }
+            g_SfxTable[SFX_PIG_OINK].sampleCount = count;
+            g_SfxTable[SFX_PIG_OINK].pcmSamples = pcm;
+        } break;
+
+        default:
+            break;
+    }
+}
+
 static void synthesizeAllSounds(void) {
-    // 1. SFX_CLICK: UI button click (softened responsive click)
-    {
-        float duration = 0.035f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq = (t < 0.008f) ? 1200.0f : 750.0f;
-            float phase = 2.0f * (float)M_PI * freq * t;
-            // Soften square edge with smooth harmonic blend
-            float wave = sinf(phase) * 0.75f + sinf(phase * 2.0f) * 0.20f + sinf(phase * 3.0f) * 0.05f;
-            float attack = (t < 0.002f) ? (t / 0.002f) : 1.0f;
-            float env = attack * expf(-85.0f * t);
-            float sample = wave * env * 12000.0f; // Peak amplitude reduced from 18000 to 12000
-            pcm[i] = (int16_t)sample;
-        }
-        g_SfxTable[SFX_CLICK].sampleCount = count;
-        g_SfxTable[SFX_CLICK].pcmSamples = pcm;
-    }
-
-    // 2. SFX_MINE: Block dig chip sound (satisfying solid dig + soft low-pass envelope)
-    {
-        float duration = 0.095f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        float phase = 0.0f;
-        float noiseLp = 0.0f;
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            // Warm solid impact sweep
-            float freq = 160.0f * expf(-30.0f * t) + 42.0f;
-            phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-            float impact = (sinf(phase) * 0.80f + sinf(phase * 0.5f) * 0.20f) * expf(-24.0f * t);
-
-            // One-pole low-pass filter on crunch noise to remove treble clicks
-            float rawNoise = sfxRandomFloat();
-            noiseLp += 0.22f * (rawNoise - noiseLp);
-            float noiseEnv = expf(-38.0f * t);
-
-            // Decreased noise crunch gain (0.22 vs 0.45), boosted solid body impact (0.78 vs 0.55)
-            float attack = (t < 0.003f) ? (t / 0.003f) : 1.0f;
-            float mix = (impact * 0.78f + noiseLp * 0.22f * noiseEnv) * attack;
-            pcm[i] = (int16_t)(mix * 22000.0f);
-        }
-        g_SfxTable[SFX_MINE].sampleCount = count;
-        g_SfxTable[SFX_MINE].pcmSamples = pcm;
-    }
-
-    // 3. SFX_BREAK: Block destroyed (crumbling collapse with rounded sines/triangles)
-    {
-        float duration = 0.185f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        float phase = 0.0f;
-        float crackleLp = 0.0f;
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq = 220.0f * expf(-14.0f * t) + 40.0f;
-            phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-
-            // Rounded smooth sub/mid rumble without harsh hard-clipping
-            float rumble = sinf(phase) * 0.70f + sinf(phase * 0.5f) * 0.30f;
-
-            // Low-pass filtered crackle to eliminate harsh treble buzzing
-            float rawCrackle = sfxRandomFloat();
-            crackleLp += 0.26f * (rawCrackle - crackleLp);
-
-            float env = (t < 0.006f) ? (t / 0.006f) : expf(-11.5f * (t - 0.006f));
-            float mix = (rumble * 0.62f + crackleLp * 0.38f) * env;
-            pcm[i] = (int16_t)(mix * 23000.0f);
-        }
-        g_SfxTable[SFX_BREAK].sampleCount = count;
-        g_SfxTable[SFX_BREAK].pcmSamples = pcm;
-    }
-
-    // 4. SFX_PLACE: Block placed (solid thud)
-    {
-        float duration = 0.075f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        float phase = 0.0f;
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq = 210.0f * expf(-45.0f * t) + 42.0f;
-            phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-            float click = (t < 0.008f) ? (sfxRandomFloat() * 0.3f) : 0.0f;
-            float wave = sinf(phase) + click;
-            float env = expf(-36.0f * t);
-            pcm[i] = (int16_t)(wave * env * 22000.0f);
-        }
-        g_SfxTable[SFX_PLACE].sampleCount = count;
-        g_SfxTable[SFX_PLACE].pcmSamples = pcm;
-    }
-
-    // 5. SFX_STEP: Footstep (soft rustle/thud)
-    {
-        float duration = 0.055f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        float phase = 0.0f;
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq = 90.0f * expf(-30.0f * t) + 40.0f;
-            phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-            float thump = sinf(phase) * 0.6f;
-            float rustle = sfxRandomFloat() * 0.4f;
-            float env = expf(-55.0f * t);
-            pcm[i] = (int16_t)((thump + rustle) * env * 13500.0f);
-        }
-        g_SfxTable[SFX_STEP].sampleCount = count;
-        g_SfxTable[SFX_STEP].pcmSamples = pcm;
-    }
-
-    // 6. SFX_JUMP: Jump spring (sine upward sweep)
-    {
-        float duration = 0.160f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        float phase = 0.0f;
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float progress = t / duration;
-            float freq = 150.0f + 320.0f * powf(progress, 1.35f);
-            phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-            float wave = sinf(phase) * 0.8f + sinf(phase * 2.0f) * 0.2f;
-            float env = (t < 0.015f) ? (t / 0.015f) : expf(-9.0f * (t - 0.015f));
-            pcm[i] = (int16_t)(wave * env * 22000.0f);
-        }
-        g_SfxTable[SFX_JUMP].sampleCount = count;
-        g_SfxTable[SFX_JUMP].pcmSamples = pcm;
-    }
-
-    // 7. SFX_FLY: Creative flight whoosh (harmonic synth tone)
-    {
-        float duration = 0.260f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float vibrato = 1.0f + 0.025f * sinf(24.0f * (float)M_PI * t);
-            float f1 = 330.0f * vibrato; // E4
-            float f2 = 495.0f * vibrato; // B4
-            float f3 = 660.0f * vibrato; // E5
-            float tone = sinf(2.0f * (float)M_PI * f1 * t) * 0.45f +
-                         sinf(2.0f * (float)M_PI * f2 * t) * 0.30f +
-                         sinf(2.0f * (float)M_PI * f3 * t) * 0.25f;
-            float air = sfxRandomFloat() * 0.15f;
-            float env = (t < 0.035f) ? (t / 0.035f) : expf(-7.5f * (t - 0.035f));
-            pcm[i] = (int16_t)((tone + air) * env * 21000.0f);
-        }
-        g_SfxTable[SFX_FLY].sampleCount = count;
-        g_SfxTable[SFX_FLY].pcmSamples = pcm;
-    }
-
-    // 8. SFX_HIT: Mob hit (warm mid-frequency punch thud)
-    {
-        float duration = 0.125f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        float phase = 0.0f;
-        float punchLp = 0.0f;
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            // Lowered transient frequency sweep (240 Hz down to 55 Hz instead of 440 Hz)
-            float freq = 240.0f * expf(-32.0f * t) + 55.0f;
-            phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-
-            // Warm punch thud with rich fundamental + octave sub-body
-            float body = sinf(phase) * 0.70f + sinf(phase * 0.5f) * 0.30f;
-            // Gentle soft saturation (smooth overdrive without harsh clipping)
-            float thud = tanhf(body * 1.4f);
-
-            // Low-pass filtered impact noise for meaty punch transient
-            float rawNoise = (t < 0.035f) ? sfxRandomFloat() : 0.0f;
-            punchLp += 0.30f * (rawNoise - punchLp);
-
-            float env = expf(-22.0f * t);
-            float mix = (thud * 0.75f + punchLp * 0.25f) * env;
-            pcm[i] = (int16_t)(mix * 23500.0f);
-        }
-        g_SfxTable[SFX_HIT].sampleCount = count;
-        g_SfxTable[SFX_HIT].pcmSamples = pcm;
-    }
-
-    // 9. SFX_KILL: Mob death (cinematic deep explosion with low-frequency roll-off)
-    {
-        float duration = 0.360f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        float phase = 0.0f;
-        float holdNoise = 0.0f;
-        float noiseLp = 0.0f;
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            // Deep sub-bass sweep
-            float freq = 135.0f * expf(-7.5f * t) + 28.0f;
-            phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-            float subBass = sinf(phase) * 0.65f + sinf(phase * 0.5f) * 0.35f;
-
-            // Sample and hold noise softened with dynamic low-pass roll-off
-            if ((i % 5) == 0) {
-                holdNoise = sfxRandomFloat();
-            }
-            // Dynamic low-frequency roll-off: progressively filters treble as sound decays
-            float rollOffAlpha = 0.22f * expf(-3.5f * t) + 0.04f;
-            noiseLp += rollOffAlpha * (holdNoise - noiseLp);
-
-            float attack = (t < 0.015f) ? (t / 0.015f) : 1.0f;
-            float env = attack * expf(-5.8f * t);
-            float mix = (subBass * 0.65f + noiseLp * 0.35f) * env;
-            pcm[i] = (int16_t)(mix * 24000.0f);
-        }
-        g_SfxTable[SFX_KILL].sampleCount = count;
-        g_SfxTable[SFX_KILL].pcmSamples = pcm;
-    }
-
-    // 10. SFX_PICKUP: Item pickup (two-tone coin chime)
-    {
-        float duration = 0.150f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        float tSplit = 0.055f;
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq, relT, env;
-            if (t < tSplit) {
-                freq = 987.77f; // B5
-                relT = t;
-                env = expf(-18.0f * relT);
-            } else {
-                freq = 1318.51f; // E6
-                relT = t - tSplit;
-                env = expf(-14.0f * relT);
-            }
-            float phase = 2.0f * (float)M_PI * freq * t;
-            float tone = sinf(phase) * 0.85f + sinf(phase * 2.0f) * 0.15f;
-            pcm[i] = (int16_t)(tone * env * 22000.0f);
-        }
-        g_SfxTable[SFX_PICKUP].sampleCount = count;
-        g_SfxTable[SFX_PICKUP].pcmSamples = pcm;
-    }
-
-    // 11. SFX_CRAFT: Crafting success fanfare (bright tri-tone chime)
-    {
-        float duration = 0.380f;
-        int count = (int)(duration * AUDIO_SAMPLE_RATE);
-        int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
-        float t1 = 0.080f;
-        float t2 = 0.160f;
-        for (int i = 0; i < count; i++) {
-            float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq, env;
-            if (t < t1) {
-                freq = 1046.50f; // C6
-                env = expf(-14.0f * t);
-            } else if (t < t2) {
-                freq = 1318.51f; // E6
-                env = expf(-14.0f * (t - t1));
-            } else {
-                freq = 1567.98f; // G6
-                env = expf(-6.2f * (t - t2));
-            }
-            float phase = 2.0f * (float)M_PI * freq * t;
-            // Rich glockenspiel overtone structure
-            float tone = sinf(phase) * 0.80f + sinf(phase * 3.0f) * 0.15f + sinf(phase * 4.0f) * 0.05f;
-            pcm[i] = (int16_t)(tone * env * 23000.0f);
-        }
-        g_SfxTable[SFX_CRAFT].sampleCount = count;
-        g_SfxTable[SFX_CRAFT].pcmSamples = pcm;
+    for (int k = 0; k < SFX_COUNT; k++) {
+        generateSoundBuffer(k);
     }
 
     // Wrap each synthesized PCM stream into a valid in-memory RIFF WAV buffer
     for (int k = 0; k < SFX_COUNT; k++) {
         int sampleCount = g_SfxTable[k].sampleCount;
+        if (sampleCount <= 0 || g_SfxTable[k].pcmSamples == NULL) continue;
         int dataSize = sampleCount * sizeof(int16_t);
         int totalWavSize = sizeof(SfxWavHeader) + dataSize;
 

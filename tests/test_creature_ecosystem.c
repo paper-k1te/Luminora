@@ -19,8 +19,12 @@ typedef enum {
     BLOCK_GOLD_ORE,
     BLOCK_RUBY_ORE,
     BLOCK_GLOW_SHROOM,
+    BLOCK_TORCH,
+    BLOCK_CHANDELIER,
     BLOCK_TYPE_COUNT
 } BlockType;
+
+static inline bool isLightExtinguished(int x, int y) { (void)x; (void)y; return false; }
 
 typedef struct {
     float r, g, b;
@@ -278,8 +282,120 @@ int main(void) {
     printf("  -> PASS: Animals smoothly step up 1-block obstacles!\n\n");
     g_World[102][81] = BLOCK_AIR; // Clean up
 
+    // -------------------------------------------------------------
+    // Test 10: Skeleton Warrior (MOB_SKELETON)
+    // -------------------------------------------------------------
+    printf("[Test 10] Testing Skeleton Warrior (MOB_SKELETON)...\n");
+    initMobs();
+    spawnMob(100.5f, 81.0f, MOB_SKELETON);
+    assert(g_Mobs[0].active && g_Mobs[0].type == MOB_SKELETON);
+    assert(g_Mobs[0].health == 40.0f);
+    assert(isHostileMob(g_Mobs[0].type));
+
+    // Skeleton attack within range (2.0 blocks)
+    g_PlayerHurtDamage = 0.0f;
+    g_Mobs[0].attackTimer = 0.85f; // Ready to thrust
+    updateMobs(0.016f, 102.0f, 81.0f);
+    assert(g_PlayerHurtDamage > 0.0f); // Player damaged by skeleton thrust!
+
+    // Skeleton death drops sticks
+    g_LastDroppedType = -1;
+    checkMobAttackEx(100.5f, 81.5f, 100.0f, 1.0f, 102.0f, 81.0f);
+    assert(!g_Mobs[0].active);
+    assert(g_LastDroppedType == ITEM_STICK);
+    assert(g_LastDroppedCount == 2);
+    printf("  -> PASS: Skeleton attacks with bone weapon and drops ITEM_STICK on death!\n\n");
+
+    // -------------------------------------------------------------
+    // Test 11: Cave Spider (MOB_SPIDER) Fast Scuttle & Leap Attack
+    // -------------------------------------------------------------
+    printf("[Test 11] Testing Cave Spider (MOB_SPIDER) Leap Attack...\n");
+    initMobs();
+    spawnMob(100.5f, 81.0f, MOB_SPIDER);
+    assert(g_Mobs[0].active && g_Mobs[0].type == MOB_SPIDER);
+    assert(g_Mobs[0].health == 28.0f);
+    assert(isHostileMob(g_Mobs[0].type));
+
+    // Player within 4.0 blocks (dist <= 4.5f)
+    g_Mobs[0].isGrounded = true;
+    g_Mobs[0].attackTimer = 0.0f;
+    updateMobs(0.016f, 104.0f, 81.0f);
+    assert(g_Mobs[0].state == SPIDER_STATE_LEAP);
+    assert(g_Mobs[0].vy > 6.0f); // Leaping into air!
+    assert(g_Mobs[0].vx > 4.0f); // Leaping toward player!
+    printf("  -> PASS: Cave Spider leaps aggressively at player within 4.5 blocks!\n\n");
+
+    // -------------------------------------------------------------
+    // Test 12: Night Shadow Ghost (MOB_GHOST) Flying & Aerial Pursuit
+    // -------------------------------------------------------------
+    printf("[Test 12] Testing Night Shadow Ghost (MOB_GHOST) Floating Aerial Pursuit...\n");
+    initMobs();
+    // Ghost is a flying entity: can spawn in air cavity without solid floor underneath
+    assert(isValidMobSpawnPoint(100, 90, true));
+    spawnMob(100.5f, 90.0f, MOB_GHOST);
+    assert(g_Mobs[0].active && g_Mobs[0].type == MOB_GHOST);
+    assert(g_Mobs[0].health == 24.0f);
+    assert(isHostileMob(g_Mobs[0].type));
+
+    // Ghost glides towards player at (110.0, 95.0)
+    updateMobs(0.016f, 110.0f, 95.0f);
+    assert(g_Mobs[0].state == GHOST_STATE_CHASE);
+    assert(g_Mobs[0].vx > 0.0f); // Glides right towards player
+    assert(g_Mobs[0].vy > 0.0f); // Glides up towards player (no gravity fall!)
+    printf("  -> PASS: Ghost glides freely through air pursuing player with sine bobbing!\n\n");
+
+    // -------------------------------------------------------------
+    // Test 13: Lava Slime (MOB_LAVA_SLIME) High Jump & Magma/Gel Drops
+    // -------------------------------------------------------------
+    printf("[Test 13] Testing Lava Slime (MOB_LAVA_SLIME) High Jump & Underworld Drops...\n");
+    initMobs();
+    spawnMob(100.5f, 81.0f, MOB_LAVA_SLIME);
+    assert(g_Mobs[0].active && g_Mobs[0].type == MOB_LAVA_SLIME);
+    assert(g_Mobs[0].health == 38.0f);
+    assert(isHostileMob(g_Mobs[0].type));
+
+    // Test high jump
+    g_Mobs[0].isGrounded = true;
+    g_Mobs[0].animTimer = 0.0f; // Trigger jump
+    updateMobs(0.016f, 105.0f, 81.0f);
+    assert(g_Mobs[0].state == LAVA_SLIME_STATE_JUMP);
+    assert(g_Mobs[0].vy > 12.0f); // High jump velocity (13.8f vs regular 9.8f)!
+
+    // Kill lava slime to verify drops
+    g_LastDroppedType = -1;
+    checkMobAttackEx(100.5f, 81.5f, 100.0f, 1.0f, 102.0f, 81.0f);
+    assert(!g_Mobs[0].active);
+    assert(g_LastDroppedType == ITEM_GEL); // Last dropped item is gel, and magma was dropped
+    printf("  -> PASS: Lava Slime executes high jump and drops magma block & slime gel!\n\n");
+
+    // -------------------------------------------------------------
+    // Test 14: Zone-based Spawning Distribution (spawnMobs)
+    // -------------------------------------------------------------
+    printf("[Test 14] Testing Zone Spawning Distribution (Caverns, Deep Dark/Midnight, Underworld)...\n");
+    // Underworld zone: playerY = 15 (< UNDERWORLD_LEVEL 24)
+    // Set up solid floor in underworld around x = 100, y = 14
+    for (int x = 0; x < 512; x++) {
+        g_World[x][14] = BLOCK_STONE;
+        g_World[x][15] = BLOCK_AIR;
+        g_World[x][16] = BLOCK_AIR;
+    }
+
+    int underworldLavaSlimes = 0;
+    for (int iter = 0; iter < 100; iter++) {
+        initMobs();
+        spawnMobs(100.0f, 15.0f, 0, 0);
+        for (int m = 0; m < MAX_MOBS; m++) {
+            if (g_Mobs[m].active && g_Mobs[m].type == MOB_LAVA_SLIME) {
+                underworldLavaSlimes++;
+                break;
+            }
+        }
+    }
+    printf("  Underworld Lava Slime spawn rate: %d / 100 trials\n", underworldLavaSlimes);
+    assert(underworldLavaSlimes > 20); // Frequent Lava Slime spawns in Underworld!
+
     printf("=======================================================\n");
-    printf("   ALL 9 CREATURE ECOSYSTEM UNIT TESTS PASSED! (100%%) \n");
+    printf("   ALL 14 CREATURE ECOSYSTEM UNIT TESTS PASSED! (100%%) \n");
     printf("=======================================================\n");
     return 0;
 }

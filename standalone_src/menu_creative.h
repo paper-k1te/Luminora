@@ -1243,7 +1243,7 @@ static void renderMainMenu(void) {
 
     // 4. Footer credits
     float footY = (float)WINDOW_HEIGHT - 28.0f;
-    const char* footText = LOC("Luminora｜流明洛原 v0.3.0 独立引擎 | [F11] 切换全屏/窗口 | [ESC] 暂停菜单", "Luminora Standalone Engine v0.3.0 | [F11] Toggle Fullscreen | [ESC] Pause Menu");
+    const char* footText = LOC("Luminora｜流明洛原 v0.4.0 独立引擎 | [F11] 切换全屏/窗口 | [ESC] 暂停菜单", "Luminora Standalone Engine v0.4.0 | [F11] Toggle Fullscreen | [ESC] Pause Menu");
     float footW = getTextWidth(footText, false);
     drawText(((float)WINDOW_WIDTH - footW) * 0.5f, footY, footText, 0.65f, 0.70f, 0.78f, false);
 

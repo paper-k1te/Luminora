@@ -396,39 +396,184 @@ static void paint_clay(unsigned char* diff, int tile_idx) {
     }
 }
 
-static void paint_ore(unsigned char* diff, unsigned char* emit, int tile_idx,
-                      unsigned char r1, unsigned char g1, unsigned char b1,
-                      unsigned char r2, unsigned char g2, unsigned char b2,
-                      bool isEmissive) {
+
+// ---------------------------------------------------------------------------
+// Enhanced High-Contrast Ore Painters (Unique patterns & large nuggets)
+// ---------------------------------------------------------------------------
+
+static void apply_ore_pattern(unsigned char* diff, unsigned char* emit, int tile_idx,
+                              const char* pattern[16],
+                              const unsigned char pal[6][4],
+                              bool isEmissive) {
     paint_stone(diff, tile_idx);
 
-    int clusters[][3] = {
-        {3, 11, 0}, {4, 10, 0}, {5, 10, 0}, {6, 11, 0},
-        {4, 11, 1}, {5, 11, 1}, {4, 12, 2}, {5, 12, 1},
-        {4, 12, 3}, // Specular glint
-        {9, 4, 0}, {10, 3, 0}, {11, 3, 0}, {12, 4, 0}, {13, 5, 0},
-        {10, 4, 1}, {11, 4, 1}, {12, 5, 1}, {11, 5, 2},
-        {11, 5, 3}, // Specular glint
-        {7, 6, 0}, {8, 6, 1}, {7, 7, 2}, {8, 7, 3}
-    };
-    int numClusters = sizeof(clusters) / sizeof(clusters[0]);
-
-    for (int i = 0; i < numClusters; i++) {
-        int gx = clusters[i][0];
-        int gy = clusters[i][1];
-        int t = clusters[i][2];
-
-        unsigned char r, g, b;
-        if (t == 0)      { r = 20; g = 20; b = 20; }
-        else if (t == 1) { r = r1; g = g1; b = b1; }
-        else if (t == 2) { r = r2; g = g2; b = b2; }
-        else             { r = 255; g = 255; b = 255; } // Star glint
-
-        atlas_set_pixel(diff, tile_idx, gx, gy, r, g, b, 255);
-        if (isEmissive && t >= 1 && emit) {
-            atlas_set_pixel(emit, tile_idx, gx, gy, r, g, b, 255);
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            char c = pattern[y][x];
+            if (c >= '1' && c <= '5') {
+                int idx = c - '0';
+                atlas_set_pixel(diff, tile_idx, x, y, pal[idx][0], pal[idx][1], pal[idx][2], 255);
+                if (isEmissive && emit && idx >= 2) {
+                    atlas_set_pixel(emit, tile_idx, x, y, pal[idx][0], pal[idx][1], pal[idx][2], 255);
+                }
+            }
         }
     }
+}
+
+// 1. Coal Ore: Distinct chunky jet-black/charcoal clusters on stone
+static void paint_coal_ore(unsigned char* diff, int tile_idx) {
+    static const char* coal_pattern[16] = {
+        "...1221.........",
+        "..123321...121..",
+        ".12344321.13421.",
+        ".13454321124431.",
+        "..1234321.13421.",
+        "...12211...121..",
+        ".........1221...",
+        "..121...123321..",
+        ".12321..1345431.",
+        ".13431..1245421.",
+        "..121....123321.",
+        ".......1211221..",
+        "......123321....",
+        ".....12345321...",
+        ".....12344321...",
+        "......123321...."
+    };
+    static const unsigned char coal_pal[6][4] = {
+        {0, 0, 0, 0},
+        {18, 18, 20, 255},   // 1: Deep obsidian crevice / outline
+        {34, 36, 40, 255},   // 2: Dark jet-black body
+        {56, 60, 68, 255},   // 3: Charcoal mid-tone
+        {90, 96, 108, 255},  // 4: Slate carbon highlight
+        {130, 138, 150, 255} // 5: Specular carbon facet
+    };
+    apply_ore_pattern(diff, NULL, tile_idx, coal_pattern, coal_pal, false);
+}
+
+// 2. Iron Ore: Warm metallic bronze/rust diagonal mineral bands with specular sheen
+static void paint_iron_ore(unsigned char* diff, int tile_idx) {
+    static const char* iron_pattern[16] = {
+        "..........123452",
+        "........12345431",
+        "......123454321.",
+        "....123454321...",
+        "..123454321.121.",
+        ".12454321..12321",
+        "12454321..123431",
+        "2454321..1234531",
+        "134321..12345321",
+        ".121...12345321.",
+        "......12345321..",
+        "....12345321....",
+        "..12345321......",
+        ".1234321........",
+        "123321..........",
+        "121............."
+    };
+    static const unsigned char iron_pal[6][4] = {
+        {0, 0, 0, 0},
+        {70, 36, 20, 255},    // 1: Deep rust shadow crevice
+        {132, 75, 42, 255},   // 2: Oxidized terracotta iron
+        {186, 118, 72, 255},  // 3: Warm metallic bronze
+        {228, 168, 122, 255}, // 4: Raw metallic bronze sheen
+        {255, 235, 210, 255}  // 5: Specular metallic glint
+    };
+    apply_ore_pattern(diff, NULL, tile_idx, iron_pattern, iron_pal, false);
+}
+
+// 3. Gold Ore: Large chunky gleaming golden nuggets (255, 215, 0) with bright yellow highlights
+static void paint_gold_ore(unsigned char* diff, int tile_idx) {
+    static const char* gold_pattern[16] = {
+        "...........1221.",
+        "..1221....123431",
+        ".123421...134541",
+        ".134531...124421",
+        "..12321....1221.",
+        "....11..........",
+        "......123321....",
+        ".....12345421...",
+        "....124455431...",
+        "....1345544321..",
+        ".....12344321...",
+        ".121..123321....",
+        "12421...11......",
+        "13431.......121.",
+        ".1221......12421",
+        "..11.......12321"
+    };
+    static const unsigned char gold_pal[6][4] = {
+        {0, 0, 0, 0},
+        {115, 75, 5, 255},    // 1: Deep amber cavity
+        {190, 138, 12, 255},  // 2: Rich gold shadow
+        {255, 215, 0, 255},   // 3: Gleaming pure golden nugget
+        {255, 242, 75, 255},  // 4: Bright yellow highlight
+        {255, 255, 200, 255}  // 5: Brilliant white-gold star sparkle
+    };
+    apply_ore_pattern(diff, NULL, tile_idx, gold_pattern, gold_pal, false);
+}
+
+// 4. Diamond Ore: Vibrant crystalline cyan/aquamarine shards (60, 240, 255) with pure white sparkle facets
+static void paint_diamond_ore(unsigned char* diff, unsigned char* emit, int tile_idx) {
+    static const char* diamond_pattern[16] = {
+        "...121..........",
+        "..12421....121..",
+        "..13531...12431.",
+        "...121...124531.",
+        "........1235421.",
+        "...121..134431..",
+        "..12421..1221...",
+        ".1245321........",
+        ".1355431...121..",
+        "..134321..12431.",
+        "...1221..124531.",
+        ".........1345421",
+        "....121...124321",
+        "...12421...1221.",
+        "...13431........",
+        "....121........."
+    };
+    static const unsigned char diamond_pal[6][4] = {
+        {0, 0, 0, 0},
+        {14, 58, 92, 255},    // 1: Deep abyssal blue shadow
+        {18, 155, 205, 255},  // 2: Rich aquamarine crystal
+        {60, 240, 255, 255},  // 3: Vibrant crystalline cyan (60, 240, 255)
+        {175, 250, 255, 255}, // 4: Electric ice-cyan facet
+        {255, 255, 255, 255}  // 5: Pure white sparkle facet
+    };
+    apply_ore_pattern(diff, emit, tile_idx, diamond_pattern, diamond_pal, true);
+}
+
+// 5. Ruby Ore: Rich scarlet and crimson gemstone facets (255, 30, 70) with deep burgundy shading
+static void paint_ruby_ore(unsigned char* diff, unsigned char* emit, int tile_idx) {
+    static const char* ruby_pattern[16] = {
+        ".........1221...",
+        "..121...124531..",
+        ".12421..1355421.",
+        ".13541...134421.",
+        "..1221....1221..",
+        "................",
+        "...123321.......",
+        "..12454321......",
+        "..13554431......",
+        "..12443321.121..",
+        "...12211..12431.",
+        ".........1245321",
+        "....121..1355421",
+        "...12421..123321",
+        "...13431...1221.",
+        "....121........."
+    };
+    static const unsigned char ruby_pal[6][4] = {
+        {0, 0, 0, 0},
+        {70, 6, 26, 255},     // 1: Deep burgundy cavity / shading
+        {145, 14, 46, 255},   // 2: Dark wine crimson
+        {228, 26, 65, 255},   // 3: Rich scarlet / crimson
+        {255, 68, 110, 255},  // 4: Fiery bright ruby facet (255, 68, 110)
+        {255, 210, 225, 255}  // 5: Specular pink-white diamond gleam
+    };
+    apply_ore_pattern(diff, emit, tile_idx, ruby_pattern, ruby_pal, true);
 }
 
 static void paint_brick(unsigned char* diff, int tile_idx) {
@@ -1060,12 +1205,12 @@ static inline void GenerateTextureAtlasRGBA(unsigned char* outRgba, unsigned cha
     paint_ice(outRgba, 10);
     paint_clay(outRgba, 11);
 
-    // Ores
-    paint_ore(outRgba, outEmission, 12, 49, 52, 59, 86, 91, 99, false);   // Coal Ore
-    paint_ore(outRgba, outEmission, 13, 170, 104, 56, 212, 149, 99, false); // Iron Ore
-    paint_ore(outRgba, outEmission, 14, 240, 184, 12, 255, 222, 67, false); // Gold Ore
-    paint_ore(outRgba, outEmission, 15, 0, 212, 235, 122, 233, 247, true);  // Diamond Ore
-    paint_ore(outRgba, outEmission, 16, 196, 8, 40, 255, 43, 79, true);    // Ruby Ore
+    // Ores: Enhanced large-nugget, high-contrast, uniquely patterned pixel art
+    paint_coal_ore(outRgba, 12);
+    paint_iron_ore(outRgba, 13);
+    paint_gold_ore(outRgba, 14);
+    paint_diamond_ore(outRgba, outEmission, 15);
+    paint_ruby_ore(outRgba, outEmission, 16);
 
     paint_brick(outRgba, 17);
     paint_wood_plank(outRgba, 18);

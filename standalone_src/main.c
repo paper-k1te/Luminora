@@ -65,6 +65,7 @@ static inline int getResPresetIndex(void) { return g_ResPresetIndex; }
 #define MAX_FLOATING_TEXTS 32
 #define MAX_MODIFIED_BLOCKS 65536
 #define HOTBAR_SLOTS     9
+#define BACKPACK_SLOTS   27
 
 // ============================================================================
 // Block Types & Definition
@@ -124,30 +125,30 @@ typedef struct {
 
 static BlockDef g_BlockDefs[BLOCK_TYPE_COUNT] = {
     { "Air",            "空气",       "无",         0.0f, 0.0f, 0.0f,  0.0f, false, true,  false, 0,0,0 },
-    { "Grass Block",    "草方块",     "泥土",       0.26f, 0.68f, 0.22f, 0.5f, true,  false, false, 0,0,0 },
-    { "Dirt Block",     "泥土",       "泥土",       0.52f, 0.35f, 0.22f, 0.5f, true,  false, false, 0,0,0 },
-    { "Stone Block",    "石块",       "原石",       0.50f, 0.52f, 0.54f, 2.0f, true,  false, false, 0,0,0 },
-    { "Wood Log",       "原木",       "原木",       0.58f, 0.38f, 0.20f, 1.2f, false, true,  false, 0,0,0 },
-    { "Leaves",         "树叶",       "树叶",       0.18f, 0.55f, 0.20f, 0.25f, true,  true,  false, 0,0,0 },
-    { "Sand Block",     "沙块",       "沙块",       0.88f, 0.78f, 0.52f, 0.4f, true,  false, false, 0,0,0 },
-    { "Sandstone",      "砂岩",       "砂岩",       0.75f, 0.64f, 0.42f, 1.2f, true,  false, false, 0,0,0 },
-    { "Cactus",         "仙人掌",     "仙人掌",     0.22f, 0.62f, 0.28f, 0.5f, true,  false, false, 0,0,0 },
-    { "Snow Block",     "雪块",       "雪球",       0.92f, 0.95f, 0.98f, 0.3f, true,  false, false, 0,0,0 },
-    { "Ice Block",      "坚冰",       "冰块",       0.65f, 0.85f, 0.95f, 0.8f, true,  true,  false, 0,0,0 },
-    { "Clay Block",     "粘土",       "粘土块",     0.68f, 0.52f, 0.45f, 0.7f, true,  false, false, 0,0,0 },
-    { "Coal Ore",       "煤矿石",     "煤炭",       0.25f, 0.25f, 0.27f, 2.5f, true,  false, false, 0,0,0 },
-    { "Iron Ore",       "铁矿石",     "铁矿",       0.72f, 0.58f, 0.50f, 3.2f, true,  false, false, 0,0,0 },
-    { "Gold Ore",       "金矿石",     "金矿",       0.95f, 0.82f, 0.22f, 4.0f, true,  false, false, 0,0,0 },
-    { "Diamond Ore",    "钻石矿石",   "璀璨钻石",   0.28f, 0.88f, 0.95f, 5.5f, true,  false, true,  0.2f, 0.6f, 0.8f },
-    { "Ruby Ore",       "红宝石矿",   "红宝石",     0.92f, 0.18f, 0.28f, 5.0f, true,  false, true,  0.8f, 0.1f, 0.2f },
-    { "Stone Brick",    "石砖",       "石砖",       0.72f, 0.38f, 0.30f, 2.0f, true,  false, false, 0,0,0 },
-    { "Wood Plank",     "木板",       "木板",       0.68f, 0.48f, 0.28f, 1.2f, true,  false, false, 0,0,0 },
+    { "Grass Block",    "草方块",     "泥土",       0.26f, 0.68f, 0.22f, 0.75f, true,  false, false, 0,0,0 },
+    { "Dirt Block",     "泥土",       "泥土",       0.52f, 0.35f, 0.22f, 0.75f, true,  false, false, 0,0,0 },
+    { "Stone Block",    "石块",       "原石",       0.50f, 0.52f, 0.54f, 3.0f, true,  false, false, 0,0,0 },
+    { "Wood Log",       "原木",       "原木",       0.58f, 0.38f, 0.20f, 1.8f, false, true,  false, 0,0,0 },
+    { "Leaves",         "树叶",       "树叶",       0.18f, 0.55f, 0.20f, 0.38f, true,  true,  false, 0,0,0 },
+    { "Sand Block",     "沙块",       "沙块",       0.88f, 0.78f, 0.52f, 0.6f, true,  false, false, 0,0,0 },
+    { "Sandstone",      "砂岩",       "砂岩",       0.75f, 0.64f, 0.42f, 1.8f, true,  false, false, 0,0,0 },
+    { "Cactus",         "仙人掌",     "仙人掌",     0.22f, 0.62f, 0.28f, 0.75f, true,  false, false, 0,0,0 },
+    { "Snow Block",     "雪块",       "雪球",       0.92f, 0.95f, 0.98f, 0.45f, true,  false, false, 0,0,0 },
+    { "Ice Block",      "坚冰",       "冰块",       0.65f, 0.85f, 0.95f, 1.2f, true,  true,  false, 0,0,0 },
+    { "Clay Block",     "粘土",       "粘土块",     0.68f, 0.52f, 0.45f, 1.0f, true,  false, false, 0,0,0 },
+    { "Coal Ore",       "煤矿石",     "煤炭",       0.25f, 0.25f, 0.27f, 3.75f, true,  false, false, 0,0,0 },
+    { "Iron Ore",       "铁矿石",     "铁矿",       0.72f, 0.58f, 0.50f, 4.8f, true,  false, false, 0,0,0 },
+    { "Gold Ore",       "金矿石",     "金矿",       0.95f, 0.82f, 0.22f, 6.0f, true,  false, false, 0,0,0 },
+    { "Diamond Ore",    "钻石矿石",   "璀璨钻石",   0.28f, 0.88f, 0.95f, 8.25f, true,  false, true,  0.2f, 0.6f, 0.8f },
+    { "Ruby Ore",       "红宝石矿",   "红宝石",     0.92f, 0.18f, 0.28f, 7.5f, true,  false, true,  0.8f, 0.1f, 0.2f },
+    { "Stone Brick",    "石砖",       "石砖",       0.72f, 0.38f, 0.30f, 3.0f, true,  false, false, 0,0,0 },
+    { "Wood Plank",     "木板",       "木板",       0.68f, 0.48f, 0.28f, 1.8f, true,  false, false, 0,0,0 },
     { "Glass Block",    "透明玻璃",   "玻璃",       0.75f, 0.90f, 0.98f, 0.3f, true,  true,  false, 0,0,0 },
     { "Torch",          "火把",       "火把",       1.00f, 0.85f, 0.25f, 0.1f, false, true,  true,  1.0f, 0.85f, 0.3f },
-    { "Obsidian",       "黑曜石",     "黑曜石",     0.16f, 0.12f, 0.22f, 12.0f, true,  false, false, 0,0,0 },
-    { "Magma Block",    "熔岩块",     "岩浆块",     0.90f, 0.32f, 0.08f, 2.5f, true,  false, true,  0.9f, 0.35f, 0.1f },
-    { "Mossy Stone",    "苔石",       "苔石",       0.42f, 0.52f, 0.40f, 1.6f, true,  false, false, 0,0,0 },
-    { "Mud Block",      "泥浆块",     "泥浆",       0.40f, 0.30f, 0.22f, 0.5f, true,  false, false, 0,0,0 },
+    { "Obsidian",       "黑曜石",     "黑曜石",     0.16f, 0.12f, 0.22f, 18.0f, true,  false, false, 0,0,0 },
+    { "Magma Block",    "熔岩块",     "岩浆块",     0.90f, 0.32f, 0.08f, 3.75f, true,  false, true,  0.9f, 0.35f, 0.1f },
+    { "Mossy Stone",    "苔石",       "苔石",       0.42f, 0.52f, 0.40f, 2.4f, true,  false, false, 0,0,0 },
+    { "Mud Block",      "泥浆块",     "泥浆",       0.40f, 0.30f, 0.22f, 0.75f, true,  false, false, 0,0,0 },
     { "Glow Shroom",    "发光蘑菇",   "发光蘑菇",   0.15f, 0.82f, 0.88f, 0.2f, false, true,  true,  0.2f, 0.9f, 0.95f },
     { "Bedrock",        "基岩",       "基岩",       0.12f, 0.12f, 0.14f,-1.0f, true,  false, false, 0,0,0 },
     { "Work Bench",     "工作台",     "工作台",     0.68f, 0.48f, 0.28f, 1.0f, true,  false, false, 0,0,0 },
@@ -309,8 +310,10 @@ static Particle g_Particles[MAX_PARTICLES];
 // Player & Inventory
 // ============================================================================
 typedef struct {
-    int type; // BlockType (0..26) or ToolItemID (101..116)
+    int type; // BlockType (0..26), ToolItemID (101..116), or ArmorItemID (120..135)
     int count;
+    int durability;
+    int maxDurability;
 } InventorySlot;
 
 typedef struct {
@@ -335,7 +338,11 @@ static Player g_Player;
 static int g_SurfaceHeight[WORLD_WIDTH];
 static int g_Seed = 1337;
 static InventorySlot g_Hotbar[HOTBAR_SLOTS];
+static InventorySlot g_Backpack[BACKPACK_SLOTS];
 static int g_ActiveSlot = 0;
+
+static int g_EquippedArmor[4] = { 0, 0, 0, 0 };
+static int g_ArmorDurability[4] = { 0, 0, 0, 0 };
 
 // Camera & World Time
 static float g_CamX = 0.0f;
@@ -631,23 +638,62 @@ static void spawnDroppedItem(float x, float y, BlockType type, int count) {
 }
 
 static bool addToInventory(BlockType type, int count) {
+    if (type == BLOCK_AIR || count <= 0) return true;
+
     char buf[64];
     snprintf(buf, sizeof(buf), "+%d %s", count, (getLanguage() == LANG_ZH) ? g_BlockDefs[type].chineseName : g_BlockDefs[type].name);
     spawnFloatingText(buf, g_Player.x, g_Player.y + 1.8f, g_BlockDefs[type].r, g_BlockDefs[type].g, g_BlockDefs[type].b);
 
-    for (int i = 0; i < HOTBAR_SLOTS; i++) {
+    int remaining = count;
+
+    // a) Try stacking in g_Hotbar[0..8]
+    for (int i = 0; i < HOTBAR_SLOTS && remaining > 0; i++) {
         if (g_Hotbar[i].type == (int)type && g_Hotbar[i].count < 999) {
-            g_Hotbar[i].count += count;
-            return true;
+            int space = 999 - g_Hotbar[i].count;
+            int take = (remaining < space) ? remaining : space;
+            g_Hotbar[i].count += take;
+            remaining -= take;
         }
     }
-    for (int i = 0; i < HOTBAR_SLOTS; i++) {
+    if (remaining <= 0) return true;
+
+    // b) If not fully placed, try stacking in g_Backpack[0..26]
+    for (int i = 0; i < BACKPACK_SLOTS && remaining > 0; i++) {
+        if (g_Backpack[i].type == (int)type && g_Backpack[i].count < 999) {
+            int space = 999 - g_Backpack[i].count;
+            int take = (remaining < space) ? remaining : space;
+            g_Backpack[i].count += take;
+            remaining -= take;
+        }
+    }
+    if (remaining <= 0) return true;
+
+    // c) If still not placed, try finding an empty slot in g_Hotbar[0..8]
+    for (int i = 0; i < HOTBAR_SLOTS && remaining > 0; i++) {
         if (g_Hotbar[i].type == BLOCK_AIR || g_Hotbar[i].count <= 0) {
-            g_Hotbar[i].type = type;
-            g_Hotbar[i].count = count;
-            return true;
+            int take = (remaining < 999) ? remaining : 999;
+            g_Hotbar[i].type = (int)type;
+            g_Hotbar[i].count = take;
+            g_Hotbar[i].durability = 0;
+            g_Hotbar[i].maxDurability = 0;
+            remaining -= take;
         }
     }
+    if (remaining <= 0) return true;
+
+    // d) If still not placed, try finding an empty slot in g_Backpack[0..26]
+    for (int i = 0; i < BACKPACK_SLOTS && remaining > 0; i++) {
+        if (g_Backpack[i].type == BLOCK_AIR || g_Backpack[i].count <= 0) {
+            int take = (remaining < 999) ? remaining : 999;
+            g_Backpack[i].type = (int)type;
+            g_Backpack[i].count = take;
+            g_Backpack[i].durability = 0;
+            g_Backpack[i].maxDurability = 0;
+            remaining -= take;
+        }
+    }
+    if (remaining <= 0) return true;
+
     return false;
 }
 
@@ -930,10 +976,20 @@ static bool loadWorldSlot(int slotIdx) {
     for (int i = 0; i < 9; i++) {
         g_Hotbar[i].type = hdr.hotbar[i].type;
         g_Hotbar[i].count = hdr.hotbar[i].count;
+        int maxD = getMaxDurability(g_Hotbar[i].type);
+        g_Hotbar[i].durability = maxD;
+        g_Hotbar[i].maxDurability = maxD;
     }
     for (int i = 0; i < 27; i++) {
         g_Backpack[i].type = hdr.backpack[i].type;
         g_Backpack[i].count = hdr.backpack[i].count;
+        int maxD = getMaxDurability(g_Backpack[i].type);
+        g_Backpack[i].durability = maxD;
+        g_Backpack[i].maxDurability = maxD;
+    }
+    for (int i = 0; i < 4; i++) {
+        g_EquippedArmor[i] = 0;
+        g_ArmorDurability[i] = 0;
     }
 
     int count = hdr.modifiedBlockCount;
@@ -993,29 +1049,40 @@ static void startNewWorld(int slotIdx, const char* name, int mode, int seed) {
     g_Player.isDead = false;
     g_Player.deathTimer = 0.0f;
 
+    for (int i = 0; i < 4; i++) {
+        g_EquippedArmor[i] = 0;
+        g_ArmorDurability[i] = 0;
+    }
+
     // Requirement 3: In Survival Mode start from 0 items (empty hotbar & backpack)
     if (mode == 0) { // Survival
         for (int i = 0; i < HOTBAR_SLOTS; i++) {
             g_Hotbar[i].type = BLOCK_AIR;
             g_Hotbar[i].count = 0;
+            g_Hotbar[i].durability = 0;
+            g_Hotbar[i].maxDurability = 0;
         }
         for (int i = 0; i < BACKPACK_SLOTS; i++) {
             g_Backpack[i].type = BLOCK_AIR;
             g_Backpack[i].count = 0;
+            g_Backpack[i].durability = 0;
+            g_Backpack[i].maxDurability = 0;
         }
     } else { // Creative
-        g_Hotbar[0] = (InventorySlot){ ITEM_TOOL_DIAMOND_PICKAXE, 1 };
-        g_Hotbar[1] = (InventorySlot){ ITEM_TOOL_DIAMOND_SWORD, 1 };
-        g_Hotbar[2] = (InventorySlot){ BLOCK_DIRT, 999 };
-        g_Hotbar[3] = (InventorySlot){ BLOCK_STONE, 999 };
-        g_Hotbar[4] = (InventorySlot){ BLOCK_TORCH, 999 };
-        g_Hotbar[5] = (InventorySlot){ BLOCK_GLASS, 999 };
-        g_Hotbar[6] = (InventorySlot){ BLOCK_BRICK, 999 };
-        g_Hotbar[7] = (InventorySlot){ BLOCK_GLOW_SHROOM, 999 };
-        g_Hotbar[8] = (InventorySlot){ BLOCK_WOOD_PLANK, 999 };
+        g_Hotbar[0] = (InventorySlot){ ITEM_TOOL_DIAMOND_PICKAXE, 1, 1560, 1560 };
+        g_Hotbar[1] = (InventorySlot){ ITEM_TOOL_DIAMOND_SWORD, 1, 1560, 1560 };
+        g_Hotbar[2] = (InventorySlot){ BLOCK_DIRT, 999, 0, 0 };
+        g_Hotbar[3] = (InventorySlot){ BLOCK_STONE, 999, 0, 0 };
+        g_Hotbar[4] = (InventorySlot){ BLOCK_TORCH, 999, 0, 0 };
+        g_Hotbar[5] = (InventorySlot){ BLOCK_GLASS, 999, 0, 0 };
+        g_Hotbar[6] = (InventorySlot){ BLOCK_BRICK, 999, 0, 0 };
+        g_Hotbar[7] = (InventorySlot){ BLOCK_GLOW_SHROOM, 999, 0, 0 };
+        g_Hotbar[8] = (InventorySlot){ BLOCK_WOOD_PLANK, 999, 0, 0 };
         for (int i = 0; i < BACKPACK_SLOTS; i++) {
             g_Backpack[i].type = BLOCK_AIR;
             g_Backpack[i].count = 0;
+            g_Backpack[i].durability = 0;
+            g_Backpack[i].maxDurability = 0;
         }
     }
 
@@ -1026,17 +1093,40 @@ void onPlayerHurt(float damage, float sourceX) {
     if (getGameMode() != MODE_SURVIVAL) return;
     if (g_Player.isDead || g_Player.hurtTimer > 0.0f) return;
 
-    g_Player.health -= damage;
+    float reduction = getPlayerArmorReduction();
+    float actualDamage = damage * (1.0f - reduction);
+    if (actualDamage < 1.0f && damage > 0.0f) actualDamage = 1.0f;
+
+    g_Player.health -= actualDamage;
     g_Player.hurtTimer = 0.65f;
     g_Player.timeSinceCombat = 0.0f;
     playSound(SFX_HIT);
+
+    // Each equipped armor piece loses 1 durability
+    for (int i = 0; i < 4; i++) {
+        if (g_EquippedArmor[i] != 0 && g_ArmorDurability[i] > 0) {
+            g_ArmorDurability[i]--;
+            if (g_ArmorDurability[i] <= 0) {
+                int brokenId = g_EquippedArmor[i];
+                g_EquippedArmor[i] = 0;
+                g_ArmorDurability[i] = 0;
+                playSound(SFX_BREAK);
+                char breakNotif[128];
+                snprintf(breakNotif, sizeof(breakNotif), "%s%s%s",
+                         LOC("[防具已损坏: ", "[Armor Broken: "),
+                         getItemLocalizedName(brokenId),
+                         "]");
+                showNotification(breakNotif, 1.0f, 0.35f, 0.35f);
+            }
+        }
+    }
 
     float pushDir = (g_Player.x >= sourceX) ? 1.0f : -1.0f;
     g_Player.vx = pushDir * 6.5f;
     g_Player.vy = 5.8f;
 
     char dmgStr[16];
-    snprintf(dmgStr, sizeof(dmgStr), "-%d", (int)damage);
+    snprintf(dmgStr, sizeof(dmgStr), "-%d", (int)(actualDamage + 0.5f));
     spawnFloatingText(dmgStr, g_Player.x, g_Player.y + 1.8f, 1.0f, 0.2f, 0.2f);
 
     if (g_Player.health <= 0.0f) {
@@ -1409,6 +1499,11 @@ static void updateInteraction(float dt) {
     float mouseWX, mouseWY;
     screenToWorld(g_MouseScreenX, g_MouseScreenY, &mouseWX, &mouseWY);
 
+    // Immediately face the target/mouse coordinate when attacking or interacting with mouse
+    if (g_MouseLeft) {
+        g_Player.isFacingRight = (mouseWX >= g_Player.x);
+    }
+
     static float s_AttackCooldown = 0.0f;
     s_AttackCooldown -= dt;
     if (g_MouseLeft && s_AttackCooldown <= 0.0f) {
@@ -1419,6 +1514,21 @@ static void updateInteraction(float dt) {
             s_AttackCooldown = 0.20f;
             g_MiningProgress = 0.0f;
             g_Player.timeSinceCombat = 0.0f;
+
+            if (getGameMode() == MODE_SURVIVAL) {
+                InventorySlot* slot = &g_Hotbar[g_ActiveSlot];
+                if (slot->type != BLOCK_AIR && slot->maxDurability > 0 && isToolItem(slot->type)) {
+                    slot->durability--;
+                    if (slot->durability <= 0) {
+                        slot->type = BLOCK_AIR;
+                        slot->count = 0;
+                        slot->durability = 0;
+                        slot->maxDurability = 0;
+                        playSound(SFX_BREAK);
+                        showNotification(LOC("[工具已损坏！]", "[Tool Broken!]"), 1.0f, 0.35f, 0.35f);
+                    }
+                }
+            }
             return;
         }
     }
@@ -1431,6 +1541,43 @@ static void updateInteraction(float dt) {
     float dist = sqrtf(dx * dx + dy * dy);
 
     g_TargetValid = (dist <= REACH_DISTANCE) && (g_TargetX >= 0 && g_TargetX < WORLD_WIDTH && g_TargetY >= 0 && g_TargetY < WORLD_HEIGHT);
+
+    // Line-of-sight occlusion: trace from player eye to target block center
+    if (g_TargetValid) {
+        float eyeX = g_Player.x;
+        float eyeY = g_Player.y + 1.2f;
+        float targetCenterX = (float)g_TargetX + 0.5f;
+        float targetCenterY = (float)g_TargetY + 0.5f;
+        float rayDx = targetCenterX - eyeX;
+        float rayDy = targetCenterY - eyeY;
+        float rayDist = sqrtf(rayDx * rayDx + rayDy * rayDy);
+
+        if (rayDist > 0.001f) {
+            float step = 0.2f;
+            float curDist = step;
+            while (curDist < rayDist) {
+                float t = curDist / rayDist;
+                float rx = eyeX + rayDx * t;
+                float ry = eyeY + rayDy * t;
+                int bx = (int)floorf(rx);
+                int by = (int)floorf(ry);
+                if (bx != g_TargetX || by != g_TargetY) {
+                    if (bx >= 0 && bx < WORLD_WIDTH && by >= 0 && by < WORLD_HEIGHT) {
+                        if (isSolidBlock(bx, by)) {
+                            g_TargetValid = false;
+                            break;
+                        }
+                    }
+                }
+                curDist += step;
+            }
+        }
+    }
+
+    // Immediately turn to face the target/mouse coordinate when mining, attacking or hovering valid target
+    if (g_MouseLeft || g_TargetValid) {
+        g_Player.isFacingRight = (mouseWX >= g_Player.x);
+    }
 
     if (!g_TargetValid) {
         g_MiningProgress = 0.0f;
@@ -1488,6 +1635,21 @@ static void updateInteraction(float dt) {
                 g_World[g_TargetX][g_TargetY] = BLOCK_AIR;
                 recordBlockDelta(g_TargetX, g_TargetY, false, BLOCK_AIR);
                 g_MiningProgress = 0.0f;
+
+                if (getGameMode() == MODE_SURVIVAL) {
+                    InventorySlot* slot = &g_Hotbar[g_ActiveSlot];
+                    if (slot->type != BLOCK_AIR && slot->maxDurability > 0 && isToolItem(slot->type)) {
+                        slot->durability--;
+                        if (slot->durability <= 0) {
+                            slot->type = BLOCK_AIR;
+                            slot->count = 0;
+                            slot->durability = 0;
+                            slot->maxDurability = 0;
+                            playSound(SFX_BREAK);
+                            showNotification(LOC("[工具已损坏！]", "[Tool Broken!]"), 1.0f, 0.35f, 0.35f);
+                        }
+                    }
+                }
 
                 if (g_TutorialStep == TUTORIAL_MINE) {
                     g_MinedCount++;
@@ -2412,12 +2574,15 @@ static void renderHUD(void) {
     int actCount = g_Hotbar[g_ActiveSlot].count;
     char actBanner[128];
     if (actType != BLOCK_AIR && actType != 0 && actCount > 0) {
-        if (isToolItem(actType)) {
+        if (isToolItem(actType) || isArmorItem(actType)) {
             snprintf(actBanner, sizeof(actBanner), "[%d] %s",
                 g_ActiveSlot + 1, (getLanguage() == LANG_ZH) ? getItemChineseName(actType) : getItemName(actType));
         } else if (actType < BLOCK_TYPE_COUNT) {
             snprintf(actBanner, sizeof(actBanner), "[%d] %s  x%d",
                 g_ActiveSlot + 1, (getLanguage() == LANG_ZH) ? g_BlockDefs[actType].chineseName : g_BlockDefs[actType].name, actCount);
+        } else {
+            snprintf(actBanner, sizeof(actBanner), "[%d] %s  x%d",
+                g_ActiveSlot + 1, getItemLocalizedName(actType), actCount);
         }
     } else {
         snprintf(actBanner, sizeof(actBanner), "[%d] (%s)", g_ActiveSlot + 1, LOC("空", "Empty"));
@@ -2459,7 +2624,7 @@ static void renderHUD(void) {
 
         int bt = g_Hotbar[i].type;
         if (bt != BLOCK_AIR && bt != 0 && g_Hotbar[i].count > 0) {
-            if (isToolItem(bt)) {
+            if (isToolItem(bt) || isArmorItem(bt)) {
                 drawInventoryItemIcon(sx + 6.0f, sy + 6.0f, slotSize - 12.0f, bt);
             } else if (bt < BLOCK_TYPE_COUNT) {
                 float u0, v0, u1, v1;
@@ -2483,6 +2648,30 @@ static void renderHUD(void) {
                 char countBuf[16];
                 snprintf(countBuf, sizeof(countBuf), "%d", g_Hotbar[i].count);
                 drawText(sx + slotSize - 22, sy + slotSize - 6, countBuf, 1.0f, 1.0f, 1.0f, false);
+            } else {
+                drawInventoryItemIcon(sx + 6.0f, sy + 6.0f, slotSize - 12.0f, bt);
+                char countBuf[16];
+                snprintf(countBuf, sizeof(countBuf), "%d", g_Hotbar[i].count);
+                drawText(sx + slotSize - 22, sy + slotSize - 6, countBuf, 1.0f, 1.0f, 1.0f, false);
+            }
+
+            // Durability Bar (Green >50%, Yellow >20%, Red <=20%)
+            if (g_Hotbar[i].durability > 0 && g_Hotbar[i].durability < g_Hotbar[i].maxDurability && g_Hotbar[i].maxDurability > 0) {
+                float pct = (float)g_Hotbar[i].durability / (float)g_Hotbar[i].maxDurability;
+                if (pct > 1.0f) pct = 1.0f;
+                float barPad = 6.0f;
+                float barW = slotSize - barPad * 2.0f;
+                float barH = 2.0f;
+                float barX = sx + barPad;
+                float barY = sy + slotSize - 6.0f;
+                drawQuad2D(barX, barY - 1.0f, barW, barH + 2.0f, 0.0f, 0.0f, 0.0f, 0.80f);
+                float r = 0.20f, g = 0.90f, b = 0.20f;
+                if (pct <= 0.20f) {
+                    r = 0.95f; g = 0.20f; b = 0.20f;
+                } else if (pct <= 0.50f) {
+                    r = 0.95f; g = 0.85f; b = 0.15f;
+                }
+                drawQuad2D(barX, barY, barW * pct, barH, r, g, b, 1.0f);
             }
         }
 
@@ -2678,12 +2867,14 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
             if (wParam == 'R') {
                 if (g_Player.isDead) {
                     respawnPlayer();
-                } else {
+                } else if (getGameMode() == MODE_CREATIVE) {
                     int sx = (int)floorf(g_Player.x);
                     g_Player.y = (float)(getSurfaceHeight(sx, g_Seed) + 3);
                     g_Player.vx = 0.0f;
                     g_Player.vy = 0.0f;
                     showNotification(LOC("已在地面安全区域重生！", "Respawned on surface safe ground!"), 0.4f, 0.8f, 1.0f);
+                } else {
+                    showNotification(LOC("仅创造模式可使用地表传送！", "Surface teleport is only available in Creative Mode!"), 1.0f, 0.4f, 0.4f);
                 }
             }
             return 0;
@@ -2733,6 +2924,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
+    (void)hPrevInstance;
+    (void)lpCmdLine;
+    (void)nCmdShow;
     memset(&g_PrevPlacement, 0, sizeof(g_PrevPlacement));
     g_PrevPlacement.length = sizeof(g_PrevPlacement);
 

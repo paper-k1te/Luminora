@@ -67,7 +67,29 @@ typedef enum {
     ITEM_GEL                  = 118,
     ITEM_STICKY_BOMB          = 119,
 
-    ITEM_TOOL_COUNT           = 16
+    // Armor Pieces (120 - 135)
+    ITEM_ARMOR_WOOD_HELMET    = 120,
+    ITEM_ARMOR_WOOD_CHEST     = 121,
+    ITEM_ARMOR_WOOD_LEGS      = 122,
+    ITEM_ARMOR_WOOD_BOOTS     = 123,
+
+    ITEM_ARMOR_STONE_HELMET   = 124,
+    ITEM_ARMOR_STONE_CHEST    = 125,
+    ITEM_ARMOR_STONE_LEGS     = 126,
+    ITEM_ARMOR_STONE_BOOTS    = 127,
+
+    ITEM_ARMOR_IRON_HELMET    = 128,
+    ITEM_ARMOR_IRON_CHEST     = 129,
+    ITEM_ARMOR_IRON_LEGS      = 130,
+    ITEM_ARMOR_IRON_BOOTS     = 131,
+
+    ITEM_ARMOR_DIAMOND_HELMET = 132,
+    ITEM_ARMOR_DIAMOND_CHEST  = 133,
+    ITEM_ARMOR_DIAMOND_LEGS   = 134,
+    ITEM_ARMOR_DIAMOND_BOOTS  = 135,
+
+    ITEM_TOOL_COUNT           = 16,
+    ITEM_ARMOR_COUNT          = 16
 } ToolItemID;
 
 typedef struct {
@@ -87,28 +109,28 @@ typedef struct {
 // 16 Full Tools Definitions across Wood, Stone, Iron, Diamond
 static const ToolDef g_ToolDefs[ITEM_TOOL_COUNT] = {
     // Pickaxes: Speed multiplier on stone, ores, bricks
-    { ITEM_TOOL_WOOD_PICKAXE,    TOOL_PICKAXE, TIER_WOOD,    "Wooden Pickaxe",  "木镐",   "采矿工具: 开采岩石与矿脉速度 3.0x",   "Mining tool: Mines stone and ores at 3.0x speed",    3.0f,  6.0f, 1.0f, 0.68f, 0.46f, 0.24f },
-    { ITEM_TOOL_STONE_PICKAXE,   TOOL_PICKAXE, TIER_STONE,   "Stone Pickaxe",   "石镐",   "采矿工具: 开采岩石与矿脉速度 5.5x",   "Mining tool: Mines stone and ores at 5.5x speed",    5.5f,  7.0f, 1.1f, 0.62f, 0.64f, 0.66f },
-    { ITEM_TOOL_IRON_PICKAXE,    TOOL_PICKAXE, TIER_IRON,    "Iron Pickaxe",    "铁镐",   "采矿工具: 开采岩石与矿脉速度 9.0x",   "Mining tool: Mines stone and ores at 9.0x speed",    9.0f,  8.0f, 1.2f, 0.88f, 0.90f, 0.94f },
-    { ITEM_TOOL_DIAMOND_PICKAXE, TOOL_PICKAXE, TIER_DIAMOND, "Diamond Pickaxe", "钻石镐", "神级采矿: 开采岩石与矿脉速度 15.0x",  "Supreme tool: Mines stone and ores at 15.0x speed", 15.0f,  9.0f, 1.4f, 0.25f, 0.90f, 0.98f },
+    { ITEM_TOOL_WOOD_PICKAXE,    TOOL_PICKAXE, TIER_WOOD,    "Wooden Pickaxe",  "木镐",   "采矿工具: 开采岩石与矿脉速度 2.0x",   "Mining tool: Mines stone and ores at 2.0x speed",    2.0f,  6.0f, 1.0f, 0.68f, 0.46f, 0.24f },
+    { ITEM_TOOL_STONE_PICKAXE,   TOOL_PICKAXE, TIER_STONE,   "Stone Pickaxe",   "石镐",   "采矿工具: 开采岩石与矿脉速度 4.5x",   "Mining tool: Mines stone and ores at 4.5x speed",    4.5f,  7.0f, 1.1f, 0.62f, 0.64f, 0.66f },
+    { ITEM_TOOL_IRON_PICKAXE,    TOOL_PICKAXE, TIER_IRON,    "Iron Pickaxe",    "铁镐",   "采矿工具: 开采岩石与矿脉速度 10.0x",  "Mining tool: Mines stone and ores at 10.0x speed",   10.0f,  8.0f, 1.2f, 0.88f, 0.90f, 0.94f },
+    { ITEM_TOOL_DIAMOND_PICKAXE, TOOL_PICKAXE, TIER_DIAMOND, "Diamond Pickaxe", "钻石镐", "神级采矿: 开采岩石与矿脉速度 22.0x",  "Supreme tool: Mines stone and ores at 22.0x speed", 22.0f,  9.0f, 1.4f, 0.25f, 0.90f, 0.98f },
 
     // Axes: Rapid chop on wood, planks, leaves, cactus
-    { ITEM_TOOL_WOOD_AXE,        TOOL_AXE,     TIER_WOOD,    "Wooden Axe",      "木斧",   "伐木工具: 砍伐树木与木板速度 3.0x",   "Logging tool: Chops trees and wood at 3.0x speed",   3.0f,  7.0f, 1.1f, 0.68f, 0.46f, 0.24f },
-    { ITEM_TOOL_STONE_AXE,       TOOL_AXE,     TIER_STONE,   "Stone Axe",       "石斧",   "伐木工具: 砍伐树木与木板速度 5.5x",   "Logging tool: Chops trees and wood at 5.5x speed",   5.5f,  8.0f, 1.2f, 0.62f, 0.64f, 0.66f },
-    { ITEM_TOOL_IRON_AXE,        TOOL_AXE,     TIER_IRON,    "Iron Axe",        "铁斧",   "伐木工具: 砍伐树木与木板速度 9.0x",   "Logging tool: Chops trees and wood at 9.0x speed",   9.0f, 10.0f, 1.4f, 0.88f, 0.90f, 0.94f },
-    { ITEM_TOOL_DIAMOND_AXE,     TOOL_AXE,     TIER_DIAMOND, "Diamond Axe",     "钻石斧", "神级伐木: 秒速砍伐木材速度 15.0x",  "Supreme logging: Chops wood instantly at 15.0x speed", 15.0f, 12.0f, 1.8f, 0.25f, 0.90f, 0.98f },
+    { ITEM_TOOL_WOOD_AXE,        TOOL_AXE,     TIER_WOOD,    "Wooden Axe",      "木斧",   "伐木工具: 砍伐树木与木板速度 2.0x",   "Logging tool: Chops trees and wood at 2.0x speed",   2.0f,  7.0f, 1.1f, 0.68f, 0.46f, 0.24f },
+    { ITEM_TOOL_STONE_AXE,       TOOL_AXE,     TIER_STONE,   "Stone Axe",       "石斧",   "伐木工具: 砍伐树木与木板速度 4.5x",   "Logging tool: Chops trees and wood at 4.5x speed",   4.5f,  8.0f, 1.2f, 0.62f, 0.64f, 0.66f },
+    { ITEM_TOOL_IRON_AXE,        TOOL_AXE,     TIER_IRON,    "Iron Axe",        "铁斧",   "伐木工具: 砍伐树木与木板速度 10.0x",  "Logging tool: Chops trees and wood at 10.0x speed",  10.0f, 10.0f, 1.4f, 0.88f, 0.90f, 0.94f },
+    { ITEM_TOOL_DIAMOND_AXE,     TOOL_AXE,     TIER_DIAMOND, "Diamond Axe",     "钻石斧", "神级伐木: 秒速砍伐木材速度 22.0x",  "Supreme logging: Chops wood instantly at 22.0x speed", 22.0f, 12.0f, 1.8f, 0.25f, 0.90f, 0.98f },
 
     // Swords: Heavy melee damage and massive knockback against Slimes, Bats, Zombies!
-    { ITEM_TOOL_WOOD_SWORD,      TOOL_SWORD,   TIER_WOOD,    "Wooden Sword",    "木剑",   "近战武器: 挥砍伤害 +4 | 击退 1.5x",    "Melee weapon: Slash damage +4 | Knockback 1.5x",    1.0f,  8.0f, 1.5f, 0.68f, 0.46f, 0.24f },
-    { ITEM_TOOL_STONE_SWORD,     TOOL_SWORD,   TIER_STONE,   "Stone Sword",     "石剑",   "近战武器: 挥砍伤害 +6 | 击退 1.8x",    "Melee weapon: Slash damage +6 | Knockback 1.8x",    1.0f, 10.0f, 1.8f, 0.62f, 0.64f, 0.66f },
-    { ITEM_TOOL_IRON_SWORD,      TOOL_SWORD,   TIER_IRON,    "Iron Sword",      "铁剑",   "近战武器: 挥砍伤害 +9 | 击退 2.3x",    "Melee weapon: Slash damage +9 | Knockback 2.3x",    1.0f, 13.0f, 2.3f, 0.88f, 0.90f, 0.94f },
-    { ITEM_TOOL_DIAMOND_SWORD,   TOOL_SWORD,   TIER_DIAMOND, "Diamond Sword",   "钻石剑", "至尊神剑: 挥砍伤害 +15 | 巨幅击退 3.2x", "Supreme sword: Slash damage +15 | Massive knockback 3.2x", 1.0f, 19.0f, 3.2f, 0.25f, 0.90f, 0.98f },
+    { ITEM_TOOL_WOOD_SWORD,      TOOL_SWORD,   TIER_WOOD,    "Wooden Sword",    "木剑",   "近战武器: 挥砍伤害 +3 | 击退 1.5x",    "Melee weapon: Slash damage +3 | Knockback 1.5x",    1.0f,  8.0f, 1.5f, 0.68f, 0.46f, 0.24f },
+    { ITEM_TOOL_STONE_SWORD,     TOOL_SWORD,   TIER_STONE,   "Stone Sword",     "石剑",   "近战武器: 挥砍伤害 +6 | 击退 1.8x",    "Melee weapon: Slash damage +6 | Knockback 1.8x",    1.0f, 11.0f, 1.8f, 0.62f, 0.64f, 0.66f },
+    { ITEM_TOOL_IRON_SWORD,      TOOL_SWORD,   TIER_IRON,    "Iron Sword",      "铁剑",   "近战武器: 挥砍伤害 +10 | 击退 2.3x",   "Melee weapon: Slash damage +10 | Knockback 2.3x",   1.0f, 15.0f, 2.3f, 0.88f, 0.90f, 0.94f },
+    { ITEM_TOOL_DIAMOND_SWORD,   TOOL_SWORD,   TIER_DIAMOND, "Diamond Sword",   "钻石剑", "至尊神剑: 挥砍伤害 +15 | 巨幅击退 3.2x", "Supreme sword: Slash damage +15 | Massive knockback 3.2x", 1.0f, 20.0f, 3.2f, 0.25f, 0.90f, 0.98f },
 
     // Shovels: Rapid dig on dirt, sand, clay, snow, mud
-    { ITEM_TOOL_WOOD_SHOVEL,     TOOL_SHOVEL,  TIER_WOOD,    "Wooden Shovel",   "木铲",   "挖掘工具: 挖掘泥土与沙地速度 3.0x",   "Excavation tool: Digs dirt and sand at 3.0x speed",  3.0f,  6.0f, 1.0f, 0.68f, 0.46f, 0.24f },
-    { ITEM_TOOL_STONE_SHOVEL,    TOOL_SHOVEL,  TIER_STONE,   "Stone Shovel",    "石铲",   "挖掘工具: 挖掘泥土与沙地速度 5.5x",   "Excavation tool: Digs dirt and sand at 5.5x speed",  5.5f,  7.0f, 1.1f, 0.62f, 0.64f, 0.66f },
-    { ITEM_TOOL_IRON_SHOVEL,     TOOL_SHOVEL,  TIER_IRON,    "Iron Shovel",     "铁铲",   "挖掘工具: 挖掘泥土与沙地速度 9.0x",   "Excavation tool: Digs dirt and sand at 9.0x speed",  9.0f,  8.0f, 1.2f, 0.88f, 0.90f, 0.94f },
-    { ITEM_TOOL_DIAMOND_SHOVEL,  TOOL_SHOVEL,  TIER_DIAMOND, "Diamond Shovel",  "钻石铲", "神级挖掘: 挖掘泥土与沙地速度 15.0x",  "Supreme excavation: Digs dirt and sand at 15.0x speed", 15.0f,  9.0f, 1.3f, 0.25f, 0.90f, 0.98f },
+    { ITEM_TOOL_WOOD_SHOVEL,     TOOL_SHOVEL,  TIER_WOOD,    "Wooden Shovel",   "木铲",   "挖掘工具: 挖掘泥土与沙地速度 2.0x",   "Excavation tool: Digs dirt and sand at 2.0x speed",  2.0f,  6.0f, 1.0f, 0.68f, 0.46f, 0.24f },
+    { ITEM_TOOL_STONE_SHOVEL,    TOOL_SHOVEL,  TIER_STONE,   "Stone Shovel",    "石铲",   "挖掘工具: 挖掘泥土与沙地速度 4.5x",   "Excavation tool: Digs dirt and sand at 4.5x speed",  4.5f,  7.0f, 1.1f, 0.62f, 0.64f, 0.66f },
+    { ITEM_TOOL_IRON_SHOVEL,     TOOL_SHOVEL,  TIER_IRON,    "Iron Shovel",     "铁铲",   "挖掘工具: 挖掘泥土与沙地速度 10.0x",  "Excavation tool: Digs dirt and sand at 10.0x speed",  10.0f,  8.0f, 1.2f, 0.88f, 0.90f, 0.94f },
+    { ITEM_TOOL_DIAMOND_SHOVEL,  TOOL_SHOVEL,  TIER_DIAMOND, "Diamond Shovel",  "钻石铲", "神级挖掘: 挖掘泥土与沙地速度 22.0x",  "Supreme excavation: Digs dirt and sand at 22.0x speed", 22.0f,  9.0f, 1.3f, 0.25f, 0.90f, 0.98f },
 };
 
 // ============================================================================
@@ -144,7 +166,7 @@ static inline float getToolEfficiency(int heldItemId, int blockType) {
         if (def && def->type == TOOL_PICKAXE) {
             return def->speedMultiplier;
         }
-        return 0.08f; // Heavy penalty: bare hands or wrong tool takes 15-25s to break stone/ores!
+        return 0.04f; // Heavy penalty: bare hands or wrong tool takes 25-40s to break stone/ores!
     }
 
     // 2. Wood / Plank / Furniture / Tree
@@ -163,7 +185,7 @@ static inline float getToolEfficiency(int heldItemId, int blockType) {
         if (def && def->type == TOOL_AXE) {
             return def->speedMultiplier;
         }
-        return 0.5f; // Bare hands or wrong tool on wood (~3s break time)
+        return 0.4f; // Bare hands or wrong tool on wood (~3s break time)
     }
 
     // 3. Dirt / Sand / Clay / Snow / Mud
@@ -192,7 +214,7 @@ static inline float getToolDamage(int heldItemId) {
         const ToolDef* def = getToolDef(heldItemId);
         if (def) return def->damage;
     }
-    return 4.0f; // Base fist damage
+    return 5.0f; // Base fist damage = 5.0
 }
 
 static inline float getToolKnockback(int heldItemId) {
@@ -203,6 +225,119 @@ static inline float getToolKnockback(int heldItemId) {
     return 1.0f;
 }
 
+// ============================================================================
+// Armor System Architecture & Equipment Slots (4-Piece Armor: Wood, Stone, Iron, Diamond)
+// ============================================================================
+
+typedef enum {
+    ARMOR_SLOT_HELMET = 0, // 头盔
+    ARMOR_SLOT_CHEST  = 1, // 胸甲
+    ARMOR_SLOT_LEGS   = 2, // 护腿
+    ARMOR_SLOT_BOOTS  = 3, // 靴子
+    ARMOR_SLOT_COUNT  = 4
+} ArmorSlotType;
+
+typedef struct {
+    int id;
+    int slot;  // ARMOR_SLOT_HELMET .. BOOTS
+    int tier;  // TIER_WOOD .. TIER_DIAMOND
+    const char* name;
+    const char* chineseName;
+    const char* description;
+    const char* englishDescription;
+    float reduction;
+    int maxDurability;
+    float r, g, b;
+} ArmorDef;
+
+static const ArmorDef g_ArmorDefs[ITEM_ARMOR_COUNT] = {
+    // Wood Tier (Total 15% Reduction, Max Durability 60)
+    { ITEM_ARMOR_WOOD_HELMET,    ARMOR_SLOT_HELMET, TIER_WOOD,    "Wooden Helmet",     "木头盔",   "基础防具: 伤害减免 +3% | 耐久 60",  "Basic armor: Damage reduction +3% | Durability 60",  0.03f, 60,   0.68f, 0.46f, 0.24f },
+    { ITEM_ARMOR_WOOD_CHEST,     ARMOR_SLOT_CHEST,  TIER_WOOD,    "Wooden Chestplate", "木胸甲",   "基础防具: 伤害减免 +6% | 耐久 60",  "Basic armor: Damage reduction +6% | Durability 60",  0.06f, 60,   0.68f, 0.46f, 0.24f },
+    { ITEM_ARMOR_WOOD_LEGS,      ARMOR_SLOT_LEGS,   TIER_WOOD,    "Wooden Leggings",   "木护腿",   "基础防具: 伤害减免 +4% | 耐久 60",  "Basic armor: Damage reduction +4% | Durability 60",  0.04f, 60,   0.68f, 0.46f, 0.24f },
+    { ITEM_ARMOR_WOOD_BOOTS,     ARMOR_SLOT_BOOTS,  TIER_WOOD,    "Wooden Boots",      "木靴子",   "基础防具: 伤害减免 +2% | 耐久 60",  "Basic armor: Damage reduction +2% | Durability 60",  0.02f, 60,   0.68f, 0.46f, 0.24f },
+
+    // Stone Tier (Total 30% Reduction, Max Durability 130)
+    { ITEM_ARMOR_STONE_HELMET,   ARMOR_SLOT_HELMET, TIER_STONE,   "Stone Helmet",      "石头盔",   "坚固防具: 伤害减免 +6% | 耐久 130", "Sturdy armor: Damage reduction +6% | Durability 130", 0.06f, 130,  0.62f, 0.64f, 0.66f },
+    { ITEM_ARMOR_STONE_CHEST,    ARMOR_SLOT_CHEST,  TIER_STONE,   "Stone Chestplate",  "石胸甲",   "坚固防具: 伤害减免 +12% | 耐久 130","Sturdy armor: Damage reduction +12% | Durability 130",0.12f, 130,  0.62f, 0.64f, 0.66f },
+    { ITEM_ARMOR_STONE_LEGS,     ARMOR_SLOT_LEGS,   TIER_STONE,   "Stone Leggings",    "石护腿",   "坚固防具: 伤害减免 +8% | 耐久 130", "Sturdy armor: Damage reduction +8% | Durability 130", 0.08f, 130,  0.62f, 0.64f, 0.66f },
+    { ITEM_ARMOR_STONE_BOOTS,    ARMOR_SLOT_BOOTS,  TIER_STONE,   "Stone Boots",       "石靴子",   "坚固防具: 伤害减免 +4% | 耐久 130", "Sturdy armor: Damage reduction +4% | Durability 130", 0.04f, 130,  0.62f, 0.64f, 0.66f },
+
+    // Iron Tier (Total 50% Reduction, Max Durability 250)
+    { ITEM_ARMOR_IRON_HELMET,    ARMOR_SLOT_HELMET, TIER_IRON,    "Iron Helmet",       "铁头盔",   "重型防具: 伤害减免 +10% | 耐久 250","Heavy armor: Damage reduction +10% | Durability 250",0.10f, 250,  0.88f, 0.90f, 0.94f },
+    { ITEM_ARMOR_IRON_CHEST,     ARMOR_SLOT_CHEST,  TIER_IRON,    "Iron Chestplate",   "铁胸甲",   "重型防具: 伤害减免 +20% | 耐久 250","Heavy armor: Damage reduction +20% | Durability 250",0.20f, 250,  0.88f, 0.90f, 0.94f },
+    { ITEM_ARMOR_IRON_LEGS,      ARMOR_SLOT_LEGS,   TIER_IRON,    "Iron Leggings",     "铁护腿",   "重型防具: 伤害减免 +13% | 耐久 250","Heavy armor: Damage reduction +13% | Durability 250",0.13f, 250,  0.88f, 0.90f, 0.94f },
+    { ITEM_ARMOR_IRON_BOOTS,     ARMOR_SLOT_BOOTS,  TIER_IRON,    "Iron Boots",        "铁靴子",   "重型防具: 伤害减免 +7% | 耐久 250", "Heavy armor: Damage reduction +7% | Durability 250", 0.07f, 250,  0.88f, 0.90f, 0.94f },
+
+    // Diamond Tier (Total 75% Reduction, Max Durability 1560)
+    { ITEM_ARMOR_DIAMOND_HELMET, ARMOR_SLOT_HELMET, TIER_DIAMOND, "Diamond Helmet",    "钻石头盔", "至尊防具: 伤害减免 +15% | 耐久 1560","Supreme armor: Damage reduction +15% | Durability 1560", 0.15f, 1560, 0.25f, 0.90f, 0.98f },
+    { ITEM_ARMOR_DIAMOND_CHEST,  ARMOR_SLOT_CHEST,  TIER_DIAMOND, "Diamond Chestplate","钻石胸甲", "至尊防具: 伤害减免 +30% | 耐久 1560","Supreme armor: Damage reduction +30% | Durability 1560", 0.30f, 1560, 0.25f, 0.90f, 0.98f },
+    { ITEM_ARMOR_DIAMOND_LEGS,   ARMOR_SLOT_LEGS,   TIER_DIAMOND, "Diamond Leggings",  "钻石护腿", "至尊防具: 伤害减免 +20% | 耐久 1560","Supreme armor: Damage reduction +20% | Durability 1560", 0.20f, 1560, 0.25f, 0.90f, 0.98f },
+    { ITEM_ARMOR_DIAMOND_BOOTS,  ARMOR_SLOT_BOOTS,  TIER_DIAMOND, "Diamond Boots",     "钻石靴子", "至尊防具: 伤害减免 +10% | 耐久 1560","Supreme armor: Damage reduction +10% | Durability 1560", 0.10f, 1560, 0.25f, 0.90f, 0.98f },
+};
+
+static inline bool isArmorItem(int itemId) {
+    return (itemId >= ITEM_ARMOR_WOOD_HELMET && itemId <= ITEM_ARMOR_DIAMOND_BOOTS);
+}
+
+static inline int getArmorSlot(int itemId) {
+    if (!isArmorItem(itemId)) return -1;
+    return (itemId - ITEM_ARMOR_WOOD_HELMET) % 4;
+}
+
+static inline int getArmorTier(int itemId) {
+    if (!isArmorItem(itemId)) return TIER_NONE;
+    return TIER_WOOD + (itemId - ITEM_ARMOR_WOOD_HELMET) / 4;
+}
+
+static inline const ArmorDef* getArmorDef(int itemId) {
+    if (isArmorItem(itemId)) {
+        return &g_ArmorDefs[itemId - ITEM_ARMOR_WOOD_HELMET];
+    }
+    return NULL;
+}
+
+static inline int getMaxDurability(int itemId) {
+    if (isToolItem(itemId)) {
+        const ToolDef* def = getToolDef(itemId);
+        if (def) {
+            switch (def->tier) {
+                case TIER_WOOD:    return 60;
+                case TIER_STONE:   return 130;
+                case TIER_IRON:    return 250;
+                case TIER_DIAMOND: return 1560;
+                default: break;
+            }
+        }
+    } else if (isArmorItem(itemId)) {
+        const ArmorDef* def = getArmorDef(itemId);
+        if (def) return def->maxDurability;
+    }
+    return 0;
+}
+
+static inline float getArmorPieceReduction(int itemId) {
+    if (!isArmorItem(itemId)) return 0.0f;
+    const ArmorDef* def = getArmorDef(itemId);
+    return def ? def->reduction : 0.0f;
+}
+
+static inline float getPlayerArmorReduction(void) {
+    float total = 0.0f;
+    for (int i = 0; i < ARMOR_SLOT_COUNT; i++) {
+        if (g_EquippedArmor[i] != 0 && g_ArmorDurability[i] > 0) {
+            total += getArmorPieceReduction(g_EquippedArmor[i]);
+        }
+    }
+    if (total > 0.75f) total = 0.75f;
+    return total;
+}
+
+static inline const char* getArmorDescription(const ArmorDef* def) {
+    if (!def) return "";
+    return (getLanguage() == LANG_ZH) ? def->description : (def->englishDescription ? def->englishDescription : def->description);
+}
+
 static inline const char* getToolDescription(const ToolDef* def) {
     if (!def) return "";
     return (getLanguage() == LANG_ZH) ? def->description : (def->englishDescription ? def->englishDescription : def->description);
@@ -211,6 +346,9 @@ static inline const char* getToolDescription(const ToolDef* def) {
 static inline const char* getItemName(int itemId) {
     if (isToolItem(itemId)) {
         const ToolDef* def = getToolDef(itemId);
+        if (def) return def->name;
+    } else if (isArmorItem(itemId)) {
+        const ArmorDef* def = getArmorDef(itemId);
         if (def) return def->name;
     } else if (itemId == ITEM_STICK) {
         return "Stick";
@@ -227,6 +365,9 @@ static inline const char* getItemName(int itemId) {
 static inline const char* getItemChineseName(int itemId) {
     if (isToolItem(itemId)) {
         const ToolDef* def = getToolDef(itemId);
+        if (def) return def->chineseName;
+    } else if (isArmorItem(itemId)) {
+        const ArmorDef* def = getArmorDef(itemId);
         if (def) return def->chineseName;
     } else if (itemId == ITEM_STICK) {
         return "木棍";
@@ -251,6 +392,12 @@ static inline const char* getItemLocalizedName(int itemId) {
 static inline void getItemColor(int itemId, float* r, float* g, float* b) {
     if (isToolItem(itemId)) {
         const ToolDef* def = getToolDef(itemId);
+        if (def) {
+            *r = def->r; *g = def->g; *b = def->b;
+            return;
+        }
+    } else if (isArmorItem(itemId)) {
+        const ArmorDef* def = getArmorDef(itemId);
         if (def) {
             *r = def->r; *g = def->g; *b = def->b;
             return;
@@ -312,7 +459,12 @@ static const int g_TabToolsItems[] = {
     // Swords
     ITEM_TOOL_WOOD_SWORD, ITEM_TOOL_STONE_SWORD, ITEM_TOOL_IRON_SWORD, ITEM_TOOL_DIAMOND_SWORD,
     // Shovels
-    ITEM_TOOL_WOOD_SHOVEL, ITEM_TOOL_STONE_SHOVEL, ITEM_TOOL_IRON_SHOVEL, ITEM_TOOL_DIAMOND_SHOVEL
+    ITEM_TOOL_WOOD_SHOVEL, ITEM_TOOL_STONE_SHOVEL, ITEM_TOOL_IRON_SHOVEL, ITEM_TOOL_DIAMOND_SHOVEL,
+    // Armor Pieces
+    ITEM_ARMOR_WOOD_HELMET, ITEM_ARMOR_WOOD_CHEST, ITEM_ARMOR_WOOD_LEGS, ITEM_ARMOR_WOOD_BOOTS,
+    ITEM_ARMOR_STONE_HELMET, ITEM_ARMOR_STONE_CHEST, ITEM_ARMOR_STONE_LEGS, ITEM_ARMOR_STONE_BOOTS,
+    ITEM_ARMOR_IRON_HELMET, ITEM_ARMOR_IRON_CHEST, ITEM_ARMOR_IRON_LEGS, ITEM_ARMOR_IRON_BOOTS,
+    ITEM_ARMOR_DIAMOND_HELMET, ITEM_ARMOR_DIAMOND_CHEST, ITEM_ARMOR_DIAMOND_LEGS, ITEM_ARMOR_DIAMOND_BOOTS
 };
 static const int g_TabToolsCount = sizeof(g_TabToolsItems) / sizeof(g_TabToolsItems[0]);
 
@@ -385,28 +537,32 @@ static inline void updateToolSwing(float dt, bool isActionActive) {
 }
 
 // Calculates dynamic swinging arm angle:
-// 45 degrees backward to -60 degrees forward swing with arm extension!
+// Rest angle is -15 deg.
+// 0.00 to 0.20: Wind-up pulls UP and BACK (+40 deg to +75 deg).
+// 0.20 to 0.65: Slashes FORWARD and DOWN (+75 deg to -65 deg) with powerful cubic acceleration.
+// 0.65 to 1.00: Clean recovery back to -15 deg resting position.
 static inline float getArmSwingAngle(float t, bool isSwinging, float walkCycle) {
     if (!isSwinging) {
         // Natural resting angle with walking swing
         return -15.0f + sinf(walkCycle) * 12.0f;
     }
     // Dynamic swing arc:
-    // 0.0 to 0.22: Wind-up (pull back from -15 deg to +45 deg)
-    if (t < 0.22f) {
-        float p = t / 0.22f;
-        return -15.0f + 60.0f * (p * p); // Peaks at +45 deg
+    // 0.00 to 0.20: Wind-up (pull back & up from -15 deg to +75 deg)
+    if (t < 0.20f) {
+        float p = t / 0.20f;
+        return -15.0f + 90.0f * (p * p); // Peaks at +75 deg
     }
-    // 0.22 to 0.70: Violent forward-down slash (+45 deg to -60 deg)
-    else if (t < 0.70f) {
-        float p = (t - 0.22f) / 0.48f;
-        float ease = 1.0f - powf(1.0f - p, 3.0f); // Ease out cubic
-        return 45.0f - 105.0f * ease; // Slashes down to -60 deg!
+    // 0.20 to 0.65: Powerful forward-down slash (+75 deg to -65 deg with cubic acceleration)
+    else if (t < 0.65f) {
+        float p = (t - 0.20f) / 0.45f;
+        float ease = 1.0f - powf(1.0f - p, 3.0f); // Ease out cubic: explosive initial acceleration
+        return 75.0f - 140.0f * ease; // Slashes down to -65 deg!
     }
-    // 0.70 to 1.00: Smooth recovery back to -15 deg
+    // 0.65 to 1.00: Clean recovery back to resting -15 deg
     else {
-        float p = (t - 0.70f) / 0.30f;
-        return -60.0f + 45.0f * p; // Recovers to -15 deg
+        float p = (t - 0.65f) / 0.35f;
+        float ease = p * (2.0f - p); // Smooth ease out recovery
+        return -65.0f + 50.0f * ease; // Recovers to -15 deg
     }
 }
 
@@ -621,6 +777,70 @@ static void drawInventoryItemIcon(float x, float y, float size, int itemId) {
         glBegin(GL_POINTS);
         glVertex2f(cx, cy - size * 0.35f);
         glEnd();
+    } else if (isArmorItem(itemId)) {
+        const ArmorDef* adef = getArmorDef(itemId);
+        if (!adef) return;
+        float ar = adef->r, ag = adef->g, ab = adef->b;
+        int aslot = getArmorSlot(itemId);
+        float cx = x + size * 0.5f;
+        float cy = y + size * 0.5f;
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        if (aslot == ARMOR_SLOT_HELMET) {
+            // 1. Helmet: Skull cap + cheek guards + visor
+            menuDrawQuad(cx - size * 0.26f, cy - size * 0.32f, size * 0.52f, size * 0.38f, ar, ag, ab, 1.0f);
+            menuDrawBorder(cx - size * 0.26f, cy - size * 0.32f, size * 0.52f, size * 0.38f, ar * 0.6f, ag * 0.6f, ab * 0.6f, 1.0f);
+            menuDrawQuad(cx - size * 0.26f, cy + size * 0.06f, size * 0.14f, size * 0.22f, ar, ag, ab, 1.0f);
+            menuDrawQuad(cx + size * 0.12f, cy + size * 0.06f, size * 0.14f, size * 0.22f, ar, ag, ab, 1.0f);
+            menuDrawQuad(cx - size * 0.20f, cy - size * 0.04f, size * 0.40f, size * 0.08f, 0.10f, 0.12f, 0.16f, 1.0f);
+            glColor3f(1.0f, 0.85f, 0.3f);
+            glLineWidth(2.0f);
+            glBegin(GL_LINES);
+            glVertex2f(cx, cy - size * 0.36f);
+            glVertex2f(cx, cy - size * 0.16f);
+            glEnd();
+        } else if (aslot == ARMOR_SLOT_CHEST) {
+            // 2. Chestplate: Shoulder pauldrons + breastplate
+            menuDrawQuad(cx - size * 0.28f, cy - size * 0.18f, size * 0.56f, size * 0.48f, ar, ag, ab, 1.0f);
+            menuDrawBorder(cx - size * 0.28f, cy - size * 0.18f, size * 0.56f, size * 0.48f, ar * 0.6f, ag * 0.6f, ab * 0.6f, 1.0f);
+            menuDrawQuad(cx - size * 0.36f, cy - size * 0.32f, size * 0.20f, size * 0.18f, ar * 0.85f, ag * 0.85f, ab * 0.85f, 1.0f);
+            menuDrawQuad(cx + size * 0.16f, cy - size * 0.32f, size * 0.20f, size * 0.18f, ar * 0.85f, ag * 0.85f, ab * 0.85f, 1.0f);
+            menuDrawQuad(cx - size * 0.12f, cy - size * 0.32f, size * 0.24f, size * 0.14f, 0.08f, 0.10f, 0.14f, 1.0f);
+            glColor3f(1.0f, 0.85f, 0.3f);
+            glLineWidth(1.8f);
+            glBegin(GL_LINES);
+            glVertex2f(cx, cy - size * 0.14f);
+            glVertex2f(cx, cy + size * 0.24f);
+            glEnd();
+        } else if (aslot == ARMOR_SLOT_LEGS) {
+            // 3. Leggings: Waist belt + two leg greaves
+            menuDrawQuad(cx - size * 0.28f, cy - size * 0.30f, size * 0.56f, size * 0.14f, ar * 0.75f, ag * 0.75f, ab * 0.75f, 1.0f);
+            menuDrawQuad(cx - size * 0.06f, cy - size * 0.30f, size * 0.12f, size * 0.14f, 1.0f, 0.85f, 0.3f, 1.0f);
+            menuDrawQuad(cx - size * 0.26f, cy - size * 0.14f, size * 0.22f, size * 0.44f, ar, ag, ab, 1.0f);
+            menuDrawBorder(cx - size * 0.26f, cy - size * 0.14f, size * 0.22f, size * 0.44f, ar * 0.6f, ag * 0.6f, ab * 0.6f, 1.0f);
+            menuDrawQuad(cx + size * 0.04f, cy - size * 0.14f, size * 0.22f, size * 0.44f, ar, ag, ab, 1.0f);
+            menuDrawBorder(cx + size * 0.04f, cy - size * 0.14f, size * 0.22f, size * 0.44f, ar * 0.6f, ag * 0.6f, ab * 0.6f, 1.0f);
+            glColor3f(1.0f, 0.85f, 0.3f);
+            glLineWidth(1.8f);
+            glBegin(GL_LINES);
+            glVertex2f(cx - size * 0.24f, cy + size * 0.08f);
+            glVertex2f(cx - size * 0.06f, cy + size * 0.08f);
+            glVertex2f(cx + size * 0.06f, cy + size * 0.08f);
+            glVertex2f(cx + size * 0.24f, cy + size * 0.08f);
+            glEnd();
+        } else if (aslot == ARMOR_SLOT_BOOTS) {
+            // 4. Boots: Pair of armored boots / sabatons
+            menuDrawQuad(cx - size * 0.32f, cy - size * 0.16f, size * 0.18f, size * 0.26f, ar, ag, ab, 1.0f);
+            menuDrawQuad(cx - size * 0.36f, cy + size * 0.10f, size * 0.26f, size * 0.18f, ar, ag, ab, 1.0f);
+            menuDrawBorder(cx - size * 0.36f, cy + size * 0.10f, size * 0.26f, size * 0.18f, ar * 0.6f, ag * 0.6f, ab * 0.6f, 1.0f);
+            menuDrawQuad(cx + size * 0.14f, cy - size * 0.16f, size * 0.18f, size * 0.26f, ar, ag, ab, 1.0f);
+            menuDrawQuad(cx + size * 0.10f, cy + size * 0.10f, size * 0.26f, size * 0.18f, ar, ag, ab, 1.0f);
+            menuDrawBorder(cx + size * 0.10f, cy + size * 0.10f, size * 0.26f, size * 0.18f, ar * 0.6f, ag * 0.6f, ab * 0.6f, 1.0f);
+            menuDrawQuad(cx - size * 0.36f, cy + size * 0.24f, size * 0.26f, size * 0.06f, 0.12f, 0.14f, 0.18f, 1.0f);
+            menuDrawQuad(cx + size * 0.10f, cy + size * 0.24f, size * 0.26f, size * 0.06f, 0.12f, 0.14f, 0.18f, 1.0f);
+        }
     }
 }
 
@@ -629,12 +849,14 @@ static void drawInventoryItemIcon(float x, float y, float size, int itemId) {
 // ============================================================================
 
 void renderInHandTool(int heldItemId, float swingProgress, bool isSwinging, bool isFacingRight) {
+    (void)isFacingRight;
     float armAngle = getArmSwingAngle(swingProgress, isSwinging, g_Player.walkCycle);
 
     // Front shoulder pivot is at (0.18f, 1.05f, 0.04f) in player local space
-    // 0. Dynamic Motion Arc / Slashing Swoosh Trail (rendered in shoulder space when swinging)
-    if (isSwinging && swingProgress > 0.08f && swingProgress < 0.82f) {
-        float trailAlpha = sinf((swingProgress - 0.08f) / 0.74f * (float)M_PI) * 0.55f;
+    // 0. Dynamic Motion Arc / Slashing Swoosh Trail (rendered in shoulder space during downward slash)
+    if (isSwinging && swingProgress >= 0.18f && swingProgress <= 0.70f) {
+        float trailProgress = (swingProgress - 0.18f) / 0.52f;
+        float trailAlpha = sinf(trailProgress * (float)M_PI) * 0.60f;
         float tr = 0.9f, tg = 0.9f, tb = 0.95f;
         if (isToolItem(heldItemId)) {
             const ToolDef* tdef = getToolDef(heldItemId);
@@ -647,10 +869,10 @@ void renderInHandTool(int heldItemId, float swingProgress, bool isSwinging, bool
         glBlendFunc(GL_SRC_ALPHA, GL_ONE); // Additive luminous slash trail
 
         float curA = armAngle;
-        float lagA = curA + 40.0f; // Trail sweeps 40 degrees behind the slash
-        int segments = 8;
+        float lagA = curA + 42.0f; // Trail sweeps 42 degrees behind the slash direction
+        int segments = 10;
         float rInner = 0.55f;
-        float rOuter = 0.98f;
+        float rOuter = 1.02f;
 
         glBegin(GL_QUAD_STRIP);
         for (int s = 0; s <= segments; s++) {
@@ -1051,6 +1273,14 @@ void renderCreativeInventory(int screenW, int screenH, int mouseX, int mouseY) {
                     (def->tier == TIER_DIAMOND ? "DIA" : (def->tier == TIER_IRON ? "IRON" : (def->tier == TIER_STONE ? "STN" : "WOOD")));
                 drawText(sx + 6.0f, sy + slotSize - 6.0f, tierLabel, def->r, def->g, def->b, false);
             }
+        } else if (isArmorItem(curItemId)) {
+            const ArmorDef* def = getArmorDef(curItemId);
+            if (def) {
+                const char* tierLabel = (getLanguage() == LANG_ZH) ?
+                    (def->tier == TIER_DIAMOND ? "钻石" : (def->tier == TIER_IRON ? "铁质" : (def->tier == TIER_STONE ? "石质" : "木质"))) :
+                    (def->tier == TIER_DIAMOND ? "DIA" : (def->tier == TIER_IRON ? "IRON" : (def->tier == TIER_STONE ? "STN" : "WOOD")));
+                drawText(sx + 6.0f, sy + slotSize - 6.0f, tierLabel, def->r, def->g, def->b, false);
+            }
         } else {
             // Infinite stack symbol for creative blocks
             drawText(sx + slotSize - 20.0f, sy + slotSize - 6.0f, "oo", 0.35f, 0.95f, 1.0f, false);
@@ -1146,6 +1376,18 @@ void renderCreativeInventory(int screenW, int screenH, int mouseX, int mouseY) {
                          LOC("攻击力: ", "Attack Damage: "), def->damage,
                          LOC("击退强度: ", "Knockback: "), def->knockback,
                          LOC("挖掘倍率: ", "Mining Speed: "), def->speedMultiplier);
+                drawText(tooltipX + 12.0f, tooltipY + 64.0f, statBuf, def->r, def->g, def->b, false);
+                drawText(tooltipX + 12.0f, tooltipY + 84.0f, LOC("左键点击装备到当前快捷栏", "Click item to equip to Hotbar"), 0.35f, 0.90f, 1.0f, false);
+            }
+        } else if (isArmorItem(hoveredItemId)) {
+            const ArmorDef* def = getArmorDef(hoveredItemId);
+            if (def) {
+                drawText(tooltipX + 12.0f, tooltipY + 44.0f, getArmorDescription(def), 0.85f, 0.90f, 0.95f, false);
+
+                char statBuf[128];
+                snprintf(statBuf, sizeof(statBuf), "%s+%.0f%% | %s%d",
+                         LOC("减伤加成: ", "Damage Reduction: "), def->reduction * 100.0f,
+                         LOC("最大耐久: ", "Max Durability: "), def->maxDurability);
                 drawText(tooltipX + 12.0f, tooltipY + 64.0f, statBuf, def->r, def->g, def->b, false);
                 drawText(tooltipX + 12.0f, tooltipY + 84.0f, LOC("左键点击装备到当前快捷栏", "Click item to equip to Hotbar"), 0.35f, 0.90f, 1.0f, false);
             }
@@ -1271,11 +1513,15 @@ bool handleCreativeInventoryMsg(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                     int clickedItemId = itemsList[i];
                     // Assign item directly into active hotbar slot
                     g_Hotbar[g_ActiveSlot].type = clickedItemId;
-                    if (isToolItem(clickedItemId)) {
+                    if (isToolItem(clickedItemId) || isArmorItem(clickedItemId)) {
                         g_Hotbar[g_ActiveSlot].count = 1;
+                        g_Hotbar[g_ActiveSlot].durability = getMaxDurability(clickedItemId);
+                        g_Hotbar[g_ActiveSlot].maxDurability = getMaxDurability(clickedItemId);
                     } else {
                         // Infinite Creative Stack
                         g_Hotbar[g_ActiveSlot].count = 999;
+                        g_Hotbar[g_ActiveSlot].durability = 0;
+                        g_Hotbar[g_ActiveSlot].maxDurability = 0;
                     }
 
                     char eqNotif[128];
@@ -1313,6 +1559,8 @@ bool handleCreativeInventoryMsg(UINT uMsg, WPARAM wParam, LPARAM lParam) {
             if (mx >= trashX && mx <= trashX + trashW && my >= trashY && my <= trashY + trashH) {
                 g_Hotbar[g_ActiveSlot].type = BLOCK_AIR;
                 g_Hotbar[g_ActiveSlot].count = 0;
+                g_Hotbar[g_ActiveSlot].durability = 0;
+                g_Hotbar[g_ActiveSlot].maxDurability = 0;
                 showNotification(LOC("当前快捷栏槽位已清空！", "Active Hotbar Slot Cleared!"), 1.0f, 0.6f, 0.4f);
                 return true;
             }
@@ -1341,6 +1589,8 @@ bool handleCreativeInventoryMsg(UINT uMsg, WPARAM wParam, LPARAM lParam) {
                 if (mx >= hx && mx <= hx + hbSlotSize && my >= hbY && my <= hbY + hbSlotSize) {
                     g_Hotbar[h].type = BLOCK_AIR;
                     g_Hotbar[h].count = 0;
+                    g_Hotbar[h].durability = 0;
+                    g_Hotbar[h].maxDurability = 0;
                     showNotification(LOC("槽位已清空", "Slot Cleared"), 0.9f, 0.6f, 0.3f);
                     return true;
                 }

@@ -150,6 +150,44 @@ void spawnMob(float x, float y, int type) {
     }
 }
 
+static inline float getMobSpawnLightLevel(int x, int y) {
+    if (x < 0 || x >= WORLD_WIDTH || y < 0 || y >= WORLD_HEIGHT) return 0.0f;
+    float sunAngle = g_WorldTime * 6.2831853f;
+    float rawDaylight = sinf(sunAngle);
+    float daylight = (rawDaylight > 0.0f) ? rawDaylight : 0.0f;
+
+    int surfY = (x >= 0 && x < WORLD_WIDTH) ? g_SurfaceHeight[x] : 85;
+    float sunLight = 0.0f;
+    if (y >= surfY) {
+        sunLight = daylight;
+    } else {
+        float depth = (float)(surfY - y);
+        sunLight = daylight * expf(-depth * 0.25f);
+    }
+
+    float torchLight = 0.0f;
+    for (int dx = -7; dx <= 7; dx++) {
+        for (int dy = -7; dy <= 7; dy++) {
+            int tx = x + dx;
+            int ty = y + dy;
+            if (tx >= 0 && tx < WORLD_WIDTH && ty >= 0 && ty < WORLD_HEIGHT) {
+                BlockType bt = g_World[tx][ty];
+                if (bt != BLOCK_AIR && g_BlockDefs[bt].emitLight) {
+                    float dist = sqrtf((float)(dx * dx + dy * dy));
+                    if (dist < 7.5f) {
+                        float att = (1.0f - dist / 7.5f) * 0.90f;
+                        if (att > torchLight) torchLight = att;
+                    }
+                }
+            }
+        }
+    }
+
+    float totalLight = sunLight + torchLight;
+    if (totalLight > 1.0f) totalLight = 1.0f;
+    return totalLight;
+}
+
 void updateMobs(float dt, float playerX, float playerY) {
     // ------------------------------------------------------------------------
     // 1. Mob Spawning & Despawning Management (Maintains ~10-16 mobs)
@@ -202,22 +240,55 @@ void updateMobs(float dt, float playerX, float playerY) {
                     if (chosenType == MOB_BAT) {
                         // Bats spawn in open air pockets
                         if (!isSolidBlock(targetX, searchY) && !isSolidBlock(targetX, searchY + 1)) {
-                            spawnMob((float)targetX + 0.5f, (float)searchY + 0.5f, MOB_BAT);
+                            int spawnY = searchY;
+                            int surfaceY = (targetX >= 0 && targetX < WORLD_WIDTH) ? g_SurfaceHeight[targetX] : 85;
+                            float sunAngle = g_WorldTime * 6.2831853f;
+                            bool isDay = (sinf(sunAngle) > 0.0f);
+                            float lightFactor = getMobSpawnLightLevel(targetX, spawnY);
+
+                            bool canSpawn = true;
+                            if (isDay && (spawnY > surfaceY - 6) && (lightFactor > 0.35f)) {
+                                canSpawn = false;
+                            } else if (lightFactor >= 0.35f) {
+                                canSpawn = false;
+                            }
+
+                            if (canSpawn) {
+                                spawnMob((float)targetX + 0.5f, (float)searchY + 0.5f, MOB_BAT);
+                            }
                         }
                     } else {
                         // Zombies need solid footing
                         for (int testY = searchY; testY >= 3; testY--) {
                             if (isSolidBlock(targetX, testY) && !isSolidBlock(targetX, testY + 1) && !isSolidBlock(targetX, testY + 2)) {
-                                spawnMob((float)targetX + 0.5f, (float)(testY + 1), MOB_ZOMBIE);
+                                int spawnY = testY + 1;
+                                int surfaceY = (targetX >= 0 && targetX < WORLD_WIDTH) ? g_SurfaceHeight[targetX] : 85;
+                                float sunAngle = g_WorldTime * 6.2831853f;
+                                bool isDay = (sinf(sunAngle) > 0.0f);
+                                float lightFactor = getMobSpawnLightLevel(targetX, spawnY);
+
+                                bool canSpawn = true;
+                                if (isDay && (spawnY > surfaceY - 6) && (lightFactor > 0.35f)) {
+                                    canSpawn = false;
+                                } else if (lightFactor >= 0.35f) {
+                                    canSpawn = false;
+                                }
+
+                                if (canSpawn) {
+                                    spawnMob((float)targetX + 0.5f, (float)(testY + 1), MOB_ZOMBIE);
+                                }
                                 break;
                             }
                         }
                     }
                 } else {
                     // Surface Ground Zone
-                    int surfY = getSurfaceHeight(targetX, 1337);
+                    int surfY = (targetX >= 0 && targetX < WORLD_WIDTH) ? g_SurfaceHeight[targetX] : getSurfaceHeight(targetX, 1337);
                     float sunAngle = g_WorldTime * 6.2831853f;
                     float daylight = sinf(sunAngle);
+                    bool isDay = (daylight > 0.0f);
+                    int spawnY = surfY + 1;
+                    float lightFactor = getMobSpawnLightLevel(targetX, spawnY);
 
                     if (daylight < 0.35f) {
                         // Night surface: Zombies crawl out, accompanied by nighttime slimes
@@ -227,7 +298,18 @@ void updateMobs(float dt, float playerX, float playerY) {
                         chosenType = MOB_SLIME;
                     }
 
-                    if (surfY > 0 && surfY < WORLD_HEIGHT - 3) {
+                    // Hostile mobs only spawn in dark/dim locations (lightFactor < 0.35f) or at night.
+                    // If daytime (isDay) and on/near surface (spawnY > surfaceY - 6) and lightFactor > 0.35f, hostile mobs must NOT spawn!
+                    // Torches or daylight prevent hostile mob spawning.
+                    if (chosenType == MOB_ZOMBIE || chosenType == MOB_BAT) {
+                        if (isDay && (spawnY > surfY - 6) && (lightFactor > 0.35f)) {
+                            chosenType = MOB_SLIME;
+                        } else if (lightFactor >= 0.35f) {
+                            chosenType = -1;
+                        }
+                    }
+
+                    if (chosenType >= 0 && surfY > 0 && surfY < WORLD_HEIGHT - 3) {
                         spawnMob((float)targetX + 0.5f, (float)(surfY + 1), chosenType);
                     }
                 }

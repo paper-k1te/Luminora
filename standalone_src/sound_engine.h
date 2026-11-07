@@ -113,63 +113,76 @@ static inline float sfxRandomFloat(void) {
 // Procedural Synthesis of All 11 Sound Effects
 // ============================================================================
 static void synthesizeAllSounds(void) {
-    // 1. SFX_CLICK: UI button click (short square click)
+    // 1. SFX_CLICK: UI button click (softened responsive click)
     {
         float duration = 0.035f;
         int count = (int)(duration * AUDIO_SAMPLE_RATE);
         int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
         for (int i = 0; i < count; i++) {
             float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq = (t < 0.010f) ? 1400.0f : 850.0f;
+            float freq = (t < 0.008f) ? 1200.0f : 750.0f;
             float phase = 2.0f * (float)M_PI * freq * t;
-            float wave = (sinf(phase) > 0.0f) ? 0.7f : -0.7f;
-            wave += 0.3f * sinf(phase);
-            float env = expf(-95.0f * t);
-            float sample = wave * env * 18000.0f;
+            // Soften square edge with smooth harmonic blend
+            float wave = sinf(phase) * 0.75f + sinf(phase * 2.0f) * 0.20f + sinf(phase * 3.0f) * 0.05f;
+            float attack = (t < 0.002f) ? (t / 0.002f) : 1.0f;
+            float env = attack * expf(-85.0f * t);
+            float sample = wave * env * 12000.0f; // Peak amplitude reduced from 18000 to 12000
             pcm[i] = (int16_t)sample;
         }
         g_SfxTable[SFX_CLICK].sampleCount = count;
         g_SfxTable[SFX_CLICK].pcmSamples = pcm;
     }
 
-    // 2. SFX_MINE: Block dig chip sound (crunch noise + impact)
+    // 2. SFX_MINE: Block dig chip sound (satisfying solid dig + soft low-pass envelope)
     {
-        float duration = 0.090f;
+        float duration = 0.095f;
         int count = (int)(duration * AUDIO_SAMPLE_RATE);
         int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
         float phase = 0.0f;
+        float noiseLp = 0.0f;
         for (int i = 0; i < count; i++) {
             float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq = 190.0f * expf(-32.0f * t) + 40.0f;
+            // Warm solid impact sweep
+            float freq = 160.0f * expf(-30.0f * t) + 42.0f;
             phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-            float impact = sinf(phase) * expf(-26.0f * t);
-            float noise = sfxRandomFloat() * expf(-36.0f * t);
-            float mix = impact * 0.55f + noise * 0.45f;
-            pcm[i] = (int16_t)(mix * 24000.0f);
+            float impact = (sinf(phase) * 0.80f + sinf(phase * 0.5f) * 0.20f) * expf(-24.0f * t);
+
+            // One-pole low-pass filter on crunch noise to remove treble clicks
+            float rawNoise = sfxRandomFloat();
+            noiseLp += 0.22f * (rawNoise - noiseLp);
+            float noiseEnv = expf(-38.0f * t);
+
+            // Decreased noise crunch gain (0.22 vs 0.45), boosted solid body impact (0.78 vs 0.55)
+            float attack = (t < 0.003f) ? (t / 0.003f) : 1.0f;
+            float mix = (impact * 0.78f + noiseLp * 0.22f * noiseEnv) * attack;
+            pcm[i] = (int16_t)(mix * 22000.0f);
         }
         g_SfxTable[SFX_MINE].sampleCount = count;
         g_SfxTable[SFX_MINE].pcmSamples = pcm;
     }
 
-    // 3. SFX_BREAK: Block destroyed (burst crunch)
+    // 3. SFX_BREAK: Block destroyed (crumbling collapse with rounded sines/triangles)
     {
-        float duration = 0.180f;
+        float duration = 0.185f;
         int count = (int)(duration * AUDIO_SAMPLE_RATE);
         int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
         float phase = 0.0f;
+        float crackleLp = 0.0f;
         for (int i = 0; i < count; i++) {
             float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq = 250.0f * expf(-16.0f * t) + 45.0f;
+            float freq = 220.0f * expf(-14.0f * t) + 40.0f;
             phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-            float rumble = sinf(phase);
-            if (rumble > 0.4f) rumble = 0.4f;
-            else if (rumble < -0.4f) rumble = -0.4f;
-            rumble *= 2.5f;
 
-            float crackle = sfxRandomFloat() * (1.0f + 0.4f * sinf(160.0f * (float)M_PI * t));
-            float env = (t < 0.005f) ? (t / 0.005f) : expf(-13.0f * t);
-            float mix = (rumble * 0.40f + crackle * 0.60f) * env;
-            pcm[i] = (int16_t)(mix * 25000.0f);
+            // Rounded smooth sub/mid rumble without harsh hard-clipping
+            float rumble = sinf(phase) * 0.70f + sinf(phase * 0.5f) * 0.30f;
+
+            // Low-pass filtered crackle to eliminate harsh treble buzzing
+            float rawCrackle = sfxRandomFloat();
+            crackleLp += 0.26f * (rawCrackle - crackleLp);
+
+            float env = (t < 0.006f) ? (t / 0.006f) : expf(-11.5f * (t - 0.006f));
+            float mix = (rumble * 0.62f + crackleLp * 0.38f) * env;
+            pcm[i] = (int16_t)(mix * 23000.0f);
         }
         g_SfxTable[SFX_BREAK].sampleCount = count;
         g_SfxTable[SFX_BREAK].pcmSamples = pcm;
@@ -254,48 +267,63 @@ static void synthesizeAllSounds(void) {
         g_SfxTable[SFX_FLY].pcmSamples = pcm;
     }
 
-    // 8. SFX_HIT: Mob hit (punch impact)
+    // 8. SFX_HIT: Mob hit (warm mid-frequency punch thud)
     {
-        float duration = 0.115f;
+        float duration = 0.125f;
         int count = (int)(duration * AUDIO_SAMPLE_RATE);
         int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
         float phase = 0.0f;
+        float punchLp = 0.0f;
         for (int i = 0; i < count; i++) {
             float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq = 440.0f * expf(-35.0f * t) + 65.0f;
+            // Lowered transient frequency sweep (240 Hz down to 55 Hz instead of 440 Hz)
+            float freq = 240.0f * expf(-32.0f * t) + 55.0f;
             phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-            float s = sinf(phase);
-            // Soft clipping overdrive distortion
-            s = 1.5f * s - 0.5f * s * s * s;
-            float punchNoise = (t < 0.030f) ? (sfxRandomFloat() * 0.5f) : 0.0f;
-            float env = expf(-26.0f * t);
-            pcm[i] = (int16_t)((s * 0.7f + punchNoise * 0.3f) * env * 24500.0f);
+
+            // Warm punch thud with rich fundamental + octave sub-body
+            float body = sinf(phase) * 0.70f + sinf(phase * 0.5f) * 0.30f;
+            // Gentle soft saturation (smooth overdrive without harsh clipping)
+            float thud = tanhf(body * 1.4f);
+
+            // Low-pass filtered impact noise for meaty punch transient
+            float rawNoise = (t < 0.035f) ? sfxRandomFloat() : 0.0f;
+            punchLp += 0.30f * (rawNoise - punchLp);
+
+            float env = expf(-22.0f * t);
+            float mix = (thud * 0.75f + punchLp * 0.25f) * env;
+            pcm[i] = (int16_t)(mix * 23500.0f);
         }
         g_SfxTable[SFX_HIT].sampleCount = count;
         g_SfxTable[SFX_HIT].pcmSamples = pcm;
     }
 
-    // 9. SFX_KILL: Mob death (8-bit explosion noise)
+    // 9. SFX_KILL: Mob death (cinematic deep explosion with low-frequency roll-off)
     {
-        float duration = 0.340f;
+        float duration = 0.360f;
         int count = (int)(duration * AUDIO_SAMPLE_RATE);
         int16_t* pcm = (int16_t*)calloc(count, sizeof(int16_t));
         float phase = 0.0f;
         float holdNoise = 0.0f;
+        float noiseLp = 0.0f;
         for (int i = 0; i < count; i++) {
             float t = (float)i / (float)AUDIO_SAMPLE_RATE;
-            float freq = 160.0f * expf(-8.5f * t) + 32.0f;
+            // Deep sub-bass sweep
+            float freq = 135.0f * expf(-7.5f * t) + 28.0f;
             phase += 2.0f * (float)M_PI * freq / (float)AUDIO_SAMPLE_RATE;
-            float rumble = sinf(phase) * 0.4f;
+            float subBass = sinf(phase) * 0.65f + sinf(phase * 0.5f) * 0.35f;
 
-            // Sample and hold noise (classic retro 8-bit sound chip frequency divider)
-            if ((i % 6) == 0) {
+            // Sample and hold noise softened with dynamic low-pass roll-off
+            if ((i % 5) == 0) {
                 holdNoise = sfxRandomFloat();
             }
+            // Dynamic low-frequency roll-off: progressively filters treble as sound decays
+            float rollOffAlpha = 0.22f * expf(-3.5f * t) + 0.04f;
+            noiseLp += rollOffAlpha * (holdNoise - noiseLp);
 
-            float env = (t < 0.020f) ? (t / 0.020f) : expf(-6.8f * t);
-            float mix = (rumble + holdNoise * 0.65f) * env;
-            pcm[i] = (int16_t)(mix * 25000.0f);
+            float attack = (t < 0.015f) ? (t / 0.015f) : 1.0f;
+            float env = attack * expf(-5.8f * t);
+            float mix = (subBass * 0.65f + noiseLp * 0.35f) * env;
+            pcm[i] = (int16_t)(mix * 24000.0f);
         }
         g_SfxTable[SFX_KILL].sampleCount = count;
         g_SfxTable[SFX_KILL].pcmSamples = pcm;

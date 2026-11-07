@@ -108,17 +108,17 @@ typedef struct {
 
 // 16 Full Tools Definitions across Wood, Stone, Iron, Diamond
 static const ToolDef g_ToolDefs[ITEM_TOOL_COUNT] = {
-    // Pickaxes: Speed multiplier on stone, ores, bricks
-    { ITEM_TOOL_WOOD_PICKAXE,    TOOL_PICKAXE, TIER_WOOD,    "Wooden Pickaxe",  "木镐",   "采矿工具: 开采岩石与矿脉速度 2.0x",   "Mining tool: Mines stone and ores at 2.0x speed",    2.0f,  6.0f, 1.0f, 0.68f, 0.46f, 0.24f },
-    { ITEM_TOOL_STONE_PICKAXE,   TOOL_PICKAXE, TIER_STONE,   "Stone Pickaxe",   "石镐",   "采矿工具: 开采岩石与矿脉速度 4.5x",   "Mining tool: Mines stone and ores at 4.5x speed",    4.5f,  7.0f, 1.1f, 0.62f, 0.64f, 0.66f },
-    { ITEM_TOOL_IRON_PICKAXE,    TOOL_PICKAXE, TIER_IRON,    "Iron Pickaxe",    "铁镐",   "采矿工具: 开采岩石与矿脉速度 10.0x",  "Mining tool: Mines stone and ores at 10.0x speed",   10.0f,  8.0f, 1.2f, 0.88f, 0.90f, 0.94f },
-    { ITEM_TOOL_DIAMOND_PICKAXE, TOOL_PICKAXE, TIER_DIAMOND, "Diamond Pickaxe", "钻石镐", "神级采矿: 开采岩石与矿脉速度 22.0x",  "Supreme tool: Mines stone and ores at 22.0x speed", 22.0f,  9.0f, 1.4f, 0.25f, 0.90f, 0.98f },
+    // Pickaxes: Speed multiplier on stone, ores, bricks (Minecraft-balanced mining progression)
+    { ITEM_TOOL_WOOD_PICKAXE,    TOOL_PICKAXE, TIER_WOOD,    "Wooden Pickaxe",  "木镐",   "采矿工具: 开采岩石 1.2s | 矿脉 1.8s",  "Mining tool: Mines stone 1.2s | ores 1.8s",   3.75f,  6.0f, 1.0f, 0.68f, 0.46f, 0.24f },
+    { ITEM_TOOL_STONE_PICKAXE,   TOOL_PICKAXE, TIER_STONE,   "Stone Pickaxe",   "石镐",   "采矿工具: 开采岩石 0.6s | 矿脉 0.9s",  "Mining tool: Mines stone 0.6s | ores 0.9s",   7.5f,   7.0f, 1.1f, 0.62f, 0.64f, 0.66f },
+    { ITEM_TOOL_IRON_PICKAXE,    TOOL_PICKAXE, TIER_IRON,    "Iron Pickaxe",    "铁镐",   "采矿工具: 开采岩石 0.35s | 矿脉 0.5s", "Mining tool: Mines stone 0.35s | ores 0.5s", 13.0f,  8.0f, 1.2f, 0.88f, 0.90f, 0.94f },
+    { ITEM_TOOL_DIAMOND_PICKAXE, TOOL_PICKAXE, TIER_DIAMOND, "Diamond Pickaxe", "钻石镐", "神级采矿: 开采岩石 0.2s | 黑曜石 2.5s", "Supreme tool: Mines stone 0.2s | obsidian 2.5s", 22.5f,  9.0f, 1.4f, 0.25f, 0.90f, 0.98f },
 
-    // Axes: Rapid chop on wood, planks, leaves, cactus
-    { ITEM_TOOL_WOOD_AXE,        TOOL_AXE,     TIER_WOOD,    "Wooden Axe",      "木斧",   "伐木工具: 砍伐树木与木板速度 2.0x",   "Logging tool: Chops trees and wood at 2.0x speed",   2.0f,  7.0f, 1.1f, 0.68f, 0.46f, 0.24f },
-    { ITEM_TOOL_STONE_AXE,       TOOL_AXE,     TIER_STONE,   "Stone Axe",       "石斧",   "伐木工具: 砍伐树木与木板速度 4.5x",   "Logging tool: Chops trees and wood at 4.5x speed",   4.5f,  8.0f, 1.2f, 0.62f, 0.64f, 0.66f },
-    { ITEM_TOOL_IRON_AXE,        TOOL_AXE,     TIER_IRON,    "Iron Axe",        "铁斧",   "伐木工具: 砍伐树木与木板速度 10.0x",  "Logging tool: Chops trees and wood at 10.0x speed",  10.0f, 10.0f, 1.4f, 0.88f, 0.90f, 0.94f },
-    { ITEM_TOOL_DIAMOND_AXE,     TOOL_AXE,     TIER_DIAMOND, "Diamond Axe",     "钻石斧", "神级伐木: 秒速砍伐木材速度 22.0x",  "Supreme logging: Chops wood instantly at 22.0x speed", 22.0f, 12.0f, 1.8f, 0.25f, 0.90f, 0.98f },
+    // Axes: Rapid chop on wood, planks, leaves, cactus (~0.5s chop with axe)
+    { ITEM_TOOL_WOOD_AXE,        TOOL_AXE,     TIER_WOOD,    "Wooden Axe",      "木斧",   "伐木工具: 砍伐树木与木板 0.5s",       "Logging tool: Chops trees and wood in 0.5s",   4.0f,  7.0f, 1.1f, 0.68f, 0.46f, 0.24f },
+    { ITEM_TOOL_STONE_AXE,       TOOL_AXE,     TIER_STONE,   "Stone Axe",       "石斧",   "伐木工具: 高速砍伐树木 0.33s",        "Logging tool: Chops trees and wood in 0.33s",  6.0f,  8.0f, 1.2f, 0.62f, 0.64f, 0.66f },
+    { ITEM_TOOL_IRON_AXE,        TOOL_AXE,     TIER_IRON,    "Iron Axe",        "铁斧",   "伐木工具: 极速砍伐树木 0.2s",         "Logging tool: Chops trees and wood in 0.2s",  10.0f, 10.0f, 1.4f, 0.88f, 0.90f, 0.94f },
+    { ITEM_TOOL_DIAMOND_AXE,     TOOL_AXE,     TIER_DIAMOND, "Diamond Axe",     "钻石斧", "神级伐木: 瞬间斩断树木 0.12s",        "Supreme logging: Chops wood instantly in 0.12s", 16.0f, 12.0f, 1.8f, 0.25f, 0.90f, 0.98f },
 
     // Swords: Heavy melee damage and massive knockback against Slimes, Bats, Zombies!
     { ITEM_TOOL_WOOD_SWORD,      TOOL_SWORD,   TIER_WOOD,    "Wooden Sword",    "木剑",   "近战武器: 挥砍伤害 +3 | 击退 1.5x",    "Melee weapon: Slash damage +3 | Knockback 1.5x",    1.0f,  8.0f, 1.5f, 0.68f, 0.46f, 0.24f },
@@ -126,11 +126,11 @@ static const ToolDef g_ToolDefs[ITEM_TOOL_COUNT] = {
     { ITEM_TOOL_IRON_SWORD,      TOOL_SWORD,   TIER_IRON,    "Iron Sword",      "铁剑",   "近战武器: 挥砍伤害 +10 | 击退 2.3x",   "Melee weapon: Slash damage +10 | Knockback 2.3x",   1.0f, 15.0f, 2.3f, 0.88f, 0.90f, 0.94f },
     { ITEM_TOOL_DIAMOND_SWORD,   TOOL_SWORD,   TIER_DIAMOND, "Diamond Sword",   "钻石剑", "至尊神剑: 挥砍伤害 +15 | 巨幅击退 3.2x", "Supreme sword: Slash damage +15 | Massive knockback 3.2x", 1.0f, 20.0f, 3.2f, 0.25f, 0.90f, 0.98f },
 
-    // Shovels: Rapid dig on dirt, sand, clay, snow, mud
-    { ITEM_TOOL_WOOD_SHOVEL,     TOOL_SHOVEL,  TIER_WOOD,    "Wooden Shovel",   "木铲",   "挖掘工具: 挖掘泥土与沙地速度 2.0x",   "Excavation tool: Digs dirt and sand at 2.0x speed",  2.0f,  6.0f, 1.0f, 0.68f, 0.46f, 0.24f },
-    { ITEM_TOOL_STONE_SHOVEL,    TOOL_SHOVEL,  TIER_STONE,   "Stone Shovel",    "石铲",   "挖掘工具: 挖掘泥土与沙地速度 4.5x",   "Excavation tool: Digs dirt and sand at 4.5x speed",  4.5f,  7.0f, 1.1f, 0.62f, 0.64f, 0.66f },
-    { ITEM_TOOL_IRON_SHOVEL,     TOOL_SHOVEL,  TIER_IRON,    "Iron Shovel",     "铁铲",   "挖掘工具: 挖掘泥土与沙地速度 10.0x",  "Excavation tool: Digs dirt and sand at 10.0x speed",  10.0f,  8.0f, 1.2f, 0.88f, 0.90f, 0.94f },
-    { ITEM_TOOL_DIAMOND_SHOVEL,  TOOL_SHOVEL,  TIER_DIAMOND, "Diamond Shovel",  "钻石铲", "神级挖掘: 挖掘泥土与沙地速度 22.0x",  "Supreme excavation: Digs dirt and sand at 22.0x speed", 22.0f,  9.0f, 1.3f, 0.25f, 0.90f, 0.98f },
+    // Shovels: Rapid dig on dirt, sand, clay, snow, mud (~0.15s dig with shovel)
+    { ITEM_TOOL_WOOD_SHOVEL,     TOOL_SHOVEL,  TIER_WOOD,    "Wooden Shovel",   "木铲",   "挖掘工具: 挖掘泥土与沙地 0.15s",      "Excavation tool: Digs dirt and sand in 0.15s",  4.0f,  6.0f, 1.0f, 0.68f, 0.46f, 0.24f },
+    { ITEM_TOOL_STONE_SHOVEL,    TOOL_SHOVEL,  TIER_STONE,   "Stone Shovel",    "石铲",   "挖掘工具: 高速挖掘泥土 0.10s",        "Excavation tool: Digs dirt and sand in 0.10s",  6.0f,  7.0f, 1.1f, 0.62f, 0.64f, 0.66f },
+    { ITEM_TOOL_IRON_SHOVEL,     TOOL_SHOVEL,  TIER_IRON,    "Iron Shovel",     "铁铲",   "挖掘工具: 极速挖掘泥土 0.06s",        "Excavation tool: Digs dirt and sand in 0.06s", 10.0f,  8.0f, 1.2f, 0.88f, 0.90f, 0.94f },
+    { ITEM_TOOL_DIAMOND_SHOVEL,  TOOL_SHOVEL,  TIER_DIAMOND, "Diamond Shovel",  "钻石铲", "神级挖掘: 瞬间平整沙土 0.04s",        "Supreme excavation: Digs dirt and sand in 0.04s", 16.0f,  9.0f, 1.3f, 0.25f, 0.90f, 0.98f },
 };
 
 // ============================================================================
@@ -148,6 +148,74 @@ static inline const ToolDef* getToolDef(int itemId) {
     return NULL;
 }
 
+// Minecraft-like natural base break times without tools (bare hands)
+static inline float getBlockBaseBreakTime(int blockType) {
+    switch (blockType) {
+        // Dirt / Grass / Sand / Snow / Mud: ~0.6s by hand
+        case BLOCK_GRASS:
+        case BLOCK_DIRT:
+        case BLOCK_SAND:
+        case BLOCK_SNOW:
+        case BLOCK_MUD:
+            return 0.60f;
+        case BLOCK_CLAY:
+        case BLOCK_ICE:
+            return 0.80f;
+
+        // Wood / Planks / Furniture: ~2.0s by hand
+        case BLOCK_WOOD:
+        case BLOCK_WOOD_PLANK:
+        case BLOCK_WORKBENCH:
+        case BLOCK_CHAIR:
+        case BLOCK_TABLE:
+        case BLOCK_DOOR:
+        case BLOCK_DOOR_UPPER:
+        case BLOCK_DOOR_OPEN_LOWER:
+        case BLOCK_DOOR_OPEN_UPPER:
+        case BLOCK_BED:
+        case BLOCK_CHEST:
+        case BLOCK_BOOKSHELF:
+        case BLOCK_CLOCK:
+            return 2.0f;
+        case BLOCK_LEAVES:
+            return 0.30f;
+        case BLOCK_CACTUS:
+            return 0.60f;
+
+        // Stone / Bricks: ~4.5s by hand
+        case BLOCK_STONE:
+        case BLOCK_BRICK:
+        case BLOCK_MOSSY_STONE:
+        case BLOCK_SANDSTONE:
+            return 4.5f;
+
+        // Ores (Coal, Iron, Gold, Diamond, Ruby) / Magma / Furnace: ~6.0s by hand
+        case BLOCK_COAL_ORE:
+        case BLOCK_IRON_ORE:
+        case BLOCK_GOLD_ORE:
+        case BLOCK_DIAMOND_ORE:
+        case BLOCK_RUBY_ORE:
+        case BLOCK_MAGMA:
+        case BLOCK_FURNACE:
+            return 6.0f;
+
+        // Obsidian: ~25.0s by hand
+        case BLOCK_OBSIDIAN:
+            return 25.0f;
+
+        // Quick / instant breaks
+        case BLOCK_TORCH:
+        case BLOCK_GLOW_SHROOM:
+        case BLOCK_CHANDELIER:
+            return 0.05f;
+        case BLOCK_GLASS:
+            return 0.35f;
+        default:
+            return 1.0f;
+    }
+}
+
+// MC-Balanced Tool Efficiency: eliminates artificial 0.04f bare-hand penalty
 static inline float getToolEfficiency(int heldItemId, int blockType) {
     const ToolDef* def = isToolItem(heldItemId) ? getToolDef(heldItemId) : NULL;
 
@@ -162,11 +230,38 @@ static inline float getToolEfficiency(int heldItemId, int blockType) {
         blockType == BLOCK_OBSIDIAN ||
         blockType == BLOCK_MAGMA ||
         blockType == BLOCK_MOSSY_STONE ||
-        blockType == BLOCK_SANDSTONE) {
+        blockType == BLOCK_SANDSTONE ||
+        blockType == BLOCK_FURNACE) {
         if (def && def->type == TOOL_PICKAXE) {
-            return def->speedMultiplier;
+            // Obsidian: Diamond Pick takes ~2.5s (25.0s / 10.0)
+            if (blockType == BLOCK_OBSIDIAN) {
+                return (def->tier == TIER_DIAMOND) ? 10.0f : 1.5f;
+            }
+            // Ores: Wood Pick 1.8s, Stone Pick 0.9s, Iron Pick 0.5s, Diamond Pick 0.3s
+            if (blockType == BLOCK_COAL_ORE ||
+                blockType == BLOCK_IRON_ORE ||
+                blockType == BLOCK_GOLD_ORE ||
+                blockType == BLOCK_DIAMOND_ORE ||
+                blockType == BLOCK_RUBY_ORE) {
+                switch (def->tier) {
+                    case TIER_WOOD:    return 3.333f; // 6.0 / 3.333 = 1.8s
+                    case TIER_STONE:   return 6.667f; // 6.0 / 6.667 = 0.9s
+                    case TIER_IRON:    return 12.0f;  // 6.0 / 12.0  = 0.5s
+                    case TIER_DIAMOND: return 20.0f;  // 6.0 / 20.0  = 0.3s
+                    default: return def->speedMultiplier;
+                }
+            }
+            // Stone / Bricks: Wood Pick 1.2s, Stone Pick 0.6s, Iron Pick 0.35s, Diamond Pick 0.2s
+            switch (def->tier) {
+                case TIER_WOOD:    return 3.75f;  // 4.5 / 3.75  = 1.2s
+                case TIER_STONE:   return 7.5f;   // 4.5 / 7.5   = 0.6s
+                case TIER_IRON:    return 12.86f; // 4.5 / 12.86 = 0.35s
+                case TIER_DIAMOND: return 22.5f;  // 4.5 / 22.5  = 0.2s
+                default: return def->speedMultiplier;
+            }
         }
-        return 0.04f; // Heavy penalty: bare hands or wrong tool takes 25-40s to break stone/ores!
+        // Bare hands or non-pickaxe: natural 1.0f speed (Stone 4.5s, Ores 6.0s, Obsidian 25s)
+        return 1.0f;
     }
 
     // 2. Wood / Plank / Furniture / Tree
@@ -178,14 +273,18 @@ static inline float getToolEfficiency(int heldItemId, int blockType) {
         blockType == BLOCK_CHAIR ||
         blockType == BLOCK_TABLE ||
         blockType == BLOCK_DOOR ||
+        blockType == BLOCK_DOOR_UPPER ||
+        blockType == BLOCK_DOOR_OPEN_LOWER ||
+        blockType == BLOCK_DOOR_OPEN_UPPER ||
         blockType == BLOCK_BED ||
         blockType == BLOCK_CHEST ||
         blockType == BLOCK_BOOKSHELF ||
         blockType == BLOCK_CLOCK) {
         if (def && def->type == TOOL_AXE) {
-            return def->speedMultiplier;
+            return def->speedMultiplier; // 4.0x on wood -> 0.5s
         }
-        return 0.4f; // Bare hands or wrong tool on wood (~3s break time)
+        // Bare hands: natural 1.0f speed -> 2.0s
+        return 1.0f;
     }
 
     // 3. Dirt / Sand / Clay / Snow / Mud
@@ -197,12 +296,13 @@ static inline float getToolEfficiency(int heldItemId, int blockType) {
         blockType == BLOCK_CLAY ||
         blockType == BLOCK_MUD) {
         if (def && def->type == TOOL_SHOVEL) {
-            return def->speedMultiplier;
+            return def->speedMultiplier; // 4.0x on dirt/sand -> 0.15s
         }
-        return 1.0f; // Bare hands on soil/sand (~0.4s break time)
+        // Bare hands: natural 1.0f speed -> 0.6s
+        return 1.0f;
     }
 
-    // Default for remaining blocks (torches, glass, etc.)
+    // Default for remaining blocks
     if (def) {
         return def->speedMultiplier;
     }
@@ -295,6 +395,41 @@ static inline const ArmorDef* getArmorDef(int itemId) {
         return &g_ArmorDefs[itemId - ITEM_ARMOR_WOOD_HELMET];
     }
     return NULL;
+}
+
+typedef struct {
+    float r, g, b;       // Base plate material color
+    float hr, hg, hb;    // Highlight / specular ridge color
+    float sr, sg, sb;    // Shadow / dark border / joint color
+} ArmorMaterialPalette;
+
+static inline bool getArmorMaterialPalette(int itemId, ArmorMaterialPalette* pal) {
+    if (!isArmorItem(itemId) || !pal) return false;
+    int tier = getArmorTier(itemId);
+    switch (tier) {
+        case TIER_WOOD:
+            pal->r  = 0.65f; pal->g  = 0.42f; pal->b  = 0.22f; // Wood oak brown
+            pal->hr = 0.78f; pal->hg = 0.55f; pal->hb = 0.32f; // Light wood grain highlight
+            pal->sr = 0.38f; pal->sg = 0.23f; pal->sb = 0.12f; // Dark bark shadow / iron band
+            return true;
+        case TIER_STONE:
+            pal->r  = 0.60f; pal->g  = 0.62f; pal->b  = 0.65f; // Granite grey
+            pal->hr = 0.75f; pal->hg = 0.77f; pal->hb = 0.80f; // Chiseled slate edge
+            pal->sr = 0.38f; pal->sg = 0.39f; pal->sb = 0.42f; // Dark mortar border
+            return true;
+        case TIER_IRON:
+            pal->r  = 0.86f; pal->g  = 0.88f; pal->b  = 0.92f; // Bright plate silver
+            pal->hr = 0.98f; pal->hg = 0.99f; pal->hb = 1.00f; // Specular polished white
+            pal->sr = 0.52f; pal->sg = 0.55f; pal->sb = 0.62f; // Tempered dark steel trim
+            return true;
+        case TIER_DIAMOND:
+            pal->r  = 0.22f; pal->g  = 0.86f; pal->b  = 0.96f; // Radiant aqua
+            pal->hr = 0.65f; pal->hg = 0.98f; pal->hb = 1.00f; // Radiant crystal sheen
+            pal->sr = 0.10f; pal->sg = 0.52f; pal->sb = 0.68f; // Deep prism teal edge
+            return true;
+        default:
+            return false;
+    }
 }
 
 static inline int getMaxDurability(int itemId) {
@@ -537,32 +672,32 @@ static inline void updateToolSwing(float dt, bool isActionActive) {
 }
 
 // Calculates dynamic swinging arm angle:
-// Rest angle is -15 deg.
-// 0.00 to 0.20: Wind-up pulls UP and BACK (+40 deg to +75 deg).
-// 0.20 to 0.65: Slashes FORWARD and DOWN (+75 deg to -65 deg) with powerful cubic acceleration.
-// 0.65 to 1.00: Clean recovery back to -15 deg resting position.
+// Rest angle is naturally hanging forward at +10 deg (+X direction in front of body, never behind back).
+// 0.00 to 0.20: Wind-up pulls UP and FORWARD (+10 deg to +95 deg).
+// 0.20 to 0.65: Slashes FORWARD and DOWN (+95 deg down to +8 deg) with powerful cubic acceleration.
+// 0.65 to 1.00: Smooth recovery back to natural resting +10 deg.
 static inline float getArmSwingAngle(float t, bool isSwinging, float walkCycle) {
     if (!isSwinging) {
-        // Natural resting angle with walking swing
-        return -15.0f + sinf(walkCycle) * 12.0f;
+        // Natural resting angle hanging forward (+10 deg) with walking swing (never behind back)
+        return 10.0f + sinf(walkCycle) * 6.0f;
     }
     // Dynamic swing arc:
-    // 0.00 to 0.20: Wind-up (pull back & up from -15 deg to +75 deg)
+    // 0.00 to 0.20: Wind-up (pulls up and forward into strike-ready posture)
     if (t < 0.20f) {
         float p = t / 0.20f;
-        return -15.0f + 90.0f * (p * p); // Peaks at +75 deg
+        return 10.0f + 85.0f * (p * p); // Peaks at +95 deg
     }
-    // 0.20 to 0.65: Powerful forward-down slash (+75 deg to -65 deg with cubic acceleration)
+    // 0.20 to 0.65: Powerful forward-down slash (+95 deg down to +8 deg with cubic acceleration)
     else if (t < 0.65f) {
         float p = (t - 0.20f) / 0.45f;
         float ease = 1.0f - powf(1.0f - p, 3.0f); // Ease out cubic: explosive initial acceleration
-        return 75.0f - 140.0f * ease; // Slashes down to -65 deg!
+        return 95.0f - 87.0f * ease; // Slashes forward and down to +8 deg in front of player
     }
-    // 0.65 to 1.00: Clean recovery back to resting -15 deg
+    // 0.65 to 1.00: Clean recovery back to resting +10 deg
     else {
         float p = (t - 0.65f) / 0.35f;
         float ease = p * (2.0f - p); // Smooth ease out recovery
-        return -65.0f + 50.0f * ease; // Recovers to -15 deg
+        return 8.0f + 2.0f * ease; // Recovers to +10 deg
     }
 }
 
@@ -856,11 +991,17 @@ void renderInHandTool(int heldItemId, float swingProgress, bool isSwinging, bool
     // 0. Dynamic Motion Arc / Slashing Swoosh Trail (rendered in shoulder space during downward slash)
     if (isSwinging && swingProgress >= 0.18f && swingProgress <= 0.70f) {
         float trailProgress = (swingProgress - 0.18f) / 0.52f;
-        float trailAlpha = sinf(trailProgress * (float)M_PI) * 0.60f;
+        float trailAlpha = sinf(trailProgress * (float)M_PI) * 0.70f;
         float tr = 0.9f, tg = 0.9f, tb = 0.95f;
         if (isToolItem(heldItemId)) {
             const ToolDef* tdef = getToolDef(heldItemId);
-            if (tdef) { tr = tdef->r; tg = tdef->g; tb = tdef->b; }
+            if (tdef) {
+                if (tdef->tier == TIER_DIAMOND) {
+                    tr = 0.35f; tg = 0.95f; tb = 1.0f; // Glowing radiant cyan slash
+                } else {
+                    tr = tdef->r; tg = tdef->g; tb = tdef->b;
+                }
+            }
         }
 
         glPushMatrix();
@@ -869,10 +1010,11 @@ void renderInHandTool(int heldItemId, float swingProgress, bool isSwinging, bool
         glBlendFunc(GL_SRC_ALPHA, GL_ONE); // Additive luminous slash trail
 
         float curA = armAngle;
-        float lagA = curA + 42.0f; // Trail sweeps 42 degrees behind the slash direction
-        int segments = 10;
-        float rInner = 0.55f;
-        float rOuter = 1.02f;
+        float lagA = curA + 40.0f; // Trail sweeps 40 degrees behind the slash direction
+        if (lagA > 95.0f) lagA = 95.0f;
+        int segments = 12;
+        float rInner = 0.50f;
+        float rOuter = 1.05f;
 
         glBegin(GL_QUAD_STRIP);
         for (int s = 0; s <= segments; s++) {
@@ -885,8 +1027,21 @@ void renderInHandTool(int heldItemId, float swingProgress, bool isSwinging, bool
 
             glColor4f(tr, tg, tb, fade);
             glVertex3f(sinA * rOuter, -cosA * rOuter, 0.0f);
-            glColor4f(tr * 0.7f, tg * 0.7f, tb * 0.7f, 0.0f);
+            glColor4f(tr * 0.5f, tg * 0.5f, tb * 0.5f, 0.0f);
             glVertex3f(sinA * rInner, -cosA * rInner, 0.0f);
+        }
+        glEnd();
+
+        // High-intensity sharp cutting edge streak along the outer rim of the slash arc
+        glLineWidth(2.5f);
+        glBegin(GL_LINE_STRIP);
+        for (int s = 0; s <= segments; s++) {
+            float frac = (float)s / (float)segments;
+            float angDeg = curA + (lagA - curA) * frac;
+            float rad = angDeg * (float)M_PI / 180.0f;
+            float fade = trailAlpha * (1.0f - frac * frac);
+            glColor4f(fminf(tr + 0.35f, 1.0f), fminf(tg + 0.35f, 1.0f), fminf(tb + 0.35f, 1.0f), fade);
+            glVertex3f(sinf(rad) * rOuter, -cosf(rad) * rOuter, 0.005f);
         }
         glEnd();
 
@@ -899,8 +1054,16 @@ void renderInHandTool(int heldItemId, float swingProgress, bool isSwinging, bool
     glRotatef(armAngle, 0.0f, 0.0f, 1.0f);
 
     // 1. Adventurer Arm (Sleeve + Cuffed Forearm + Glove Hand)
-    // Blue adventurer sleeve (shoulder / bicep)
-    glColor3f(0.20f, 0.42f, 0.78f);
+    ArmorMaterialPalette frontArmChestPal;
+    bool hasChestplate = (g_EquippedArmor[ARMOR_SLOT_CHEST] != 0) &&
+                         getArmorMaterialPalette(g_EquippedArmor[ARMOR_SLOT_CHEST], &frontArmChestPal);
+
+    // Sleeve / Shoulder pauldron
+    if (hasChestplate) {
+        glColor3f(frontArmChestPal.r, frontArmChestPal.g, frontArmChestPal.b);
+    } else {
+        glColor3f(0.20f, 0.42f, 0.78f); // Blue adventurer sleeve
+    }
     glBegin(GL_QUADS);
     glVertex3f(-0.085f, -0.22f, 0.0f);
     glVertex3f( 0.085f, -0.22f, 0.0f);
@@ -908,8 +1071,12 @@ void renderInHandTool(int heldItemId, float swingProgress, bool isSwinging, bool
     glVertex3f(-0.085f,  0.04f, 0.0f);
     glEnd();
 
-    // Sleeve cuff trim
-    glColor3f(0.14f, 0.30f, 0.58f);
+    // Sleeve cuff / armored pauldron trim
+    if (hasChestplate) {
+        glColor3f(frontArmChestPal.hr, frontArmChestPal.hg, frontArmChestPal.hb);
+    } else {
+        glColor3f(0.14f, 0.30f, 0.58f);
+    }
     glBegin(GL_QUADS);
     glVertex3f(-0.09f, -0.25f, 0.01f);
     glVertex3f( 0.09f, -0.25f, 0.01f);
@@ -947,7 +1114,7 @@ void renderInHandTool(int heldItemId, float swingProgress, bool isSwinging, bool
     if (heldItemId != BLOCK_AIR && heldItemId != 0) {
         glPushMatrix();
         glTranslatef(0.0f, -0.38f, 0.02f);
-        glRotatef(45.0f, 0.0f, 0.0f, 1.0f); // Default forward-upward grip angle
+        glRotatef(-45.0f, 0.0f, 0.0f, 1.0f); // Forward-upward tool grip (+X, +Y in hand space)
 
         if (isToolItem(heldItemId)) {
             const ToolDef* def = getToolDef(heldItemId);
@@ -1082,35 +1249,6 @@ void renderInHandTool(int heldItemId, float swingProgress, bool isSwinging, bool
         }
 
         glPopMatrix();
-    }
-
-    // 3. Dynamic Swinging Slash Arc Effect (Trail in front of blade during forward stroke)
-    if (isSwinging && swingProgress >= 0.20f && swingProgress <= 0.72f) {
-        float trailAlpha = (1.0f - fabsf(swingProgress - 0.45f) / 0.28f) * 0.65f;
-        if (trailAlpha > 0.0f) {
-            glEnable(GL_BLEND);
-            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-            float tr = 0.95f, tg = 0.95f, tb = 1.0f;
-            if (isToolItem(heldItemId)) {
-                const ToolDef* def = getToolDef(heldItemId);
-                if (def && def->tier == TIER_DIAMOND) {
-                    tr = 0.35f; tg = 0.95f; tb = 1.0f; // Glowing cyan slash
-                }
-            }
-
-            glColor4f(tr, tg, tb, trailAlpha);
-            glLineWidth(3.0f);
-            glBegin(GL_LINE_STRIP);
-            for (int i = 0; i <= 8; i++) {
-                float a = (float)i / 8.0f;
-                float arcAngle = 50.0f - 110.0f * a;
-                float rad = arcAngle * (float)M_PI / 180.0f;
-                float dist = 0.85f + 0.15f * sinf(a * (float)M_PI);
-                glVertex3f(sinf(rad) * dist, -cosf(rad) * dist, 0.03f);
-            }
-            glEnd();
-        }
     }
 
     glPopMatrix();

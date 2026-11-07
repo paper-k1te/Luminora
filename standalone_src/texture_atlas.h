@@ -46,6 +46,9 @@
 #define TILE_BOOKSHELF        52
 #define TILE_CLOCK            53
 #define TILE_CHANDELIER       54
+#define TILE_DOOR_UPPER       55
+#define TILE_DOOR_OPEN_LOWER  56
+#define TILE_DOOR_OPEN_UPPER  57
 
 static GLuint g_AtlasTex = 0;
 static inline GLuint getAtlasTextureGL(void) { return g_AtlasTex; }
@@ -1021,18 +1024,102 @@ static void paint_table(unsigned char* diff, int tile_idx) {
 }
 
 static void paint_door(unsigned char* diff, int tile_idx) {
+    // Closed Door - Lower Half (TILE_DOOR = 48)
     for (int y = 0; y < 16; y++) {
         for (int x = 0; x < 16; x++) {
-            int p = (x % 5 == 0) ? 100 : 160;
-            atlas_set_pixel(diff, tile_idx, x, y, p, p * 7 / 10, p / 2, 255);
-            if (x == 0 || x == 15 || y == 0 || y == 15) {
-                atlas_set_pixel(diff, tile_idx, x, y, 90, 60, 35, 255);
+            int p = (x % 5 == 0 || x % 5 == 4) ? 115 : 158;
+            atlas_set_pixel(diff, tile_idx, x, y, (unsigned char)p, (unsigned char)(p * 7 / 10), (unsigned char)(p / 2), 255);
+            if (x == 0 || x == 15 || y == 0) {
+                atlas_set_pixel(diff, tile_idx, x, y, 90, 58, 32, 255);
             }
-            if ((y == 12 || y == 3) && x >= 1 && x <= 4) {
-                atlas_set_pixel(diff, tile_idx, x, y, 65, 68, 75, 255);
+            if ((y == 3 || y == 4) && x >= 1 && x <= 4) {
+                atlas_set_pixel(diff, tile_idx, x, y, 62, 65, 72, 255);
             }
-            if (y >= 6 && y <= 8 && x >= 12 && x <= 13) {
-                atlas_set_pixel(diff, tile_idx, x, y, 240, 200, 45, 255);
+            if (y == 3 && x == 2) {
+                atlas_set_pixel(diff, tile_idx, x, y, 95, 100, 110, 255);
+            }
+            if (y == 2 && x >= 2 && x <= 13) {
+                atlas_set_pixel(diff, tile_idx, x, y, 100, 68, 38, 255);
+            }
+        }
+    }
+}
+
+static void paint_door_upper(unsigned char* diff, int tile_idx) {
+    // Closed Door - Upper Half (TILE_DOOR_UPPER = 55)
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            int p = (x % 5 == 0 || x % 5 == 4) ? 115 : 158;
+            atlas_set_pixel(diff, tile_idx, x, y, (unsigned char)p, (unsigned char)(p * 7 / 10), (unsigned char)(p / 2), 255);
+            if (x == 0 || x == 15 || y == 15) {
+                atlas_set_pixel(diff, tile_idx, x, y, 90, 58, 32, 255);
+            }
+            if ((y == 12 || y == 13) && x >= 1 && x <= 4) {
+                atlas_set_pixel(diff, tile_idx, x, y, 62, 65, 72, 255);
+            }
+            if (y == 12 && x == 2) {
+                atlas_set_pixel(diff, tile_idx, x, y, 95, 100, 110, 255);
+            }
+            // Brass Door Knob / Handle at waist height
+            if (y >= 2 && y <= 4 && x >= 11 && x <= 13) {
+                atlas_set_pixel(diff, tile_idx, x, y, 245, 205, 50, 255);
+            }
+            if (y == 3 && x == 12) {
+                atlas_set_pixel(diff, tile_idx, x, y, 255, 240, 140, 255);
+            }
+            // Decorative Glass Viewing Window in upper door
+            if (x >= 4 && x <= 11 && y >= 7 && y <= 11) {
+                if (x == 4 || x == 11 || y == 7 || y == 11) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 78, 48, 26, 255);
+                } else if ((x == 6 && y == 9) || (x == 7 && y == 10)) {
+                    atlas_set_pixel(diff, tile_idx, x, y, 225, 245, 255, 255);
+                } else {
+                    atlas_set_pixel(diff, tile_idx, x, y, 140, 200, 235, 220);
+                }
+            }
+        }
+    }
+}
+
+static void paint_door_open_lower(unsigned char* diff, int tile_idx) {
+    // Open Door - Lower Half (TILE_DOOR_OPEN_LOWER = 56)
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+            if (x == 0 || x == 15) {
+                atlas_set_pixel(diff, tile_idx, x, y, 90, 58, 32, 255);
+            }
+            if (y == 0) {
+                atlas_set_pixel(diff, tile_idx, x, y, 85, 54, 28, 255);
+            }
+            if (x >= 1 && x <= 3 && y >= 1) {
+                int p = (x == 1) ? 140 : ((x == 2) ? 120 : 95);
+                atlas_set_pixel(diff, tile_idx, x, y, (unsigned char)p, (unsigned char)(p * 7 / 10), (unsigned char)(p / 2), 255);
+            }
+            if ((y == 3 || y == 4) && (x == 1 || x == 2)) {
+                atlas_set_pixel(diff, tile_idx, x, y, 62, 65, 72, 255);
+            }
+        }
+    }
+}
+
+static void paint_door_open_upper(unsigned char* diff, int tile_idx) {
+    // Open Door - Upper Half (TILE_DOOR_OPEN_UPPER = 57)
+    for (int y = 0; y < 16; y++) {
+        for (int x = 0; x < 16; x++) {
+            atlas_set_pixel(diff, tile_idx, x, y, 0, 0, 0, 0);
+            if (x == 0 || x == 15 || y == 15) {
+                atlas_set_pixel(diff, tile_idx, x, y, 90, 58, 32, 255);
+            }
+            if (x >= 1 && x <= 3 && y < 15) {
+                int p = (x == 1) ? 140 : ((x == 2) ? 120 : 95);
+                atlas_set_pixel(diff, tile_idx, x, y, (unsigned char)p, (unsigned char)(p * 7 / 10), (unsigned char)(p / 2), 255);
+            }
+            if ((y == 12 || y == 13) && (x == 1 || x == 2)) {
+                atlas_set_pixel(diff, tile_idx, x, y, 62, 65, 72, 255);
+            }
+            if (y >= 2 && y <= 4 && x == 3) {
+                atlas_set_pixel(diff, tile_idx, x, y, 245, 205, 50, 255);
             }
         }
     }
@@ -1249,7 +1336,7 @@ static inline void GenerateTextureAtlasRGBA(unsigned char* outRgba, unsigned cha
     paint_item_gel(outRgba, TILE_GEL);
     paint_item_sticky_bomb(outRgba, TILE_STICKY_BOMB);
 
-    // Furniture Blocks (Tiles 45 - 54)
+    // Furniture Blocks (Tiles 45 - 57)
     paint_workbench(outRgba, TILE_WORKBENCH);
     paint_chair(outRgba, TILE_CHAIR);
     paint_table(outRgba, TILE_TABLE);
@@ -1260,6 +1347,9 @@ static inline void GenerateTextureAtlasRGBA(unsigned char* outRgba, unsigned cha
     paint_bookshelf(outRgba, TILE_BOOKSHELF);
     paint_clock(outRgba, TILE_CLOCK);
     paint_chandelier(outRgba, outEmission, TILE_CHANDELIER);
+    paint_door_upper(outRgba, TILE_DOOR_UPPER);
+    paint_door_open_lower(outRgba, TILE_DOOR_OPEN_LOWER);
+    paint_door_open_upper(outRgba, TILE_DOOR_OPEN_UPPER);
 }
 
 // ---------------------------------------------------------------------------
@@ -1300,6 +1390,19 @@ static inline int GetBlockFaceTextureIndex(int blockType, int face) {
     // Furniture Blocks (27 - 36 -> Tiles 45 - 54)
     if (blockType >= 27 && blockType <= 36) {
         return (blockType - 27) + TILE_WORKBENCH;
+    }
+    // 2-Block Door System Tiles (37 - 39 -> Tiles 55 - 57)
+    if (blockType == 37) { // BLOCK_DOOR_UPPER
+        return TILE_DOOR_UPPER;
+    }
+    if (blockType == 38) { // BLOCK_DOOR_OPEN_LOWER
+        return TILE_DOOR_OPEN_LOWER;
+    }
+    if (blockType == 39) { // BLOCK_DOOR_OPEN_UPPER
+        return TILE_DOOR_OPEN_UPPER;
+    }
+    if (blockType == 118) { // ITEM_GEL
+        return TILE_GEL;
     }
     return blockType;
 }

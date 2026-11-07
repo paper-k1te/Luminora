@@ -863,7 +863,7 @@ static inline bool isNearWorkbench(float px, float py) {
         for (int dy = -4; dy <= 4; dy++) {
             int x = bx + dx; int y = by + dy;
             if (x >= 0 && x < WORLD_WIDTH && y >= 0 && y < WORLD_HEIGHT) {
-                if (g_World[x][y] == BLOCK_WORKBENCH) return true;
+                if (g_World[x][y] == BLOCK_WORKBENCH || g_World[x][y] == BLOCK_FURNACE) return true;
             }
         }
     }

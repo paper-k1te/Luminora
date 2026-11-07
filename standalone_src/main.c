@@ -108,6 +108,9 @@ typedef enum {
     BLOCK_BOOKSHELF,
     BLOCK_CLOCK,
     BLOCK_CHANDELIER,
+    BLOCK_DOOR_UPPER,
+    BLOCK_DOOR_OPEN_LOWER,
+    BLOCK_DOOR_OPEN_UPPER,
     BLOCK_TYPE_COUNT
 } BlockType;
 
@@ -125,43 +128,60 @@ typedef struct {
 
 static BlockDef g_BlockDefs[BLOCK_TYPE_COUNT] = {
     { "Air",            "空气",       "无",         0.0f, 0.0f, 0.0f,  0.0f, false, true,  false, 0,0,0 },
-    { "Grass Block",    "草方块",     "泥土",       0.26f, 0.68f, 0.22f, 0.75f, true,  false, false, 0,0,0 },
-    { "Dirt Block",     "泥土",       "泥土",       0.52f, 0.35f, 0.22f, 0.75f, true,  false, false, 0,0,0 },
-    { "Stone Block",    "石块",       "原石",       0.50f, 0.52f, 0.54f, 3.0f, true,  false, false, 0,0,0 },
-    { "Wood Log",       "原木",       "原木",       0.58f, 0.38f, 0.20f, 1.8f, false, true,  false, 0,0,0 },
-    { "Leaves",         "树叶",       "树叶",       0.18f, 0.55f, 0.20f, 0.38f, true,  true,  false, 0,0,0 },
-    { "Sand Block",     "沙块",       "沙块",       0.88f, 0.78f, 0.52f, 0.6f, true,  false, false, 0,0,0 },
-    { "Sandstone",      "砂岩",       "砂岩",       0.75f, 0.64f, 0.42f, 1.8f, true,  false, false, 0,0,0 },
-    { "Cactus",         "仙人掌",     "仙人掌",     0.22f, 0.62f, 0.28f, 0.75f, true,  false, false, 0,0,0 },
-    { "Snow Block",     "雪块",       "雪球",       0.92f, 0.95f, 0.98f, 0.45f, true,  false, false, 0,0,0 },
-    { "Ice Block",      "坚冰",       "冰块",       0.65f, 0.85f, 0.95f, 1.2f, true,  true,  false, 0,0,0 },
-    { "Clay Block",     "粘土",       "粘土块",     0.68f, 0.52f, 0.45f, 1.0f, true,  false, false, 0,0,0 },
-    { "Coal Ore",       "煤矿石",     "煤炭",       0.25f, 0.25f, 0.27f, 3.75f, true,  false, false, 0,0,0 },
-    { "Iron Ore",       "铁矿石",     "铁矿",       0.72f, 0.58f, 0.50f, 4.8f, true,  false, false, 0,0,0 },
-    { "Gold Ore",       "金矿石",     "金矿",       0.95f, 0.82f, 0.22f, 6.0f, true,  false, false, 0,0,0 },
-    { "Diamond Ore",    "钻石矿石",   "璀璨钻石",   0.28f, 0.88f, 0.95f, 8.25f, true,  false, true,  0.2f, 0.6f, 0.8f },
-    { "Ruby Ore",       "红宝石矿",   "红宝石",     0.92f, 0.18f, 0.28f, 7.5f, true,  false, true,  0.8f, 0.1f, 0.2f },
-    { "Stone Brick",    "石砖",       "石砖",       0.72f, 0.38f, 0.30f, 3.0f, true,  false, false, 0,0,0 },
-    { "Wood Plank",     "木板",       "木板",       0.68f, 0.48f, 0.28f, 1.8f, true,  false, false, 0,0,0 },
-    { "Glass Block",    "透明玻璃",   "玻璃",       0.75f, 0.90f, 0.98f, 0.3f, true,  true,  false, 0,0,0 },
-    { "Torch",          "火把",       "火把",       1.00f, 0.85f, 0.25f, 0.1f, false, true,  true,  1.0f, 0.85f, 0.3f },
-    { "Obsidian",       "黑曜石",     "黑曜石",     0.16f, 0.12f, 0.22f, 18.0f, true,  false, false, 0,0,0 },
-    { "Magma Block",    "熔岩块",     "岩浆块",     0.90f, 0.32f, 0.08f, 3.75f, true,  false, true,  0.9f, 0.35f, 0.1f },
-    { "Mossy Stone",    "苔石",       "苔石",       0.42f, 0.52f, 0.40f, 2.4f, true,  false, false, 0,0,0 },
-    { "Mud Block",      "泥浆块",     "泥浆",       0.40f, 0.30f, 0.22f, 0.75f, true,  false, false, 0,0,0 },
-    { "Glow Shroom",    "发光蘑菇",   "发光蘑菇",   0.15f, 0.82f, 0.88f, 0.2f, false, true,  true,  0.2f, 0.9f, 0.95f },
-    { "Bedrock",        "基岩",       "基岩",       0.12f, 0.12f, 0.14f,-1.0f, true,  false, false, 0,0,0 },
-    { "Work Bench",     "工作台",     "工作台",     0.68f, 0.48f, 0.28f, 1.0f, true,  false, false, 0,0,0 },
-    { "Wooden Chair",   "木椅",       "木椅",       0.72f, 0.45f, 0.22f, 0.8f, false, true,  false, 0,0,0 },
-    { "Wooden Table",   "木桌",       "木桌",       0.65f, 0.42f, 0.22f, 1.0f, true,  false, false, 0,0,0 },
-    { "Wooden Door",    "木门",       "木门",       0.60f, 0.38f, 0.20f, 1.0f, true,  true,  false, 0,0,0 },
-    { "Bed",            "舒适木床",   "舒适木床",   0.85f, 0.25f, 0.25f, 1.0f, true,  false, false, 0,0,0 },
-    { "Furnace",        "石制熔炉",   "石制熔炉",   0.55f, 0.55f, 0.58f, 2.0f, true,  false, true,  1.0f, 0.65f, 0.25f },
-    { "Treasure Chest", "大藏宝箱",   "大藏宝箱",   0.85f, 0.68f, 0.20f, 1.5f, true,  false, false, 0,0,0 },
-    { "Bookshelf",      "精装书架",   "精装书架",   0.55f, 0.35f, 0.18f, 1.2f, true,  false, false, 0,0,0 },
-    { "Clock",          "古典摆钟",   "古典摆钟",   0.50f, 0.32f, 0.16f, 1.5f, true,  false, false, 0,0,0 },
-    { "Chandelier",     "铁艺吊灯",   "铁艺吊灯",   0.95f, 0.85f, 0.45f, 0.5f, false, true,  true,  1.0f, 0.88f, 0.50f }
+    { "Grass Block",    "草方块",     "泥土",       0.26f, 0.68f, 0.22f, 0.60f, true,  false, false, 0,0,0 },
+    { "Dirt Block",     "泥土",       "泥土",       0.52f, 0.35f, 0.22f, 0.60f, true,  false, false, 0,0,0 },
+    { "Stone Block",    "石块",       "原石",       0.50f, 0.52f, 0.54f, 4.5f,  true,  false, false, 0,0,0 },
+    { "Wood Log",       "原木",       "原木",       0.58f, 0.38f, 0.20f, 2.0f,  false, true,  false, 0,0,0 },
+    { "Leaves",         "树叶",       "树叶",       0.18f, 0.55f, 0.20f, 0.30f, true,  true,  false, 0,0,0 },
+    { "Sand Block",     "沙块",       "沙块",       0.88f, 0.78f, 0.52f, 0.60f, true,  false, false, 0,0,0 },
+    { "Sandstone",      "砂岩",       "砂岩",       0.75f, 0.64f, 0.42f, 4.5f,  true,  false, false, 0,0,0 },
+    { "Cactus",         "仙人掌",     "仙人掌",     0.22f, 0.62f, 0.28f, 0.60f, true,  false, false, 0,0,0 },
+    { "Snow Block",     "雪块",       "雪球",       0.92f, 0.95f, 0.98f, 0.60f, true,  false, false, 0,0,0 },
+    { "Ice Block",      "坚冰",       "冰块",       0.65f, 0.85f, 0.95f, 0.80f, true,  true,  false, 0,0,0 },
+    { "Clay Block",     "粘土",       "粘土块",     0.68f, 0.52f, 0.45f, 0.80f, true,  false, false, 0,0,0 },
+    { "Coal Ore",       "煤矿石",     "煤炭",       0.25f, 0.25f, 0.27f, 6.0f,  true,  false, false, 0,0,0 },
+    { "Iron Ore",       "铁矿石",     "铁矿",       0.72f, 0.58f, 0.50f, 6.0f,  true,  false, false, 0,0,0 },
+    { "Gold Ore",       "金矿石",     "金矿",       0.95f, 0.82f, 0.22f, 6.0f,  true,  false, false, 0,0,0 },
+    { "Diamond Ore",    "钻石矿石",   "璀璨钻石",   0.28f, 0.88f, 0.95f, 6.0f,  true,  false, true,  0.2f, 0.6f, 0.8f },
+    { "Ruby Ore",       "红宝石矿",   "红宝石",     0.92f, 0.18f, 0.28f, 6.0f,  true,  false, true,  0.8f, 0.1f, 0.2f },
+    { "Stone Brick",    "石砖",       "石砖",       0.72f, 0.38f, 0.30f, 4.5f,  true,  false, false, 0,0,0 },
+    { "Wood Plank",     "木板",       "木板",       0.68f, 0.48f, 0.28f, 2.0f,  true,  false, false, 0,0,0 },
+    { "Glass Block",    "透明玻璃",   "玻璃",       0.75f, 0.90f, 0.98f, 0.35f, true,  true,  false, 0,0,0 },
+    { "Torch",          "火把",       "火把",       1.00f, 0.85f, 0.25f, 0.05f, false, true,  true,  1.0f, 0.85f, 0.3f },
+    { "Obsidian",       "黑曜石",     "黑曜石",     0.16f, 0.12f, 0.22f, 25.0f, true,  false, false, 0,0,0 },
+    { "Magma Block",    "熔岩块",     "岩浆块",     0.90f, 0.32f, 0.08f, 6.0f,  true,  false, true,  0.9f, 0.35f, 0.1f },
+    { "Mossy Stone",    "苔石",       "苔石",       0.42f, 0.52f, 0.40f, 4.5f,  true,  false, false, 0,0,0 },
+    { "Mud Block",      "泥浆块",     "泥浆",       0.40f, 0.30f, 0.22f, 0.60f, true,  false, false, 0,0,0 },
+    { "Glow Shroom",    "发光蘑菇",   "发光蘑菇",   0.15f, 0.82f, 0.88f, 0.05f, false, true,  true,  0.2f, 0.9f, 0.95f },
+    { "Bedrock",        "基岩",       "基岩",       0.12f, 0.12f, 0.14f,-1.0f,  true,  false, false, 0,0,0 },
+    { "Work Bench",     "工作台",     "工作台",     0.68f, 0.48f, 0.28f, 2.0f,  true,  false, false, 0,0,0 },
+    { "Wooden Chair",   "木椅",       "木椅",       0.72f, 0.45f, 0.22f, 2.0f,  false, true,  false, 0,0,0 },
+    { "Wooden Table",   "木桌",       "木桌",       0.65f, 0.42f, 0.22f, 2.0f,  true,  false, false, 0,0,0 },
+    { "Wooden Door",    "木门",       "木门",       0.60f, 0.38f, 0.20f, 2.0f,  true,  true,  false, 0,0,0 },
+    { "Bed",            "舒适木床",   "舒适木床",   0.85f, 0.25f, 0.25f, 2.0f,  true,  false, false, 0,0,0 },
+    { "Furnace",        "石制熔炉",   "石制熔炉",   0.55f, 0.55f, 0.58f, 6.0f,  true,  false, true,  1.0f, 0.65f, 0.25f },
+    { "Treasure Chest", "大藏宝箱",   "大藏宝箱",   0.85f, 0.68f, 0.20f, 2.0f,  true,  false, false, 0,0,0 },
+    { "Bookshelf",      "精装书架",   "精装书架",   0.55f, 0.35f, 0.18f, 2.0f,  true,  false, false, 0,0,0 },
+    { "Clock",          "古典摆钟",   "古典摆钟",   0.50f, 0.32f, 0.16f, 2.0f,  true,  false, false, 0,0,0 },
+    { "Chandelier",     "铁艺吊灯",   "铁艺吊灯",   0.95f, 0.85f, 0.45f, 0.50f, false, true,  true,  1.0f, 0.88f, 0.50f },
+    { "Wooden Door (Top)",   "木门 (上半)", "木门", 0.60f, 0.38f, 0.20f, 2.0f,  true,  true,  false, 0,0,0 },
+    { "Open Door (Bottom)",  "开启木门(下)", "木门", 0.60f, 0.38f, 0.20f, 2.0f,  false, true,  false, 0,0,0 },
+    { "Open Door (Top)",     "开启木门(上)", "木门", 0.60f, 0.38f, 0.20f, 2.0f,  false, true,  false, 0,0,0 }
 };
+
+static inline bool isDoorBlock(int bt) {
+    return (bt == BLOCK_DOOR || bt == BLOCK_DOOR_UPPER ||
+            bt == BLOCK_DOOR_OPEN_LOWER || bt == BLOCK_DOOR_OPEN_UPPER);
+}
+static inline bool isDoorLower(int bt) {
+    return (bt == BLOCK_DOOR || bt == BLOCK_DOOR_OPEN_LOWER);
+}
+static inline bool isDoorUpper(int bt) {
+    return (bt == BLOCK_DOOR_UPPER || bt == BLOCK_DOOR_OPEN_UPPER);
+}
+static inline bool isDoorOpen(int bt) {
+    return (bt == BLOCK_DOOR_OPEN_LOWER || bt == BLOCK_DOOR_OPEN_UPPER);
+}
 
 // ============================================================================
 // Biome System
@@ -287,7 +307,7 @@ typedef struct {
     float x, y;
     float vx, vy;
     float rotation;
-    BlockType type;
+    int type;
     int count;
     float life;
 } DroppedItem;
@@ -332,6 +352,7 @@ typedef struct {
     float regenTimer;
     bool isDead;
     float deathTimer;
+    float fallVelocity;
 } Player;
 
 static Player g_Player;
@@ -369,7 +390,7 @@ static int  g_MouseScreenY = 0;
 // OpenGL Texture Atlas (managed via texture_atlas.h)
 
 static void generateWorld(int seed);
-static bool addToInventory(BlockType type, int count);
+static bool addToInventory(int type, int count);
 static int getSurfaceHeight(int x, int seed);
 
 // ============================================================================
@@ -510,6 +531,25 @@ static void spawnTree(int rootX, int rootY, BiomeType biome) {
     }
 }
 
+static void spawnOreVein(int startX, int startY, BlockType oreType, int count) {
+    int curX = startX;
+    int curY = startY;
+    for (int b = 0; b < count; b++) {
+        if (curX >= 1 && curX < WORLD_WIDTH - 1 && curY > BEDROCK_LEVEL && curY < WORLD_HEIGHT - 2) {
+            BlockType bt = g_World[curX][curY];
+            if (bt == BLOCK_STONE || bt == BLOCK_DIRT || bt == BLOCK_SANDSTONE ||
+                bt == BLOCK_ICE || bt == BLOCK_OBSIDIAN || bt == BLOCK_MAGMA || bt == BLOCK_MOSSY_STONE) {
+                g_World[curX][curY] = oreType;
+            }
+        }
+        int dir = rand() % 4;
+        if (dir == 0) curX++;
+        else if (dir == 1) curX--;
+        else if (dir == 2) curY++;
+        else curY--;
+    }
+}
+
 static void generateWorld(int seed) {
     memset(g_World, BLOCK_AIR, sizeof(g_World));
     memset(g_WallWorld, BLOCK_AIR, sizeof(g_WallWorld));
@@ -557,19 +597,48 @@ static void generateWorld(int seed) {
         }
     }
 
-    for (int x = 1; x < WORLD_WIDTH - 1; x++) {
+    // Rich Ore Vein Generation (Minecraft-Style Multi-Block Clusters)
+    for (int x = 2; x < WORLD_WIDTH - 2; x += 2) {
         int surfaceY = g_SurfaceHeight[x];
-        for (int y = BEDROCK_LEVEL + 3; y < surfaceY - 8; y++) {
-            if (g_World[x][y] == BLOCK_STONE || g_World[x][y] == BLOCK_DIRT || g_World[x][y] == BLOCK_SANDSTONE) {
-                float oreN = fbm2D((float)x, (float)y, seed + 400, 2, 0.14f);
-                if (oreN > 0.88f) {
-                    if (y < UNDERWORLD_LEVEL + 10) {
-                        g_World[x][y] = (oreN > 0.93f) ? BLOCK_RUBY_ORE : BLOCK_DIAMOND_ORE;
-                    } else if (y < surfaceY - 18) {
-                        g_World[x][y] = (oreN > 0.92f) ? BLOCK_GOLD_ORE : BLOCK_IRON_ORE;
-                    } else {
-                        g_World[x][y] = (oreN > 0.93f) ? BLOCK_IRON_ORE : BLOCK_COAL_ORE;
-                    }
+        for (int y = BEDROCK_LEVEL + 3; y < surfaceY - 2; y += 2) {
+            // 1. Diamond & Ruby Ores: In caverns and underworld, rich clusters (noise threshold 0.82f)
+            if (y < CAVERN_LEVEL) {
+                float gemN = fbm2D((float)x, (float)y, seed + 440, 2, 0.16f);
+                if (gemN > 0.82f) {
+                    BlockType gemType = (gemN > 0.91f) ? BLOCK_RUBY_ORE : BLOCK_DIAMOND_ORE;
+                    int clusterSize = 2 + (rand() % 3); // 2-4 blocks
+                    spawnOreVein(x, y, gemType, clusterSize);
+                    continue;
+                }
+            }
+
+            // 2. Gold Ore: Starts from surfaceY - 12, veins (noise threshold 0.78f)
+            if (y < surfaceY - 12) {
+                float goldN = fbm2D((float)x, (float)y, seed + 430, 2, 0.16f);
+                if (goldN > 0.78f) {
+                    int clusterSize = 2 + (rand() % 3); // 2-4 blocks
+                    spawnOreVein(x, y, BLOCK_GOLD_ORE, clusterSize);
+                    continue;
+                }
+            }
+
+            // 3. Iron Ore: Starts from surfaceY - 5, frequent veins (noise threshold 0.74f)
+            if (y < surfaceY - 5) {
+                float ironN = fbm2D((float)x, (float)y, seed + 420, 2, 0.16f);
+                if (ironN > 0.74f) {
+                    int clusterSize = 3 + (rand() % 3); // 3-5 blocks
+                    spawnOreVein(x, y, BLOCK_IRON_ORE, clusterSize);
+                    continue;
+                }
+            }
+
+            // 4. Coal Ore: Starts from surfaceY - 2, generous clusters (noise threshold 0.72f)
+            if (y < surfaceY - 2) {
+                float coalN = fbm2D((float)x, (float)y, seed + 410, 2, 0.16f);
+                if (coalN > 0.72f) {
+                    int clusterSize = 3 + (rand() % 3); // 3-5 blocks
+                    spawnOreVein(x, y, BLOCK_COAL_ORE, clusterSize);
+                    continue;
                 }
             }
         }
@@ -619,7 +688,7 @@ static void spawnParticle(float x, float y, float r, float g, float b, float vx,
     }
 }
 
-static void spawnDroppedItem(float x, float y, BlockType type, int count) {
+static void spawnDroppedItem(float x, float y, int type, int count) {
     if (type == BLOCK_AIR) return;
     for (int i = 0; i < MAX_DROPPED_ITEMS; i++) {
         if (!g_DroppedItems[i].active) {
@@ -637,12 +706,25 @@ static void spawnDroppedItem(float x, float y, BlockType type, int count) {
     }
 }
 
-static bool addToInventory(BlockType type, int count) {
+static bool addToInventory(int type, int count) {
     if (type == BLOCK_AIR || count <= 0) return true;
 
     char buf[64];
-    snprintf(buf, sizeof(buf), "+%d %s", count, (getLanguage() == LANG_ZH) ? g_BlockDefs[type].chineseName : g_BlockDefs[type].name);
-    spawnFloatingText(buf, g_Player.x, g_Player.y + 1.8f, g_BlockDefs[type].r, g_BlockDefs[type].g, g_BlockDefs[type].b);
+    const char* itemName = "Item";
+    float itemR = 0.9f, itemG = 0.9f, itemB = 0.9f;
+    if (type >= 0 && type < BLOCK_TYPE_COUNT) {
+        itemName = (getLanguage() == LANG_ZH) ? g_BlockDefs[type].chineseName : g_BlockDefs[type].name;
+        itemR = g_BlockDefs[type].r;
+        itemG = g_BlockDefs[type].g;
+        itemB = g_BlockDefs[type].b;
+    } else if (type == 118) { // ITEM_GEL
+        itemName = (getLanguage() == LANG_ZH) ? "史莱姆凝胶" : "Slime Gel";
+        itemR = 0.25f;
+        itemG = 0.88f;
+        itemB = 0.45f;
+    }
+    snprintf(buf, sizeof(buf), "+%d %s", count, itemName);
+    spawnFloatingText(buf, g_Player.x, g_Player.y + 1.8f, itemR, itemG, itemB);
 
     int remaining = count;
 
@@ -1144,6 +1226,7 @@ static void respawnPlayer(void) {
     g_Player.y = (float)spawnY;
     g_Player.vx = 0.0f;
     g_Player.vy = 0.0f;
+    g_Player.fallVelocity = 0.0f;
     g_Player.health = g_Player.maxHealth;
     g_Player.hurtTimer = 1.0f;
     g_Player.timeSinceCombat = 25.0f;
@@ -1164,6 +1247,7 @@ static void initGame(void) {
     g_Player.health = 100.0f;
     g_Player.maxHealth = 100.0f;
     g_Player.hurtTimer = 0.0f;
+    g_Player.fallVelocity = 0.0f;
     g_Player.isDead = false;
     g_Player.deathTimer = 0.0f;
 
@@ -1255,6 +1339,9 @@ static void updatePhysics(float dt) {
 
     g_Player.vy -= 34.0f * dt;
     if (g_Player.vy < -28.0f) g_Player.vy = -28.0f;
+    if (g_Player.vy < 0.0f) {
+        g_Player.fallVelocity = g_Player.vy;
+    }
 
     if ((g_Keys[VK_SPACE] || g_Keys['W'] || g_Keys[VK_UP]) && g_Player.isGrounded) {
         g_Player.vy = g_Player.jumpSpeed;
@@ -1306,6 +1393,7 @@ static void updatePhysics(float dt) {
     minY = (int)floorf(nextY);
     maxY = (int)floorf(nextY + g_Player.height);
 
+    float landingVy = g_Player.vy;
     g_Player.isGrounded = false;
     if (g_Player.vy <= 0.0f) {
         for (int x = minX; x <= maxX; x++) {
@@ -1315,6 +1403,28 @@ static void updatePhysics(float dt) {
                 g_Player.isGrounded = true;
                 break;
             }
+        }
+        if (g_Player.isGrounded) {
+            // Fall damage physics: landing velocity > 16.0f (falling > ~3.5 blocks)
+            if (fabsf(landingVy) > 16.0f && getGameMode() != MODE_CREATIVE && !isCreativeFlying()) {
+                float dmg = (fabsf(landingVy) - 15.0f) * 3.5f;
+                if (dmg > 0.0f && !g_Player.isDead) {
+                    g_Player.health -= dmg;
+                    g_Player.hurtTimer = 0.4f;
+                    g_Player.timeSinceCombat = 0.0f;
+                    playSound(SFX_HIT);
+                    char dmgStr[16];
+                    snprintf(dmgStr, sizeof(dmgStr), "-%d", (int)(dmg + 0.5f));
+                    spawnFloatingText(dmgStr, g_Player.x, g_Player.y + 1.8f, 1.0f, 0.2f, 0.2f);
+                    if (g_Player.health <= 0.0f) {
+                        g_Player.health = 0.0f;
+                        g_Player.isDead = true;
+                        g_Player.deathTimer = 0.0f;
+                        playSound(SFX_KILL);
+                    }
+                }
+            }
+            g_Player.fallVelocity = 0.0f;
         }
     } else {
         for (int x = minX; x <= maxX; x++) {
@@ -1403,9 +1513,28 @@ static void updatePhysics(float dt) {
             int ix = (int)floorf(g_DroppedItems[i].x);
             int iy = (int)floorf(g_DroppedItems[i].y);
             if (isSolidBlock(ix, iy)) {
-                g_DroppedItems[i].y = (float)(iy + 1);
-                g_DroppedItems[i].vy = 0.0f;
-                g_DroppedItems[i].vx *= 0.8f;
+                // Requirement 3: Dropped Item Wall Ejection
+                // When an item is inside a solid block (isSolidBlock(ix, iy)), detect open adjacent air blocks
+                // (iy+1, ix-1, ix+1, iy-1) and push the item out with an impulse into open air so items never get stuck in walls.
+                if (!isSolidBlock(ix, iy + 1)) {
+                    g_DroppedItems[i].y = (float)(iy + 1);
+                    if (g_DroppedItems[i].vy < 0.0f) g_DroppedItems[i].vy = 0.0f;
+                    g_DroppedItems[i].vx *= 0.8f;
+                } else if (!isSolidBlock(ix - 1, iy)) {
+                    g_DroppedItems[i].x = (float)ix - 0.2f;
+                    g_DroppedItems[i].vx = -3.0f;
+                    g_DroppedItems[i].vy = 2.0f;
+                } else if (!isSolidBlock(ix + 1, iy)) {
+                    g_DroppedItems[i].x = (float)(ix + 1) + 0.2f;
+                    g_DroppedItems[i].vx = 3.0f;
+                    g_DroppedItems[i].vy = 2.0f;
+                } else if (!isSolidBlock(ix, iy - 1)) {
+                    g_DroppedItems[i].y = (float)iy - 0.2f;
+                    g_DroppedItems[i].vy = -2.0f;
+                } else {
+                    g_DroppedItems[i].y = (float)(iy + 1) + 0.1f;
+                    g_DroppedItems[i].vy = 3.0f;
+                }
             }
         }
     }
@@ -1457,6 +1586,9 @@ static BlockType getMatchingWallType(BlockType bt) {
         case BLOCK_TABLE:
             return BLOCK_TABLE;
         case BLOCK_DOOR:
+        case BLOCK_DOOR_UPPER:
+        case BLOCK_DOOR_OPEN_LOWER:
+        case BLOCK_DOOR_OPEN_UPPER:
             return BLOCK_DOOR;
         case BLOCK_BED:
             return BLOCK_BED;
@@ -1500,7 +1632,7 @@ static void updateInteraction(float dt) {
     screenToWorld(g_MouseScreenX, g_MouseScreenY, &mouseWX, &mouseWY);
 
     // Immediately face the target/mouse coordinate when attacking or interacting with mouse
-    if (g_MouseLeft) {
+    if (g_MouseLeft || g_MouseRight) {
         g_Player.isFacingRight = (mouseWX >= g_Player.x);
     }
 
@@ -1544,38 +1676,58 @@ static void updateInteraction(float dt) {
 
     // Line-of-sight occlusion: trace from player eye to target block center
     if (g_TargetValid) {
-        float eyeX = g_Player.x;
-        float eyeY = g_Player.y + 1.2f;
-        float targetCenterX = (float)g_TargetX + 0.5f;
-        float targetCenterY = (float)g_TargetY + 0.5f;
-        float rayDx = targetCenterX - eyeX;
-        float rayDy = targetCenterY - eyeY;
-        float rayDist = sqrtf(rayDx * rayDx + rayDy * rayDy);
+        int playerBX = (int)floorf(g_Player.x);
+        int playerBY = (int)floorf(g_Player.y);
 
-        if (rayDist > 0.001f) {
-            float step = 0.2f;
-            float curDist = step;
-            while (curDist < rayDist) {
-                float t = curDist / rayDist;
-                float rx = eyeX + rayDx * t;
-                float ry = eyeY + rayDy * t;
-                int bx = (int)floorf(rx);
-                int by = (int)floorf(ry);
-                if (bx != g_TargetX || by != g_TargetY) {
-                    if (bx >= 0 && bx < WORLD_WIDTH && by >= 0 && by < WORLD_HEIGHT) {
-                        if (isSolidBlock(bx, by)) {
-                            g_TargetValid = false;
-                            break;
+        // Requirement 2: LoS Raycast Relaxation
+        // Fix raycast occlusion so it doesn't block mining overhead ceiling blocks or blocks adjacent to the player:
+        // (abs(g_TargetX - playerBX) <= 1 && abs(g_TargetY - playerBY) <= 2). Player's own occupied blocks should not occlude the ray.
+        if (abs(g_TargetX - playerBX) <= 1 && abs(g_TargetY - playerBY) <= 2) {
+            // Adjacent or overhead ceiling blocks: bypass raycast occlusion!
+        } else {
+            float eyeX = g_Player.x;
+            float eyeY = g_Player.y + 1.2f;
+            float targetCenterX = (float)g_TargetX + 0.5f;
+            float targetCenterY = (float)g_TargetY + 0.5f;
+            float rayDx = targetCenterX - eyeX;
+            float rayDy = targetCenterY - eyeY;
+            float rayDist = sqrtf(rayDx * rayDx + rayDy * rayDy);
+
+            if (rayDist > 0.001f) {
+                int minOccX = (int)floorf(g_Player.x - g_Player.width * 0.5f);
+                int maxOccX = (int)floorf(g_Player.x + g_Player.width * 0.5f);
+                int minOccY = (int)floorf(g_Player.y);
+                int maxOccY = (int)floorf(g_Player.y + g_Player.height);
+
+                float step = 0.2f;
+                float curDist = step;
+                while (curDist < rayDist) {
+                    float t = curDist / rayDist;
+                    float rx = eyeX + rayDx * t;
+                    float ry = eyeY + rayDy * t;
+                    int bx = (int)floorf(rx);
+                    int by = (int)floorf(ry);
+                    if (bx != g_TargetX || by != g_TargetY) {
+                        // Player's own occupied blocks should not occlude the ray
+                        if (bx >= minOccX && bx <= maxOccX && by >= minOccY && by <= maxOccY) {
+                            curDist += step;
+                            continue;
+                        }
+                        if (bx >= 0 && bx < WORLD_WIDTH && by >= 0 && by < WORLD_HEIGHT) {
+                            if (isSolidBlock(bx, by)) {
+                                g_TargetValid = false;
+                                break;
+                            }
                         }
                     }
+                    curDist += step;
                 }
-                curDist += step;
             }
         }
     }
 
-    // Immediately turn to face the target/mouse coordinate when mining, attacking or hovering valid target
-    if (g_MouseLeft || g_TargetValid) {
+    // Turn to face the target/mouse coordinate only when actively swinging/mining or right-clicking
+    if (g_MouseLeft || g_MouseRight) {
         g_Player.isFacingRight = (mouseWX >= g_Player.x);
     }
 
@@ -1605,7 +1757,8 @@ static void updateInteraction(float dt) {
             } else {
                 int heldItem = g_Hotbar[g_ActiveSlot].type;
                 float efficiency = getToolEfficiency(heldItem, bt);
-                float breakTime = (g_BlockDefs[bt].hardness * 0.35f) / efficiency;
+                float baseTime = getBlockBaseBreakTime(bt);
+                float breakTime = baseTime / efficiency;
                 if (breakTime < 0.04f) breakTime = 0.04f;
                 g_MiningProgress += dt / breakTime;
             }
@@ -1631,9 +1784,32 @@ static void updateInteraction(float dt) {
                         1.0f + ((float)rand() / RAND_MAX) * 4.0f
                     );
                 }
-                spawnDroppedItem((float)g_TargetX + 0.5f, (float)g_TargetY + 0.5f, bt, 1);
-                g_World[g_TargetX][g_TargetY] = BLOCK_AIR;
-                recordBlockDelta(g_TargetX, g_TargetY, false, BLOCK_AIR);
+
+                if (isDoorBlock(bt)) {
+                    // Requirement 1: Breaking either half breaks both and drops 1 door item
+                    spawnDroppedItem((float)g_TargetX + 0.5f, (float)g_TargetY + 0.5f, BLOCK_DOOR, 1);
+
+                    int otherY = isDoorLower(bt) ? (g_TargetY + 1) : (g_TargetY - 1);
+                    if (otherY >= 0 && otherY < WORLD_HEIGHT && isDoorBlock(g_World[g_TargetX][otherY])) {
+                        for (int p = 0; p < 8; p++) {
+                            spawnParticle(
+                                (float)g_TargetX + 0.5f,
+                                (float)otherY + 0.5f,
+                                g_BlockDefs[BLOCK_DOOR].r, g_BlockDefs[BLOCK_DOOR].g, g_BlockDefs[BLOCK_DOOR].b,
+                                ((float)rand() / RAND_MAX - 0.5f) * 4.0f,
+                                1.0f + ((float)rand() / RAND_MAX) * 3.0f
+                            );
+                        }
+                        g_World[g_TargetX][otherY] = BLOCK_AIR;
+                        recordBlockDelta(g_TargetX, otherY, false, BLOCK_AIR);
+                    }
+                    g_World[g_TargetX][g_TargetY] = BLOCK_AIR;
+                    recordBlockDelta(g_TargetX, g_TargetY, false, BLOCK_AIR);
+                } else {
+                    spawnDroppedItem((float)g_TargetX + 0.5f, (float)g_TargetY + 0.5f, bt, 1);
+                    g_World[g_TargetX][g_TargetY] = BLOCK_AIR;
+                    recordBlockDelta(g_TargetX, g_TargetY, false, BLOCK_AIR);
+                }
                 g_MiningProgress = 0.0f;
 
                 if (getGameMode() == MODE_SURVIVAL) {
@@ -1666,50 +1842,151 @@ static void updateInteraction(float dt) {
     }
 
     if (g_MouseRight) {
-        if (g_World[g_TargetX][g_TargetY] == BLOCK_AIR) {
+        BlockType clickedBlock = g_World[g_TargetX][g_TargetY];
+        if (clickedBlock != BLOCK_AIR) {
+            // Requirement 1: Right-click interaction on existing blocks
+            if (clickedBlock == BLOCK_WORKBENCH) {
+                openCraftingUI(CRAFT_TAB_CRAFTING);
+                playSound(SFX_CLICK);
+                g_MouseRight = false;
+            } else if (clickedBlock == BLOCK_FURNACE) {
+                openCraftingUI(CRAFT_TAB_CRAFTING);
+                playSound(SFX_CLICK);
+                g_MouseRight = false;
+            } else if (isDoorBlock(clickedBlock)) {
+                // Right-clicking on either half of a door toggles it between CLOSED and OPEN
+                int lowX = g_TargetX;
+                int lowY = isDoorLower(clickedBlock) ? g_TargetY : (g_TargetY - 1);
+                int upX = g_TargetX;
+                int upY = lowY + 1;
+
+                bool currentlyOpen = isDoorOpen(clickedBlock);
+                if (currentlyOpen) {
+                    // Open -> Closed (solid, blocks movement)
+                    g_World[lowX][lowY] = BLOCK_DOOR;
+                    recordBlockDelta(lowX, lowY, false, BLOCK_DOOR);
+                    if (upY >= 0 && upY < WORLD_HEIGHT && isDoorBlock(g_World[upX][upY])) {
+                        g_World[upX][upY] = BLOCK_DOOR_UPPER;
+                        recordBlockDelta(upX, upY, false, BLOCK_DOOR_UPPER);
+                    }
+                    showNotification(LOC("[木门已关闭 (实体碰撞)]", "[Door Closed (Solid)]"), 0.85f, 0.70f, 0.40f);
+                } else {
+                    // Closed -> Open (non-solid, passable)
+                    g_World[lowX][lowY] = BLOCK_DOOR_OPEN_LOWER;
+                    recordBlockDelta(lowX, lowY, false, BLOCK_DOOR_OPEN_LOWER);
+                    if (upY >= 0 && upY < WORLD_HEIGHT && isDoorBlock(g_World[upX][upY])) {
+                        g_World[upX][upY] = BLOCK_DOOR_OPEN_UPPER;
+                        recordBlockDelta(upX, upY, false, BLOCK_DOOR_OPEN_UPPER);
+                    }
+                    showNotification(LOC("[木门已开启 (自由通行)]", "[Door Opened (Passable)]"), 0.40f, 0.95f, 0.45f);
+                }
+                playSound(SFX_CLICK);
+                g_MouseRight = false;
+            }
+        } else {
+            // Target is BLOCK_AIR: Place held block/item
             InventorySlot* slot = &g_Hotbar[g_ActiveSlot];
             if (slot->type != BLOCK_AIR && !isToolItem(slot->type) && slot->count > 0) {
-                bool hasSupport = (g_WallWorld[g_TargetX][g_TargetY] != BLOCK_AIR) ||
-                                  isSolidBlock(g_TargetX + 1, g_TargetY) ||
-                                  isSolidBlock(g_TargetX - 1, g_TargetY) ||
-                                  isSolidBlock(g_TargetX, g_TargetY + 1) ||
-                                  isSolidBlock(g_TargetX, g_TargetY - 1);
+                BlockType placedType = slot->type;
+                if (placedType == BLOCK_DOOR) {
+                    // Requirement 1: 2-Block Door Placement
+                    // Placing a door places 2 vertical blocks (lower and upper) if both are air and supported.
+                    int lowX = g_TargetX;
+                    int lowY = g_TargetY;
+                    int upX = g_TargetX;
+                    int upY = g_TargetY + 1;
 
-                float pLeft = g_Player.x - g_Player.width * 0.5f;
-                float pRight = g_Player.x + g_Player.width * 0.5f;
-                float pBottom = g_Player.y;
-                float pTop = g_Player.y + g_Player.height;
-                bool intersect = (pRight > (float)g_TargetX && pLeft < (float)(g_TargetX + 1) &&
-                                  pTop > (float)g_TargetY && pBottom < (float)(g_TargetY + 1));
-
-                if (hasSupport && (!g_BlockDefs[slot->type].isSolid || !intersect)) {
-                    BlockType placedType = slot->type;
-                    g_World[g_TargetX][g_TargetY] = placedType;
-                    recordBlockDelta(g_TargetX, g_TargetY, false, placedType);
-                    playSound(SFX_PLACE);
-
-                    if (g_WallWorld[g_TargetX][g_TargetY] == BLOCK_AIR) {
-                        BlockType matchWall = getMatchingWallType(placedType);
-                        if (matchWall != BLOCK_AIR) {
-                            g_WallWorld[g_TargetX][g_TargetY] = matchWall;
-                            recordBlockDelta(g_TargetX, g_TargetY, true, matchWall);
+                    // Allow clicking upper air block in a 2-high doorway opening if supported below
+                    if (upY >= WORLD_HEIGHT || g_World[lowX][upY] != BLOCK_AIR) {
+                        if (lowY - 1 >= 0 && g_World[lowX][lowY - 1] == BLOCK_AIR && (lowY - 2 >= 0 && isSolidBlock(lowX, lowY - 2))) {
+                            lowY = g_TargetY - 1;
+                            upY = g_TargetY;
                         }
                     }
 
-                    if (!isCreativeInfinitePlace()) {
-                        slot->count--;
-                        if (slot->count <= 0) slot->type = BLOCK_AIR;
-                    }
-                    g_MouseRight = false;
+                    if (lowY >= 0 && upY < WORLD_HEIGHT &&
+                        g_World[lowX][lowY] == BLOCK_AIR && g_World[upX][upY] == BLOCK_AIR) {
+                        
+                        bool hasSupport = (lowY - 1 >= 0 && isSolidBlock(lowX, lowY - 1)) ||
+                                          (g_WallWorld[lowX][lowY] != BLOCK_AIR) ||
+                                          (upY + 1 < WORLD_HEIGHT && isSolidBlock(lowX, upY + 1)) ||
+                                          isSolidBlock(lowX + 1, lowY) || isSolidBlock(lowX - 1, lowY);
 
-                    if (g_TutorialStep == TUTORIAL_BUILD) {
-                        g_TutorialStep = TUTORIAL_TORCH;
-                        playSound(SFX_CRAFT);
-                        showNotification(LOC("任务 3 已完成！选定火把 [5] 并放置以照亮洞穴。", "Quest 3 Completed! Select Torch [5] and place to light dark caves."), 0.3f, 0.95f, 0.3f);
-                    } else if (g_TutorialStep == TUTORIAL_TORCH && (placedType == BLOCK_TORCH || placedType == BLOCK_GLOW_SHROOM)) {
-                        g_TutorialStep = TUTORIAL_EXPLORE;
-                        playSound(SFX_CRAFT);
-                        showNotification(LOC("任务 4 已完成！按 [F5] 快速保存你的世界！", "Quest 4 Completed! Press [F5] to Quick Save your game!"), 0.3f, 0.95f, 0.3f);
+                        float pLeft = g_Player.x - g_Player.width * 0.5f;
+                        float pRight = g_Player.x + g_Player.width * 0.5f;
+                        float pBottom = g_Player.y;
+                        float pTop = g_Player.y + g_Player.height;
+                        bool intersect = (pRight > (float)lowX && pLeft < (float)(lowX + 1) &&
+                                          pTop > (float)lowY && pBottom < (float)(upY + 1));
+
+                        if (hasSupport && !intersect) {
+                            g_World[lowX][lowY] = BLOCK_DOOR;
+                            g_World[upX][upY] = BLOCK_DOOR_UPPER;
+                            recordBlockDelta(lowX, lowY, false, BLOCK_DOOR);
+                            recordBlockDelta(upX, upY, false, BLOCK_DOOR_UPPER);
+                            playSound(SFX_PLACE);
+
+                            if (g_WallWorld[lowX][lowY] == BLOCK_AIR) {
+                                BlockType matchWall = getMatchingWallType(BLOCK_WOOD_PLANK);
+                                if (matchWall != BLOCK_AIR) {
+                                    g_WallWorld[lowX][lowY] = matchWall;
+                                    g_WallWorld[upX][upY] = matchWall;
+                                    recordBlockDelta(lowX, lowY, true, matchWall);
+                                    recordBlockDelta(upX, upY, true, matchWall);
+                                }
+                            }
+
+                            if (!isCreativeInfinitePlace()) {
+                                slot->count--;
+                                if (slot->count <= 0) slot->type = BLOCK_AIR;
+                            }
+                            g_MouseRight = false;
+                        }
+                    }
+                } else {
+                    // Regular 1-block placement
+                    bool hasSupport = (g_WallWorld[g_TargetX][g_TargetY] != BLOCK_AIR) ||
+                                      isSolidBlock(g_TargetX + 1, g_TargetY) ||
+                                      isSolidBlock(g_TargetX - 1, g_TargetY) ||
+                                      isSolidBlock(g_TargetX, g_TargetY + 1) ||
+                                      isSolidBlock(g_TargetX, g_TargetY - 1);
+
+                    float pLeft = g_Player.x - g_Player.width * 0.5f;
+                    float pRight = g_Player.x + g_Player.width * 0.5f;
+                    float pBottom = g_Player.y;
+                    float pTop = g_Player.y + g_Player.height;
+                    bool intersect = (pRight > (float)g_TargetX && pLeft < (float)(g_TargetX + 1) &&
+                                      pTop > (float)g_TargetY && pBottom < (float)(g_TargetY + 1));
+
+                    if (hasSupport && (!g_BlockDefs[slot->type].isSolid || !intersect)) {
+                        BlockType placedType = slot->type;
+                        g_World[g_TargetX][g_TargetY] = placedType;
+                        recordBlockDelta(g_TargetX, g_TargetY, false, placedType);
+                        playSound(SFX_PLACE);
+
+                        if (g_WallWorld[g_TargetX][g_TargetY] == BLOCK_AIR) {
+                            BlockType matchWall = getMatchingWallType(placedType);
+                            if (matchWall != BLOCK_AIR) {
+                                g_WallWorld[g_TargetX][g_TargetY] = matchWall;
+                                recordBlockDelta(g_TargetX, g_TargetY, true, matchWall);
+                            }
+                        }
+
+                        if (!isCreativeInfinitePlace()) {
+                            slot->count--;
+                            if (slot->count <= 0) slot->type = BLOCK_AIR;
+                        }
+                        g_MouseRight = false;
+
+                        if (g_TutorialStep == TUTORIAL_BUILD) {
+                            g_TutorialStep = TUTORIAL_TORCH;
+                            playSound(SFX_CRAFT);
+                            showNotification(LOC("任务 3 已完成！选定火把 [5] 并放置以照亮洞穴。", "Quest 3 Completed! Select Torch [5] and place to light dark caves."), 0.3f, 0.95f, 0.3f);
+                        } else if (g_TutorialStep == TUTORIAL_TORCH && (placedType == BLOCK_TORCH || placedType == BLOCK_GLOW_SHROOM)) {
+                            g_TutorialStep = TUTORIAL_EXPLORE;
+                            playSound(SFX_CRAFT);
+                            showNotification(LOC("任务 4 已完成！按 [F5] 快速保存你的世界！", "Quest 4 Completed! Press [F5] to Quick Save your game!"), 0.3f, 0.95f, 0.3f);
+                        }
                     }
                 }
             }
@@ -1850,6 +2127,17 @@ static void renderCube25D(float x, float y, int blockType, bool topCull, bool bt
     if (blockType == BLOCK_CACTUS) {
         renderCactus25D(x, y, lightFactor);
         return;
+    }
+
+    if (blockType == BLOCK_DOOR || blockType == BLOCK_DOOR_OPEN_LOWER) {
+        topCull = true;
+    }
+    if (blockType == BLOCK_DOOR_UPPER || blockType == BLOCK_DOOR_OPEN_UPPER) {
+        btmCull = true;
+    }
+    if (blockType == BLOCK_DOOR_OPEN_LOWER || blockType == BLOCK_DOOR_OPEN_UPPER) {
+        topCull = true;
+        btmCull = true;
     }
 
     float u0, v0, u1, v1;
@@ -1994,7 +2282,7 @@ static void renderWorld25D(void) {
 
     float sunAngle = g_WorldTime * (float)M_PI * 2.0f;
     float daylight = sinf(sunAngle);
-    if (daylight < 0.22f) daylight = 0.22f;
+    if (daylight < 0.05f) daylight = 0.05f;
 
     typedef struct {
         float x, y;
@@ -2003,34 +2291,54 @@ static void renderWorld25D(void) {
         float intensity;
     } PointLight;
 
-    PointLight localLights[48];
+    PointLight localLights[64];
     int numLocalLights = 0;
 
-    localLights[numLocalLights++] = (PointLight){
-        g_Player.x, g_Player.y + 1.0f,
-        6.5f,
-        1.0f, 0.96f, 0.88f,
-        0.95f
-    };
+    // Player personal sight: faint radius (~2.5 blocks) in pitch darkness
+    // Holding torch or glow shroom in hotbar acts as dynamic portable light with radius 8.5 blocks
+    int heldItem = g_Hotbar[g_ActiveSlot].type;
+    if (heldItem == BLOCK_TORCH || heldItem == BLOCK_CHANDELIER) {
+        localLights[numLocalLights++] = (PointLight){
+            g_Player.x, g_Player.y + 1.0f,
+            8.5f,
+            1.0f, 0.90f, 0.60f,
+            1.20f
+        };
+    } else if (heldItem == BLOCK_GLOW_SHROOM) {
+        localLights[numLocalLights++] = (PointLight){
+            g_Player.x, g_Player.y + 1.0f,
+            8.5f,
+            0.30f, 0.88f, 1.0f,
+            1.20f
+        };
+    } else {
+        localLights[numLocalLights++] = (PointLight){
+            g_Player.x, g_Player.y + 1.0f,
+            2.5f,
+            0.80f, 0.80f, 0.85f,
+            0.45f
+        };
+    }
 
-    int lStartX = (startX - 8 < 0) ? 0 : startX - 8;
-    int lEndX   = (endX + 8 >= WORLD_WIDTH) ? WORLD_WIDTH - 1 : endX + 8;
-    int lStartY = (startY - 8 < 0) ? 0 : startY - 8;
-    int lEndY   = (endY + 8 >= WORLD_HEIGHT) ? WORLD_HEIGHT - 1 : endY + 8;
+    int lStartX = (startX - 9 < 0) ? 0 : startX - 9;
+    int lEndX   = (endX + 9 >= WORLD_WIDTH) ? WORLD_WIDTH - 1 : endX + 9;
+    int lStartY = (startY - 9 < 0) ? 0 : startY - 9;
+    int lEndY   = (endY + 9 >= WORLD_HEIGHT) ? WORLD_HEIGHT - 1 : endY + 9;
 
-    for (int lx = lStartX; lx <= lEndX && numLocalLights < 45; lx++) {
-        for (int ly = lStartY; ly <= lEndY && numLocalLights < 45; ly++) {
+    for (int lx = lStartX; lx <= lEndX && numLocalLights < 60; lx++) {
+        for (int ly = lStartY; ly <= lEndY && numLocalLights < 60; ly++) {
             BlockType bt = g_World[lx][ly];
             if (bt != BLOCK_AIR && g_BlockDefs[bt].emitLight) {
                 float lr = 1.0f, lg = 0.90f, lb = 0.60f;
-                float rad = 8.0f;
+                float rad = 8.5f;
                 if (bt == BLOCK_MAGMA) { lr = 1.0f; lg = 0.35f; lb = 0.10f; rad = 6.0f; }
-                else if (bt == BLOCK_GLOW_SHROOM) { lr = 0.20f; lg = 0.85f; lb = 1.0f; rad = 7.0f; }
+                else if (bt == BLOCK_GLOW_SHROOM) { lr = 0.30f; lg = 0.88f; lb = 1.0f; rad = 8.5f; }
+                else if (bt == BLOCK_TORCH || bt == BLOCK_CHANDELIER) { lr = 1.0f, lg = 0.90f, lb = 0.60f; rad = 8.5f; }
                 localLights[numLocalLights++] = (PointLight){
                     (float)lx + 0.5f, (float)ly + 0.5f,
                     rad,
                     lr, lg, lb,
-                    1.15f
+                    1.20f
                 };
             }
         }
@@ -2052,7 +2360,7 @@ static void renderWorld25D(void) {
                 if (y < sY) {
                     float depth = (float)(sY - y);
                     float sunPen = daylight * expf(-depth * 0.25f);
-                    float caveAmbient = 0.45f;
+                    float caveAmbient = 0.05f;
                     baseL = (sunPen > caveAmbient) ? sunPen : caveAmbient;
                 }
                 float rAcc = baseL, gAcc = baseL, bAcc = baseL;
@@ -2113,7 +2421,7 @@ static void renderWorld25D(void) {
                 if (y < sY) {
                     float depth = (float)(sY - y);
                     float sunPen = daylight * expf(-depth * 0.25f);
-                    float caveAmbient = 0.45f;
+                    float caveAmbient = 0.05f;
                     baseL = (sunPen > caveAmbient) ? sunPen : caveAmbient;
                 }
                 float rAcc = baseL, gAcc = baseL, bAcc = baseL;
@@ -2132,7 +2440,7 @@ static void renderWorld25D(void) {
                 }
                 lightFactor = (rAcc + gAcc + bAcc) * 0.3333f;
                 if (lightFactor > 1.0f) lightFactor = 1.0f;
-                if (lightFactor < 0.35f) lightFactor = 0.35f;
+                if (lightFactor < 0.05f) lightFactor = 0.05f;
             }
 
             renderCube25D((float)x, (float)y, bt, topCull, btmCull, leftCull, rightCull, lightFactor);
@@ -2176,18 +2484,42 @@ static void renderWorld25D(void) {
 
     float sinWalk = sinf(g_Player.walkCycle);
 
+    // 0. Visual Armor Overlay Palettes
+    ArmorMaterialPalette helmetPal, chestPal, legsPal, bootsPal;
+    bool hasHelmet = (g_EquippedArmor[ARMOR_SLOT_HELMET] != 0) &&
+                     getArmorMaterialPalette(g_EquippedArmor[ARMOR_SLOT_HELMET], &helmetPal);
+    bool hasChestplate = (g_EquippedArmor[ARMOR_SLOT_CHEST] != 0) &&
+                         getArmorMaterialPalette(g_EquippedArmor[ARMOR_SLOT_CHEST], &chestPal);
+    bool hasLeggings = (g_EquippedArmor[ARMOR_SLOT_LEGS] != 0) &&
+                       getArmorMaterialPalette(g_EquippedArmor[ARMOR_SLOT_LEGS], &legsPal);
+    bool hasBoots = (g_EquippedArmor[ARMOR_SLOT_BOOTS] != 0) &&
+                    getArmorMaterialPalette(g_EquippedArmor[ARMOR_SLOT_BOOTS], &bootsPal);
+
     // 1. Back Arm / Off-hand (Z = -0.04f, behind torso)
     float backArmAngle = g_ToolIsSwinging ? (-g_ToolSwingTimer * 25.0f) : (-sinWalk * 18.0f);
     glPushMatrix();
     glTranslatef(-0.14f, 1.05f, -0.04f);
     glRotatef(backArmAngle, 0.0f, 0.0f, 1.0f);
-    glColor3f(0.14f, 0.30f, 0.60f); // Shaded rear sleeve
+    if (hasChestplate) {
+        glColor3f(chestPal.r * 0.75f, chestPal.g * 0.75f, chestPal.b * 0.75f); // Armored rear sleeve
+    } else {
+        glColor3f(0.14f, 0.30f, 0.60f); // Shaded rear sleeve
+    }
     glBegin(GL_QUADS);
     glVertex3f(-0.07f, -0.28f, 0.0f);
     glVertex3f( 0.07f, -0.28f, 0.0f);
     glVertex3f( 0.07f,  0.02f, 0.0f);
     glVertex3f(-0.07f,  0.02f, 0.0f);
     glEnd();
+    if (hasChestplate) {
+        glColor3f(chestPal.hr * 0.75f, chestPal.hg * 0.75f, chestPal.hb * 0.75f);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.08f, -0.28f, 0.005f);
+        glVertex3f( 0.08f, -0.28f, 0.005f);
+        glVertex3f( 0.08f, -0.24f, 0.005f);
+        glVertex3f(-0.08f, -0.24f, 0.005f);
+        glEnd();
+    }
     glColor3f(0.82f, 0.68f, 0.56f); // Shaded rear hand
     glBegin(GL_QUADS);
     glVertex3f(-0.06f, -0.38f, 0.0f);
@@ -2247,6 +2579,143 @@ static void renderWorld25D(void) {
     glVertex3f( 0.03f + legAngleR, 0.03f, 0.015f);
     glEnd();
 
+    // Visual Armor Overlays: Greaves (Leggings) & Sabatons (Boots)
+    if (hasLeggings) {
+        // Armored Tassets / Hip Plates (Z = 0.025f)
+        glColor3f(legsPal.r, legsPal.g, legsPal.b);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.31f, 0.38f, 0.025f);
+        glVertex3f( 0.31f, 0.38f, 0.025f);
+        glVertex3f( 0.31f, 0.48f, 0.025f);
+        glVertex3f(-0.31f, 0.48f, 0.025f);
+        glEnd();
+        // Tasset bottom trim
+        glColor3f(legsPal.sr, legsPal.sg, legsPal.sb);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.31f, 0.36f, 0.026f);
+        glVertex3f( 0.31f, 0.36f, 0.026f);
+        glVertex3f( 0.31f, 0.38f, 0.026f);
+        glVertex3f(-0.31f, 0.38f, 0.026f);
+        glEnd();
+
+        // Left Leg Armored Greave (Back Leg, Z = 0.02f)
+        glColor3f(legsPal.r * 0.85f, legsPal.g * 0.85f, legsPal.b * 0.85f);
+        glBegin(GL_QUADS);
+        // Thigh cuisse
+        glVertex3f(-0.23f + legAngleL * 0.4f, 0.28f, 0.02f);
+        glVertex3f(-0.04f + legAngleL * 0.4f, 0.28f, 0.02f);
+        glVertex3f(-0.04f,                    0.44f, 0.02f);
+        glVertex3f(-0.23f,                    0.44f, 0.02f);
+        // Shin greave
+        glVertex3f(-0.23f + legAngleL * 0.9f, 0.13f, 0.02f);
+        glVertex3f(-0.04f + legAngleL * 0.9f, 0.13f, 0.02f);
+        glVertex3f(-0.04f + legAngleL * 0.4f, 0.28f, 0.02f);
+        glVertex3f(-0.23f + legAngleL * 0.4f, 0.28f, 0.02f);
+        glEnd();
+        // Left Knee Poleyn (Kneecap guard, Z = 0.025f)
+        glColor3f(legsPal.hr * 0.85f, legsPal.hg * 0.85f, legsPal.hb * 0.85f);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.24f + legAngleL * 0.65f, 0.25f, 0.025f);
+        glVertex3f(-0.03f + legAngleL * 0.65f, 0.25f, 0.025f);
+        glVertex3f(-0.03f + legAngleL * 0.65f, 0.31f, 0.025f);
+        glVertex3f(-0.24f + legAngleL * 0.65f, 0.31f, 0.025f);
+        glEnd();
+
+        // Right Leg Armored Greave (Front Leg, Z = 0.02f)
+        glColor3f(legsPal.r, legsPal.g, legsPal.b);
+        glBegin(GL_QUADS);
+        // Thigh cuisse
+        glVertex3f(0.04f + legAngleR * 0.4f, 0.28f, 0.02f);
+        glVertex3f(0.23f + legAngleR * 0.4f, 0.28f, 0.02f);
+        glVertex3f(0.23f,                    0.44f, 0.02f);
+        glVertex3f(0.04f,                    0.44f, 0.02f);
+        // Shin greave
+        glVertex3f(0.04f + legAngleR * 0.9f, 0.13f, 0.02f);
+        glVertex3f(0.23f + legAngleR * 0.9f, 0.13f, 0.02f);
+        glVertex3f(0.23f + legAngleR * 0.4f, 0.28f, 0.02f);
+        glVertex3f(0.04f + legAngleR * 0.4f, 0.28f, 0.02f);
+        glEnd();
+        // Right Knee Poleyn (Kneecap guard, Z = 0.025f)
+        glColor3f(legsPal.hr, legsPal.hg, legsPal.hb);
+        glBegin(GL_QUADS);
+        glVertex3f(0.03f + legAngleR * 0.65f, 0.25f, 0.025f);
+        glVertex3f(0.24f + legAngleR * 0.65f, 0.25f, 0.025f);
+        glVertex3f(0.24f + legAngleR * 0.65f, 0.31f, 0.025f);
+        glVertex3f(0.03f + legAngleR * 0.65f, 0.31f, 0.025f);
+        glEnd();
+        // Specular highlight line along front shin
+        glColor3f(legsPal.hr, legsPal.hg, legsPal.hb);
+        glLineWidth(2.0f);
+        glBegin(GL_LINES);
+        glVertex3f(0.14f + legAngleR * 0.9f, 0.14f, 0.028f);
+        glVertex3f(0.14f + legAngleR * 0.4f, 0.27f, 0.028f);
+        glEnd();
+    }
+
+    if (hasBoots) {
+        // Left Armored Sabaton (Back Foot, Z = 0.025f)
+        glColor3f(bootsPal.r * 0.85f, bootsPal.g * 0.85f, bootsPal.b * 0.85f);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.25f + legAngleL, 0.03f, 0.025f);
+        glVertex3f(-0.02f + legAngleL, 0.03f, 0.025f);
+        glVertex3f(-0.02f + legAngleL, 0.15f, 0.025f);
+        glVertex3f(-0.25f + legAngleL, 0.15f, 0.025f);
+        glEnd();
+        // Sabaton ankle cuff trim
+        glColor3f(bootsPal.hr * 0.85f, bootsPal.hg * 0.85f, bootsPal.hb * 0.85f);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.26f + legAngleL, 0.12f, 0.028f);
+        glVertex3f(-0.01f + legAngleL, 0.12f, 0.028f);
+        glVertex3f(-0.01f + legAngleL, 0.16f, 0.028f);
+        glVertex3f(-0.26f + legAngleL, 0.16f, 0.028f);
+        glEnd();
+        // Heavy armored sole
+        glColor3f(bootsPal.sr, bootsPal.sg, bootsPal.sb);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.26f + legAngleL, 0.0f, 0.028f);
+        glVertex3f(-0.01f + legAngleL, 0.0f, 0.028f);
+        glVertex3f(-0.01f + legAngleL, 0.035f, 0.028f);
+        glVertex3f(-0.26f + legAngleL, 0.035f, 0.028f);
+        glEnd();
+
+        // Right Armored Sabaton (Front Foot, Z = 0.025f)
+        glColor3f(bootsPal.r, bootsPal.g, bootsPal.b);
+        glBegin(GL_QUADS);
+        glVertex3f(0.02f + legAngleR, 0.03f, 0.025f);
+        glVertex3f(0.25f + legAngleR, 0.03f, 0.025f);
+        glVertex3f(0.25f + legAngleR, 0.15f, 0.025f);
+        glVertex3f(0.02f + legAngleR, 0.15f, 0.025f);
+        // Pointed armored toe cap
+        glVertex3f(0.22f + legAngleR, 0.02f, 0.026f);
+        glVertex3f(0.28f + legAngleR, 0.02f, 0.026f);
+        glVertex3f(0.28f + legAngleR, 0.08f, 0.026f);
+        glVertex3f(0.22f + legAngleR, 0.08f, 0.026f);
+        glEnd();
+        // Sabaton ankle cuff trim
+        glColor3f(bootsPal.hr, bootsPal.hg, bootsPal.hb);
+        glBegin(GL_QUADS);
+        glVertex3f(0.01f + legAngleR, 0.12f, 0.028f);
+        glVertex3f(0.26f + legAngleR, 0.12f, 0.028f);
+        glVertex3f(0.26f + legAngleR, 0.16f, 0.028f);
+        glVertex3f(0.01f + legAngleR, 0.16f, 0.028f);
+        glEnd();
+        // Armored tread / sole
+        glColor3f(bootsPal.sr, bootsPal.sg, bootsPal.sb);
+        glBegin(GL_QUADS);
+        glVertex3f(0.01f + legAngleR, 0.0f, 0.028f);
+        glVertex3f(0.29f + legAngleR, 0.0f, 0.028f);
+        glVertex3f(0.29f + legAngleR, 0.035f, 0.028f);
+        glVertex3f(0.01f + legAngleR, 0.035f, 0.028f);
+        glEnd();
+        // Toe cap highlight
+        glColor3f(bootsPal.hr, bootsPal.hg, bootsPal.hb);
+        glLineWidth(2.0f);
+        glBegin(GL_LINES);
+        glVertex3f(0.23f + legAngleR, 0.08f, 0.03f);
+        glVertex3f(0.28f + legAngleR, 0.03f, 0.03f);
+        glEnd();
+    }
+
     // 3. Torso & Adventurer Tunic
     // Main Royal Blue Tunic
     glColor3f(0.22f, 0.46f, 0.90f);
@@ -2304,6 +2773,102 @@ static void renderWorld25D(void) {
     glVertex3f( 0.28f, 0.62f, 0.03f);
     glVertex3f( 0.18f, 0.62f, 0.03f);
     glEnd();
+
+    // Visual Armor Overlay: Cuirass & Pauldrons (Chestplate)
+    if (hasChestplate) {
+        // Cuirass Breastplate Base (Z = 0.04f)
+        glColor3f(chestPal.r, chestPal.g, chestPal.b);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.31f, 0.54f, 0.04f);
+        glVertex3f( 0.31f, 0.54f, 0.04f);
+        glVertex3f( 0.31f, 1.26f, 0.04f);
+        glVertex3f(-0.31f, 1.26f, 0.04f);
+        glEnd();
+
+        // Shaded rear torso edge
+        glColor3f(chestPal.sr, chestPal.sg, chestPal.sb);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.31f, 0.54f, 0.042f);
+        glVertex3f(-0.22f, 0.54f, 0.042f);
+        glVertex3f(-0.22f, 1.26f, 0.042f);
+        glVertex3f(-0.31f, 1.26f, 0.042f);
+        glEnd();
+
+        // Segmented Lower Abdominal Faulds
+        glColor3f(chestPal.r * 0.9f, chestPal.g * 0.9f, chestPal.b * 0.9f);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.29f, 0.54f, 0.043f);
+        glVertex3f( 0.29f, 0.54f, 0.043f);
+        glVertex3f( 0.29f, 0.70f, 0.043f);
+        glVertex3f(-0.29f, 0.70f, 0.043f);
+        glEnd();
+        // Fauld articulation line
+        glColor3f(chestPal.sr, chestPal.sg, chestPal.sb);
+        glLineWidth(2.0f);
+        glBegin(GL_LINES);
+        glVertex3f(-0.29f, 0.62f, 0.044f);
+        glVertex3f( 0.29f, 0.62f, 0.044f);
+        glEnd();
+
+        // Pectoral Plate Center Ridge & Gorget Collar (Specular Highlight)
+        glColor3f(chestPal.hr, chestPal.hg, chestPal.hb);
+        glBegin(GL_QUADS);
+        // Pectoral plate crest
+        glVertex3f(-0.06f, 0.78f, 0.045f);
+        glVertex3f( 0.18f, 0.78f, 0.045f);
+        glVertex3f( 0.18f, 1.18f, 0.045f);
+        glVertex3f(-0.06f, 1.18f, 0.045f);
+        // Armored Neck Gorget
+        glVertex3f(-0.16f, 1.18f, 0.046f);
+        glVertex3f( 0.16f, 1.18f, 0.046f);
+        glVertex3f( 0.16f, 1.27f, 0.046f);
+        glVertex3f(-0.16f, 1.27f, 0.046f);
+        glEnd();
+
+        // Center Sternum Specular Chiseled Line
+        glColor3f(fminf(chestPal.hr + 0.2f, 1.0f), fminf(chestPal.hg + 0.2f, 1.0f), fminf(chestPal.hb + 0.2f, 1.0f));
+        glLineWidth(2.2f);
+        glBegin(GL_LINES);
+        glVertex3f(0.06f, 0.74f, 0.048f);
+        glVertex3f(0.06f, 1.22f, 0.048f);
+        glEnd();
+
+        // Front Pauldron (Shoulder Guard, Z = 0.05f)
+        glColor3f(chestPal.r, chestPal.g, chestPal.b);
+        glBegin(GL_QUADS);
+        glVertex3f(0.08f, 1.04f, 0.05f);
+        glVertex3f(0.33f, 1.04f, 0.05f);
+        glVertex3f(0.31f, 1.28f, 0.05f);
+        glVertex3f(0.08f, 1.28f, 0.05f);
+        glEnd();
+        // Front Pauldron trim
+        glColor3f(chestPal.hr, chestPal.hg, chestPal.hb);
+        glLineWidth(2.2f);
+        glBegin(GL_LINE_LOOP);
+        glVertex3f(0.08f, 1.04f, 0.052f);
+        glVertex3f(0.33f, 1.04f, 0.052f);
+        glVertex3f(0.31f, 1.28f, 0.052f);
+        glVertex3f(0.08f, 1.28f, 0.052f);
+        glEnd();
+
+        // Rear Pauldron (Shoulder Guard, Z = 0.05f)
+        glColor3f(chestPal.r * 0.85f, chestPal.g * 0.85f, chestPal.b * 0.85f);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.33f, 1.04f, 0.05f);
+        glVertex3f(-0.08f, 1.04f, 0.05f);
+        glVertex3f(-0.08f, 1.28f, 0.05f);
+        glVertex3f(-0.31f, 1.28f, 0.05f);
+        glEnd();
+        // Rear Pauldron border
+        glColor3f(chestPal.sr, chestPal.sg, chestPal.sb);
+        glLineWidth(2.0f);
+        glBegin(GL_LINE_LOOP);
+        glVertex3f(-0.33f, 1.04f, 0.052f);
+        glVertex3f(-0.08f, 1.04f, 0.052f);
+        glVertex3f(-0.08f, 1.28f, 0.052f);
+        glVertex3f(-0.31f, 1.28f, 0.052f);
+        glEnd();
+    }
 
     // 4. Head, Hair & Expressive Face
     // Base Face Skin
@@ -2409,6 +2974,99 @@ static void renderWorld25D(void) {
     glVertex3f(0.18f, 1.36f, 0.02f);
     glVertex3f(0.08f, 1.36f, 0.02f);
     glEnd();
+
+    // Visual Armor Overlay: Helmet with Visor & Cheekplates
+    if (hasHelmet) {
+        // Helmet Dome / Skullcap (covers top and rear hair, Z = 0.045f)
+        glColor3f(helmetPal.r, helmetPal.g, helmetPal.b);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.29f, 1.54f, 0.045f);
+        glVertex3f( 0.28f, 1.54f, 0.045f);
+        glVertex3f( 0.26f, 1.83f, 0.045f);
+        glVertex3f(-0.29f, 1.83f, 0.045f);
+        glEnd();
+
+        // Rear Neckguard / Nape Guard (Z = 0.045f)
+        glColor3f(helmetPal.sr, helmetPal.sg, helmetPal.sb);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.32f, 1.25f, 0.045f);
+        glVertex3f(-0.22f, 1.25f, 0.045f);
+        glVertex3f(-0.22f, 1.58f, 0.045f);
+        glVertex3f(-0.32f, 1.58f, 0.045f);
+        glEnd();
+
+        // Helmet Crown Crest Ridge (Z = 0.048f)
+        glColor3f(helmetPal.hr, helmetPal.hg, helmetPal.hb);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.16f, 1.80f, 0.048f);
+        glVertex3f( 0.16f, 1.80f, 0.048f);
+        glVertex3f( 0.14f, 1.87f, 0.048f);
+        glVertex3f(-0.14f, 1.87f, 0.048f);
+        glEnd();
+
+        // Cheekplate / Temporal Guard (Z = 0.046f)
+        glColor3f(helmetPal.r, helmetPal.g, helmetPal.b);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.26f, 1.26f, 0.046f);
+        glVertex3f( 0.02f, 1.26f, 0.046f);
+        glVertex3f( 0.02f, 1.56f, 0.046f);
+        glVertex3f(-0.26f, 1.56f, 0.046f);
+        glEnd();
+        // Cheekplate bevel border
+        glColor3f(helmetPal.sr, helmetPal.sg, helmetPal.sb);
+        glLineWidth(2.0f);
+        glBegin(GL_LINES);
+        glVertex3f(0.02f, 1.26f, 0.047f);
+        glVertex3f(0.02f, 1.56f, 0.047f);
+        glEnd();
+
+        // Armored Chin / Lower Jaw Guard (Z = 0.046f)
+        glColor3f(helmetPal.r * 0.95f, helmetPal.g * 0.95f, helmetPal.b * 0.95f);
+        glBegin(GL_QUADS);
+        glVertex3f(0.02f, 1.25f, 0.046f);
+        glVertex3f(0.24f, 1.25f, 0.046f);
+        glVertex3f(0.24f, 1.34f, 0.046f);
+        glVertex3f(0.02f, 1.34f, 0.046f);
+        glEnd();
+
+        // Visor Brow / Forehead Guard (Projecting visor, Z = 0.05f)
+        glColor3f(helmetPal.hr, helmetPal.hg, helmetPal.hb);
+        glBegin(GL_QUADS);
+        glVertex3f(-0.02f, 1.51f, 0.05f);
+        glVertex3f( 0.30f, 1.51f, 0.05f);
+        glVertex3f( 0.28f, 1.62f, 0.05f);
+        glVertex3f(-0.02f, 1.62f, 0.05f);
+        glEnd();
+
+        // Nasal Guard / Front Lip (Z = 0.048f)
+        glColor3f(helmetPal.r, helmetPal.g, helmetPal.b);
+        glBegin(GL_QUADS);
+        glVertex3f(0.21f, 1.32f, 0.048f);
+        glVertex3f(0.27f, 1.32f, 0.048f);
+        glVertex3f(0.27f, 1.52f, 0.048f);
+        glVertex3f(0.21f, 1.52f, 0.048f);
+        glEnd();
+
+        // Visor Eye Slit Aperture Dark Framing (Z = 0.049f)
+        glColor3f(0.10f, 0.12f, 0.15f);
+        glLineWidth(2.0f);
+        glBegin(GL_LINE_LOOP);
+        glVertex3f(0.03f, 1.35f, 0.049f);
+        glVertex3f(0.21f, 1.35f, 0.049f);
+        glVertex3f(0.21f, 1.51f, 0.049f);
+        glVertex3f(0.03f, 1.51f, 0.049f);
+        glEnd();
+
+        // Diamond radiant crest glint (Special diamond helmet visual)
+        if (getArmorTier(g_EquippedArmor[ARMOR_SLOT_HELMET]) == TIER_DIAMOND) {
+            glColor3f(0.70f, 1.0f, 1.0f);
+            glBegin(GL_TRIANGLES);
+            glVertex3f(0.12f, 1.54f, 0.052f);
+            glVertex3f(0.18f, 1.54f, 0.052f);
+            glVertex3f(0.15f, 1.60f, 0.052f);
+            glEnd();
+        }
+    }
 
     // 5. In-Hand Tool Rendering with Dynamic Arm Swing Arc & Motion Trail
     renderInHandTool(g_Hotbar[g_ActiveSlot].type, g_ToolSwingTimer, g_ToolIsSwinging, g_Player.isFacingRight);
@@ -2572,21 +3230,7 @@ static void renderHUD(void) {
 
     int actType = g_Hotbar[g_ActiveSlot].type;
     int actCount = g_Hotbar[g_ActiveSlot].count;
-    char actBanner[128];
-    if (actType != BLOCK_AIR && actType != 0 && actCount > 0) {
-        if (isToolItem(actType) || isArmorItem(actType)) {
-            snprintf(actBanner, sizeof(actBanner), "[%d] %s",
-                g_ActiveSlot + 1, (getLanguage() == LANG_ZH) ? getItemChineseName(actType) : getItemName(actType));
-        } else if (actType < BLOCK_TYPE_COUNT) {
-            snprintf(actBanner, sizeof(actBanner), "[%d] %s  x%d",
-                g_ActiveSlot + 1, (getLanguage() == LANG_ZH) ? g_BlockDefs[actType].chineseName : g_BlockDefs[actType].name, actCount);
-        } else {
-            snprintf(actBanner, sizeof(actBanner), "[%d] %s  x%d",
-                g_ActiveSlot + 1, getItemLocalizedName(actType), actCount);
-        }
-    } else {
-        snprintf(actBanner, sizeof(actBanner), "[%d] (%s)", g_ActiveSlot + 1, LOC("空", "Empty"));
-    }
+
     if (getGameMode() == MODE_CREATIVE) {
         float flyW = 450.0f;
         float flyH = 24.0f;
@@ -2601,11 +3245,156 @@ static void renderHUD(void) {
         }
     }
 
-    float banW = 280.0f;
-    float banX = ((float)WINDOW_WIDTH - banW) * 0.5f;
-    drawQuad2D(banX, startY - 30, banW, 24, 0.06f, 0.08f, 0.12f, 0.85f);
-    drawBorder2D(banX, startY - 30, banW, 24, 0.95f, 0.80f, 0.20f, 1.5f);
-    drawText(banX + 15, startY - 14, actBanner, 1.0f, 0.90f, 0.30f, false);
+    // Requirement 4: Selected Item HUD Tooltip / Info Card
+    // Above the active hotbar slot (or neatly in HUD), render an info card showing: Item Name, Item Category, Attack Damage / Defense % / Durability (X / Y).
+    {
+        float actSlotCenterX = startX + g_ActiveSlot * (slotSize + slotGap) + slotSize * 0.5f;
+        float cardW = 320.0f;
+        float cardH = 62.0f;
+        float cardX = actSlotCenterX - cardW * 0.5f;
+        if (cardX < 15.0f) cardX = 15.0f;
+        if (cardX + cardW > (float)WINDOW_WIDTH - 15.0f) cardX = (float)WINDOW_WIDTH - 15.0f - cardW;
+
+        float cardY = startY - cardH - 10.0f;
+        if (getGameMode() == MODE_CREATIVE) {
+            cardY = startY - 58.0f - cardH - 6.0f;
+        }
+
+        // Info card container & golden border
+        drawQuad2D(cardX, cardY, cardW, cardH, 0.07f, 0.09f, 0.14f, 0.94f);
+        drawBorder2D(cardX, cardY, cardW, cardH, 0.95f, 0.80f, 0.22f, 1.5f);
+
+        // Indicator notch pointing toward active hotbar slot
+        drawQuad2D(actSlotCenterX - 5.0f, cardY + cardH, 10.0f, 3.0f, 0.95f, 0.80f, 0.22f, 1.0f);
+
+        char nameLine[128];
+        char catLine[128];
+        char statLine[128];
+
+        int curDur = g_Hotbar[g_ActiveSlot].durability;
+        int maxDur = g_Hotbar[g_ActiveSlot].maxDurability;
+
+        if (actType != BLOCK_AIR && actType != 0 && actCount > 0) {
+            if (isToolItem(actType)) {
+                const ToolDef* td = getToolDef(actType);
+                const char* tName = (getLanguage() == LANG_ZH) ? (td ? td->chineseName : "工具") : (td ? td->name : "Tool");
+                snprintf(nameLine, sizeof(nameLine), "[%d] %s", g_ActiveSlot + 1, tName);
+
+                if (td && td->type == TOOL_SWORD) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【近战武器】 锋利战剑", "[Weapon] Melee Sword"));
+                } else if (td && td->type == TOOL_PICKAXE) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【开采工具】 矿工镐 (开采岩石/矿脉)", "[Tool] Mining Pickaxe"));
+                } else if (td && td->type == TOOL_AXE) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【伐木工具】 伐木斧 (砍伐树木/木材)", "[Tool] Logging Axe"));
+                } else {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【挖掘工具】 工兵铲 (挖掘泥土/沙石)", "[Tool] Excavation Shovel"));
+                }
+
+                int mDur = (maxDur > 0) ? maxDur : getMaxDurability(actType);
+                int cDur = (curDur > 0) ? curDur : mDur;
+                float dmg = td ? td->damage : 5.0f;
+                snprintf(statLine, sizeof(statLine), "%s: %.1f  |  %s: %d / %d",
+                         LOC("攻击伤害", "Attack"), dmg,
+                         LOC("耐久度", "Durability"), cDur, mDur);
+
+            } else if (isArmorItem(actType)) {
+                const ArmorDef* ad = getArmorDef(actType);
+                const char* aName = (getLanguage() == LANG_ZH) ? (ad ? ad->chineseName : "防具") : (ad ? ad->name : "Armor");
+                snprintf(nameLine, sizeof(nameLine), "[%d] %s", g_ActiveSlot + 1, aName);
+
+                int slotIdx = ad ? ad->slot : -1;
+                if (slotIdx == ARMOR_SLOT_HELMET) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【防具装备】 头部盔甲 (按E装备)", "[Armor] Helmet (Equip in E)"));
+                } else if (slotIdx == ARMOR_SLOT_CHEST) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【防具装备】 护胸板甲 (按E装备)", "[Armor] Chestplate (Equip in E)"));
+                } else if (slotIdx == ARMOR_SLOT_LEGS) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【防具装备】 腿部护甲 (按E装备)", "[Armor] Leggings (Equip in E)"));
+                } else {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【防具装备】 战靴胫甲 (按E装备)", "[Armor] Boots (Equip in E)"));
+                }
+
+                int mDur = (maxDur > 0) ? maxDur : (ad ? ad->maxDurability : 100);
+                int cDur = (curDur > 0) ? curDur : mDur;
+                float defPct = ad ? (ad->reduction * 100.0f) : 0.0f;
+                snprintf(statLine, sizeof(statLine), "%s: +%.0f%%  |  %s: %d / %d",
+                         LOC("防御减免", "Defense"), defPct,
+                         LOC("耐久度", "Durability"), cDur, mDur);
+
+            } else if (actType == ITEM_STICKY_BOMB) {
+                snprintf(nameLine, sizeof(nameLine), "[%d] %s  x%d",
+                         g_ActiveSlot + 1, (getLanguage() == LANG_ZH) ? "粘性炸弹" : "Sticky Bomb", actCount);
+                snprintf(catLine, sizeof(catLine), "%s", LOC("【投掷消耗品】 炸药武器", "[Consumable] Thrown Explosive"));
+                snprintf(statLine, sizeof(statLine), "%s: 50.0  |  %s: %d",
+                         LOC("爆炸伤害", "Explosion Dmg"), LOC("携带数量", "Count"), actCount);
+
+            } else if (actType == ITEM_STICK || actType == ITEM_GEL) {
+                const char* mName = (getLanguage() == LANG_ZH) ? getItemChineseName(actType) : getItemName(actType);
+                snprintf(nameLine, sizeof(nameLine), "[%d] %s  x%d", g_ActiveSlot + 1, mName, actCount);
+                snprintf(catLine, sizeof(catLine), "%s", LOC("【基础资源】 合成原料", "[Resource] Crafting Material"));
+                snprintf(statLine, sizeof(statLine), "%s: %d  |  %s",
+                         LOC("堆叠数量", "Stack Count"), actCount,
+                         LOC("用于制作工具、武器与火把", "For Tools, Weapons & Torches"));
+
+            } else if (actType < BLOCK_TYPE_COUNT) {
+                const char* bName = (getLanguage() == LANG_ZH) ? g_BlockDefs[actType].chineseName : g_BlockDefs[actType].name;
+                snprintf(nameLine, sizeof(nameLine), "[%d] %s  x%d", g_ActiveSlot + 1, bName, actCount);
+
+                if (isDoorBlock(actType)) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【功能设施】 双格木门 (右键开/关门)", "[Furniture] 2-Block Door (R-Click Toggle)"));
+                    snprintf(statLine, sizeof(statLine), "%s: 2.0x1.0  |  %s: %s",
+                             LOC("方块尺寸", "Block Size"),
+                             LOC("通行状态", "Passage"),
+                             g_BlockDefs[actType].isSolid ? LOC("关闭 (阻挡)", "Closed (Solid)") : LOC("开启 (通行)", "Open (Passable)"));
+                } else if (actType == BLOCK_WORKBENCH) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【合成站】 工作台 (右键直接进入合成)", "[Station] Workbench (R-Click Craft)"));
+                    snprintf(statLine, sizeof(statLine), "%s: 2.0  |  %s",
+                             LOC("方块硬度", "Hardness"),
+                             LOC("解锁高级工具与装备配方", "Unlocks Advanced Recipes"));
+                } else if (actType == BLOCK_FURNACE) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【合成站】 石制熔炉 (右键直接进入合成)", "[Station] Furnace (R-Click Craft)"));
+                    snprintf(statLine, sizeof(statLine), "%s: 6.0  |  %s",
+                             LOC("方块硬度", "Hardness"),
+                             LOC("用于冶炼矿物与高级加工", "Smelting & Metalworking"));
+                } else if (actType >= BLOCK_CHAIR && actType <= BLOCK_CHANDELIER) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【功能家具】 庇护所设施", "[Furniture] Shelter Decor"));
+                    snprintf(statLine, sizeof(statLine), "%s: %.1f  |  %s: %s",
+                             LOC("方块硬度", "Hardness"), g_BlockDefs[actType].hardness,
+                             LOC("阻挡通行", "Solid"), g_BlockDefs[actType].isSolid ? LOC("是", "Yes") : LOC("否", "No"));
+                } else if (actType == BLOCK_TORCH || actType == BLOCK_GLOW_SHROOM) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【照明设施】 动态光源", "[Lighting] Dynamic Light"));
+                    snprintf(statLine, sizeof(statLine), "%s: %.1f  |  %s",
+                             LOC("发光强度", "Light Intensity"), 1.0f,
+                             LOC("提供大范围温暖照明", "Provides Wide Illumination"));
+                } else if (actType >= BLOCK_COAL_ORE && actType <= BLOCK_RUBY_ORE) {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【矿脉资源】 贵重矿石", "[Mineral] Ore Deposit"));
+                    snprintf(statLine, sizeof(statLine), "%s: %.1f (需镐开采)  |  %s: %d",
+                             LOC("方块硬度", "Hardness"), g_BlockDefs[actType].hardness,
+                             LOC("数量", "Count"), actCount);
+                } else {
+                    snprintf(catLine, sizeof(catLine), "%s", LOC("【建筑方块】 基础建材", "[Block] Building Material"));
+                    snprintf(statLine, sizeof(statLine), "%s: %.1f  |  %s: %s  |  %s: %d",
+                             LOC("硬度", "Hardness"), g_BlockDefs[actType].hardness,
+                             LOC("实体碰撞", "Solid"), g_BlockDefs[actType].isSolid ? LOC("是", "Yes") : LOC("否", "No"),
+                             LOC("数量", "Count"), actCount);
+                }
+            } else {
+                snprintf(nameLine, sizeof(nameLine), "[%d] %s  x%d", g_ActiveSlot + 1, getItemLocalizedName(actType), actCount);
+                snprintf(catLine, sizeof(catLine), "%s", LOC("【通用物品】", "[Item] General"));
+                snprintf(statLine, sizeof(statLine), "%s: %d", LOC("堆叠数量", "Count"), actCount);
+            }
+        } else {
+            snprintf(nameLine, sizeof(nameLine), "[%d] %s", g_ActiveSlot + 1, LOC("空手 / 未选择物品", "Bare Hands / Empty Slot"));
+            snprintf(catLine, sizeof(catLine), "%s", LOC("【当前未装备任何道具】", "[No Item Selected]"));
+            snprintf(statLine, sizeof(statLine), "%s: 5.0  |  %s: 1.0x",
+                     LOC("基础拳击伤害", "Fist Damage"),
+                     LOC("击退力", "Knockback"));
+        }
+
+        // Render 3 lines of crisp text
+        drawText(cardX + 14.0f, cardY + 16.0f, nameLine, 1.0f, 0.90f, 0.30f, true);
+        drawText(cardX + 14.0f, cardY + 34.0f, catLine, 0.38f, 0.85f, 1.0f, false);
+        drawText(cardX + 14.0f, cardY + 52.0f, statLine, 0.45f, 0.95f, 0.50f, false);
+    }
 
     drawQuad2D(startX - 10, startY - 4, totalW + 20, slotSize + 10, 0.08f, 0.10f, 0.14f, 0.92f);
     drawBorder2D(startX - 10, startY - 4, totalW + 20, slotSize + 10, 0.30f, 0.38f, 0.48f, 1.5f);
